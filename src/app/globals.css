@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --cream: #f9f6f2;
+  --cream-dark: #f2ebe3;
+  --gold: #b8963d;
+  --gold-light: #c9a962;
+  --white: #fdfcfb;
+  --text: #2c2c2c;
+  --text-muted: #6b6b6b;
+}
+
+body {
+  @apply bg-cream-100 text-stone-900 antialiased;
+  background-color: var(--cream);
+  color: var(--text);
+}
+
+/* デパコス風の控えめなアクセント */
+.ring-gold:focus-within {
+  @apply ring-1 ring-gold-500/40;
+}
+
+.btn-gold {
+  @apply bg-gold-500 text-white hover:bg-gold-600 focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-cream-100;
+}
+
+.card-cream {
+  @apply bg-white/90 border border-cream-300/60 shadow-sm;
+}
