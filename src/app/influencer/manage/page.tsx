@@ -10,7 +10,7 @@ import {
   setProfile,
   removeFromList,
   reorderList,
-} from "@/lib/local-storage";
+} from "@/lib/store";
 import type { ListedCosmeItem } from "@/types";
 
 const SKIN_TYPE_OPTIONS = [
@@ -38,18 +38,23 @@ export default function InfluencerManagePage() {
   const saveMessageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [displayName, setDisplayName] = useState("");
+  const [editingName, setEditingName] = useState(false);
+  const [tempName, setTempName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [skinType, setSkinType] = useState("");
   const [personalColor, setPersonalColor] = useState("");
 
-  const load = useCallback(() => setList(getMyList()), []);
+  const load = useCallback(() => {
+    getMyList().then(setList);
+  }, []);
 
   const loadProfile = useCallback(() => {
-    const p = getProfile();
-    setDisplayName(p?.displayName ?? "");
-    setAvatarUrl(p?.avatarUrl ?? "");
-    setSkinType(p?.skinType ?? "");
-    setPersonalColor(p?.personalColor ?? "");
+    getProfile().then((p) => {
+      setDisplayName(p?.displayName ?? "");
+      setAvatarUrl(p?.avatarUrl ?? "");
+      setSkinType(p?.skinType ?? "");
+      setPersonalColor(p?.personalColor ?? "");
+    });
   }, []);
 
   useEffect(() => {
@@ -57,11 +62,12 @@ export default function InfluencerManagePage() {
     loadProfile();
   }, [load, loadProfile]);
 
-  const handleSave = useCallback(() => {
-    const current = getMyList();
-    setMyList(current);
-    setProfile({
-      username: getProfile()?.username ?? "user",
+  const handleSave = useCallback(async () => {
+    const current = await getMyList();
+    await setMyList(current);
+    const p = await getProfile();
+    await setProfile({
+      username: p?.username ?? "demo",
       displayName,
       avatarUrl: avatarUrl || undefined,
       skinType: skinType || undefined,
@@ -73,25 +79,18 @@ export default function InfluencerManagePage() {
     saveMessageTimerRef.current = setTimeout(() => setSavedMessage(false), 3000);
   }, [displayName, avatarUrl, skinType, personalColor]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const handleRemove = useCallback(
-    (id: string) => {
-      if (confirm("この商品をリストから削除しますか？")) {
-        setList(removeFromList(id));
-      }
-    },
-    []
-  );
+  const handleRemove = useCallback((id: string) => {
+    if (confirm("この商品をリストから削除しますか？")) {
+      removeFromList(id).then(setList);
+    }
+  }, []);
 
   const moveUp = useCallback(
     (index: number) => {
       if (index <= 0) return;
       const ids = list.map((x) => x.id);
       [ids[index - 1], ids[index]] = [ids[index], ids[index - 1]];
-      setList(reorderList(ids));
+      reorderList(ids).then(setList);
     },
     [list]
   );
@@ -101,7 +100,7 @@ export default function InfluencerManagePage() {
       if (index >= list.length - 1) return;
       const ids = list.map((x) => x.id);
       [ids[index], ids[index + 1]] = [ids[index + 1], ids[index]];
-      setList(reorderList(ids));
+      reorderList(ids).then(setList);
     },
     [list]
   );
@@ -113,7 +112,7 @@ export default function InfluencerManagePage() {
       <header className="border-b border-cream-300 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-lg font-medium text-stone-800 tracking-wide">
-            Cosmetree
+            Cosmepik
           </h1>
           <div className="flex items-center gap-2">
             <Link
@@ -162,28 +161,107 @@ export default function InfluencerManagePage() {
                   <span className="text-2xl text-stone-400">✨</span>
                 )}
               </div>
-              <label className="text-xs text-stone-500 w-full text-center">
-                <span className="block mb-1">アイコン画像URL</span>
+              <label
+                htmlFor="avatar-upload"
+                className="text-xs text-stone-500 w-full text-center cursor-pointer"
+              >
+                <span className="block mb-1">アイコン画像を選択</span>
                 <input
-                  type="url"
-                  value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full rounded border border-cream-300 bg-white px-2 py-1 text-xs"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setAvatarUrl(reader.result as string);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="hidden"
+                  id="avatar-upload"
                 />
+                <span className="inline-block rounded-lg border border-gold-500/50 text-gold-700 py-1.5 px-3 text-xs font-medium hover:bg-cream-200 transition-colors">
+                  写真を選択
+                </span>
               </label>
             </div>
             <div className="flex-1 min-w-[200px] space-y-4">
-              <label className="block">
+              <div className="block">
                 <span className="block text-xs font-medium text-stone-600 mb-1">名前</span>
-                <input
-                  type="text"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="表示名を入力"
-                  className="w-full rounded-lg border border-cream-300 bg-white px-4 py-2 text-stone-800 placeholder-stone-400"
-                />
-              </label>
+                {editingName ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={tempName}
+                      onChange={(e) => setTempName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          setDisplayName(tempName);
+                          setEditingName(false);
+                        } else if (e.key === "Escape") {
+                          setTempName(displayName);
+                          setEditingName(false);
+                        }
+                      }}
+                      placeholder="表示名を入力"
+                      className="flex-1 rounded-lg border border-cream-300 bg-white px-4 py-2 text-stone-800 placeholder-stone-400"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDisplayName(tempName);
+                        setEditingName(false);
+                      }}
+                      className="rounded-lg bg-gold-500 text-white px-3 py-2 text-xs font-medium hover:bg-gold-600"
+                    >
+                      保存
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTempName(displayName);
+                        setEditingName(false);
+                      }}
+                      className="rounded-lg border border-cream-300 text-stone-600 px-3 py-2 text-xs hover:bg-cream-200"
+                    >
+                      キャンセル
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="flex-1 rounded-lg border border-cream-300 bg-white px-4 py-2 text-stone-800 min-h-[42px] flex items-center">
+                      {displayName || "（未設定）"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTempName(displayName);
+                        setEditingName(true);
+                      }}
+                      className="rounded-lg border border-cream-300 text-stone-500 px-3 py-2 hover:bg-cream-200"
+                      aria-label="名前を編集"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="w-4 h-4"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              </div>
               <label className="block">
                 <span className="block text-xs font-medium text-stone-600 mb-1">肌質</span>
                 <select

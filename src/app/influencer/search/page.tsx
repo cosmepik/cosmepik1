@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { searchMockCosme } from "@/lib/mock-data";
-import { getMyList, addToList } from "@/lib/local-storage";
+import { getMyList, addToList } from "@/lib/store";
 import { CosmeCard } from "@/components/CosmeCard";
 import { AddCommentModal } from "@/components/AddCommentModal";
 import type { CosmeItem, ListedCosmeItem } from "@/types";
@@ -13,7 +13,7 @@ export default function InfluencerSearchPage() {
   const [myList, setMyList] = useState<ListedCosmeItem[]>([]);
 
   useEffect(() => {
-    setMyList(getMyList());
+    getMyList().then(setMyList);
   }, []);
   const [modalItem, setModalItem] = useState<CosmeItem | null>(null);
 
@@ -34,12 +34,13 @@ export default function InfluencerSearchPage() {
 
   const handleAddToList = useCallback(
     (item: CosmeItem, comment: string) => {
-      const next = addToList({
+      addToList({
         ...item,
         comment: comment || "（コメントなし）",
+      }).then((next) => {
+        setMyList(next);
+        setModalItem(null);
       });
-      setMyList(next);
-      setModalItem(null);
     },
     []
   );

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Cosmetree - あなたの愛用コスメをシェア",
+  title: "Cosmepik - あなたの愛用コスメをシェア",
   description: "インフルエンサーの愛用コスメをまとめたリンクツリー",
 };
 
