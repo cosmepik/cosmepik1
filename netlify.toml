@@ -1,0 +1,12 @@
+# Netlify で Next.js を正しくビルド・実行するための設定
+# https://docs.netlify.com/frameworks/next-js/overview/
+
+[build]
+  command = "npm run build"
+  # Next.js は Netlify が自動検出し、OpenNext でデプロイします（publish は指定しない）
+
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_FLAGS = "--legacy-peer-deps"
+
+# ルート (/) へのアクセスは Next.js が /influencer/manage にリダイレクトするので追加の redirect は不要
