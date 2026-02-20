@@ -3,10 +3,11 @@
 
 [build]
   command = "npm run build"
-  # Next.js は Netlify が自動検出し、OpenNext でデプロイします（publish は指定しない）
+
+# Next.js 用プラグインを明示指定（これがないと静的として配信され Page not found になりやすい）
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
 
 [build.environment]
   NODE_VERSION = "20"
   NPM_FLAGS = "--legacy-peer-deps"
-
-# ルート (/) へのアクセスは Next.js が /influencer/manage にリダイレクトするので追加の redirect は不要
