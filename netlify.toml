@@ -3,8 +3,9 @@
 
 [build]
   command = "npm run build"
+  publish = ".next"
 
-# Next.js 用プラグインを明示指定（これがないと静的として配信され Page not found になりやすい）
+# Next.js 用プラグインを明示指定（publish は base と異なる必要があるため .next を指定）
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
