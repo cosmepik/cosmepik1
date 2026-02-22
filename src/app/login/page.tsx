@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { supabase as supabaseFallback } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -15,9 +16,12 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = createClient();
+    const supabase = createClient() ?? supabaseFallback;
     if (!supabase) {
-      setMessage({ type: "error", text: "Supabase が設定されていません" });
+      setMessage({
+        type: "error",
+        text: "Supabase が設定されていません。.env.local（ローカル）または Netlify の環境変数に NEXT_PUBLIC_SUPABASE_URL と NEXT_PUBLIC_SUPABASE_ANON_KEY を設定してください。",
+      });
       return;
     }
     setLoading(true);
