@@ -54,15 +54,15 @@ Netlify でビルドする前に、次の環境変数を設定してください
 
 | Key | Value | 備考 |
 |-----|-------|------|
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | `pk_live_...` または `pk_test_...` | [Clerk ダッシュボード](https://dashboard.clerk.com) で取得 |
-| `CLERK_SECRET_KEY` | `sk_live_...` または `sk_test_...` | 同上 |
-| `NEXT_PUBLIC_SUPABASE_URL` | （あなたの Supabase URL） | Supabase を使用する場合 |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | （あなたの Supabase Anon Key） | Supabase を使用する場合 |
+| `NEXT_PUBLIC_SUPABASE_URL` | （Supabase URL） | 認証・DB に必須 |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | （Supabase Anon Key） | 認証・DB に必須 |
 | `RAKUTEN_APPLICATION_ID` | （楽天 API の Application ID） | 楽天検索を使う場合 |
 | `RAKUTEN_ACCESS_KEY` | （楽天 API の Access Key） | 楽天検索を使う場合 |
 
 ※ `.env.local` は GitHub に含まれないため、Netlify の環境変数に同じ値を設定する必要があります。  
 ※ 変更後は **再デプロイ**してください。
+
+※ Supabase でメール確認を有効にしている場合、本番 URL を Supabase の **Authentication → URL Configuration** の **Redirect URLs** に追加してください。
 
 ---
 

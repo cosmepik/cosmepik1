@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "@/hooks/use-user";
 import { searchMockCosme } from "@/lib/mock-data";
 import { getMyList, addToList } from "@/lib/store";
 import { CosmeCard } from "@/components/CosmeCard";
@@ -12,7 +12,7 @@ import type { CosmeItem, ListedCosmeItem } from "@/types";
 
 export default function InfluencerSearchPage() {
   const router = useRouter();
-  const { user } = useUser();
+  const user = useUser();
   const userId = user?.id ?? null;
 
   const [keyword, setKeyword] = useState("");

@@ -1,7 +1,7 @@
 /**
  * データの読み書きはここを通す。
  * .env.local に Supabase の URL/Key があれば Supabase、なければ localStorage を使用。
- * Clerk 利用時は userId を渡すとそのユーザーのデータを扱う（未指定時は "demo"）。
+ * Supabase Auth 利用時は userId を渡すとそのユーザーのデータを扱う（未指定時は "demo"）。
  */
 import { isSupabaseConfigured } from "@/lib/supabase";
 import * as db from "@/lib/supabase-db";
@@ -18,7 +18,7 @@ function uid(userId?: string | null) {
   return userId ?? FALLBACK_USER_ID;
 }
 
-/** 自分のリストを取得（Clerk 利用時は userId を渡す） */
+/** 自分のリストを取得（Supabase Auth 利用時は userId を渡す） */
 export async function getMyList(userId?: string | null): Promise<ListedCosmeItem[]> {
   if (useSupabase()) return db.fetchList(uid(userId));
   return Promise.resolve(local.getMyList());

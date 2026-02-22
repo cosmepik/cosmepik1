@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useUser, UserButton } from "@clerk/nextjs";
+import { useUser } from "@/hooks/use-user";
+import { createClient } from "@/lib/supabase/client";
 import {
   getMyList,
   setMyList,
@@ -34,7 +35,7 @@ const PERSONAL_COLOR_OPTIONS = [
 ];
 
 export default function InfluencerManagePage() {
-  const { user } = useUser();
+  const user = useUser();
   const userId = user?.id ?? null;
 
   const [list, setList] = useState<ListedCosmeItem[]>([]);
@@ -132,7 +133,19 @@ export default function InfluencerManagePage() {
             >
               プレビュー
             </Link>
-            <UserButton afterSignOutUrl="/" />
+            <button
+              type="button"
+              onClick={async () => {
+                const supabase = createClient();
+                if (supabase) {
+                  await supabase.auth.signOut();
+                  window.location.href = "/";
+                }
+              }}
+              className="rounded-lg border border-cream-300 text-stone-600 py-2 px-4 text-sm hover:bg-cream-200"
+            >
+              サインアウト
+            </button>
           </div>
         </div>
       </header>

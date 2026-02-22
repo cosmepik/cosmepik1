@@ -31,5 +31,5 @@ yarn-error.log*
 # Vercel
 .vercel
 
-# clerk configuration (can include secrets)
-/.clerk/
+# Clerk（削除済み）
+.clerk/
