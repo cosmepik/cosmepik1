@@ -44,7 +44,29 @@
 
 ---
 
-## 4. まとめ
+## 4. 環境変数（必須）
+
+Netlify でビルドする前に、次の環境変数を設定してください。
+
+1. **Site configuration** → **Environment variables**（または **Build & deploy** → **Environment**）
+2. **「Add a variable」** または **「Add environment variables」** をクリック
+3. 次の変数を追加：
+
+| Key | Value | 備考 |
+|-----|-------|------|
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | `pk_live_...` または `pk_test_...` | [Clerk ダッシュボード](https://dashboard.clerk.com) で取得 |
+| `CLERK_SECRET_KEY` | `sk_live_...` または `sk_test_...` | 同上 |
+| `NEXT_PUBLIC_SUPABASE_URL` | （あなたの Supabase URL） | Supabase を使用する場合 |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | （あなたの Supabase Anon Key） | Supabase を使用する場合 |
+| `RAKUTEN_APPLICATION_ID` | （楽天 API の Application ID） | 楽天検索を使う場合 |
+| `RAKUTEN_ACCESS_KEY` | （楽天 API の Access Key） | 楽天検索を使う場合 |
+
+※ `.env.local` は GitHub に含まれないため、Netlify の環境変数に同じ値を設定する必要があります。  
+※ 変更後は **再デプロイ**してください。
+
+---
+
+## 5. まとめ
 
 - **「Framework」は探さなくてOK**（項目がないUIです）
 - **Build command:** `npm run build`
