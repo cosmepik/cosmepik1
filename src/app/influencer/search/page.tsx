@@ -2,6 +2,8 @@
 
 import { useState, useCallback, useMemo, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import { searchMockCosme } from "@/lib/mock-data";
 import { getMyList, addToList } from "@/lib/store";
 import { CosmeCard } from "@/components/CosmeCard";
@@ -9,18 +11,62 @@ import { AddCommentModal } from "@/components/AddCommentModal";
 import type { CosmeItem, ListedCosmeItem } from "@/types";
 
 export default function InfluencerSearchPage() {
+  const router = useRouter();
+  const { user } = useUser();
+  const userId = user?.id ?? null;
+
   const [keyword, setKeyword] = useState("");
   const [myList, setMyList] = useState<ListedCosmeItem[]>([]);
+  const [searchResults, setSearchResults] = useState<CosmeItem[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   useEffect(() => {
-    getMyList().then(setMyList);
-  }, []);
+    getMyList(userId).then(setMyList);
+  }, [userId]);
   const [modalItem, setModalItem] = useState<CosmeItem | null>(null);
 
-  const searchResults = useMemo(
-    () => (keyword.trim() ? searchMockCosme(keyword) : []),
-    [keyword]
-  );
+  useEffect(() => {
+    const k = keyword.trim();
+    if (!k) {
+      setSearchResults([]);
+      setSearchError(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      setSearchError(null);
+      try {
+        const res = await fetch(
+          `/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=20`
+        );
+        const data = await res.json();
+        if (res.ok && Array.isArray(data.items)) {
+          setSearchResults(data.items);
+          setSearchError(null);
+        } else if (res.status === 503 || res.status === 403 || res.status >= 500) {
+          setSearchResults(searchMockCosme(k));
+          setSearchError(
+            res.status === 403
+              ? "楽天APIのドメイン制限のため、本番環境（Netlify）でお試しください"
+              : null
+          );
+        } else if (data.error) {
+          setSearchError(data.error);
+          setSearchResults([]);
+        } else {
+          setSearchResults(searchMockCosme(k));
+        }
+      } catch {
+        setSearchResults(searchMockCosme(k));
+      } finally {
+        setIsSearching(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [keyword]);
 
   const listIds = useMemo(() => new Set(myList.map((x) => x.id)), [myList]);
 
@@ -34,15 +80,18 @@ export default function InfluencerSearchPage() {
 
   const handleAddToList = useCallback(
     (item: CosmeItem, comment: string) => {
-      addToList({
-        ...item,
-        comment: comment || "（コメントなし）",
-      }).then((next) => {
-        setMyList(next);
+      addToList(
+        {
+          ...item,
+          comment: comment || "（コメントなし）",
+        },
+        userId
+      ).then(() => {
         setModalItem(null);
+        router.push("/influencer/manage");
       });
     },
-    []
+    [router, userId]
   );
 
   return (
@@ -66,7 +115,7 @@ export default function InfluencerSearchPage() {
           コスメを検索して追加
         </h1>
         <p className="mt-1 text-sm text-stone-500">
-          「ファンデーション」「SHISEIDO」などで検索（ダミーデータで動作）
+          「ファンデーション」「SHISEIDO」などで検索（楽天API／未設定時はダミーデータ）
         </p>
 
         <div className="mt-6">
@@ -81,10 +130,16 @@ export default function InfluencerSearchPage() {
         </div>
 
         <div className="mt-6 space-y-4">
-          {searchResults.length === 0 && keyword.trim() && (
+          {isSearching && (
+            <p className="text-sm text-stone-500">検索中...</p>
+          )}
+          {searchError && (
+            <p className="text-sm text-amber-600">{searchError}</p>
+          )}
+          {!isSearching && searchResults.length === 0 && keyword.trim() && !searchError && (
             <p className="text-sm text-stone-500">該当する商品がありません</p>
           )}
-          {searchResults.length === 0 && !keyword.trim() && (
+          {!isSearching && searchResults.length === 0 && !keyword.trim() && (
             <p className="text-sm text-stone-500">
               上記の検索窓に文字を入れると候補が表示されます
             </p>

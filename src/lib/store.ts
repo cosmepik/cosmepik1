@@ -1,40 +1,45 @@
 /**
  * データの読み書きはここを通す。
  * .env.local に Supabase の URL/Key があれば Supabase、なければ localStorage を使用。
+ * Clerk 利用時は userId を渡すとそのユーザーのデータを扱う（未指定時は "demo"）。
  */
 import { isSupabaseConfigured } from "@/lib/supabase";
 import * as db from "@/lib/supabase-db";
 import * as local from "@/lib/local-storage";
 import type { ListedCosmeItem, InfluencerProfile } from "@/types";
 
-const CURRENT_USERNAME = db.CURRENT_USERNAME;
+const FALLBACK_USER_ID = "demo";
 
 function useSupabase() {
   return typeof window !== "undefined" && isSupabaseConfigured;
 }
 
-/** 自分のリストを取得 */
-export async function getMyList(): Promise<ListedCosmeItem[]> {
-  if (useSupabase()) return db.fetchList(CURRENT_USERNAME);
+function uid(userId?: string | null) {
+  return userId ?? FALLBACK_USER_ID;
+}
+
+/** 自分のリストを取得（Clerk 利用時は userId を渡す） */
+export async function getMyList(userId?: string | null): Promise<ListedCosmeItem[]> {
+  if (useSupabase()) return db.fetchList(uid(userId));
   return Promise.resolve(local.getMyList());
 }
 
 /** 自分のリストを保存 */
-export async function setMyList(list: ListedCosmeItem[]): Promise<void> {
+export async function setMyList(list: ListedCosmeItem[], userId?: string | null): Promise<void> {
   if (useSupabase()) {
-    await db.saveList(CURRENT_USERNAME, list);
+    await db.saveList(uid(userId), list);
     return;
   }
   local.setMyList(list);
 }
 
 /** プロフィール取得（現在のユーザー） */
-export async function getProfile(): Promise<InfluencerProfile | null> {
-  if (useSupabase()) return db.fetchProfile(CURRENT_USERNAME);
+export async function getProfile(userId?: string | null): Promise<InfluencerProfile | null> {
+  if (useSupabase()) return db.fetchProfile(uid(userId));
   return Promise.resolve(local.getProfile());
 }
 
-/** プロフィール保存 */
+/** プロフィール保存（profile.username に userId を入れて渡す） */
 export async function setProfile(
   profile: Partial<InfluencerProfile> & { username: string }
 ): Promise<void> {
@@ -47,23 +52,25 @@ export async function setProfile(
 
 /** リストに1件追加 */
 export async function addToList(
-  item: Omit<ListedCosmeItem, "order" | "addedAt">
+  item: Omit<ListedCosmeItem, "order" | "addedAt">,
+  userId?: string | null
 ): Promise<ListedCosmeItem[]> {
-  if (useSupabase()) return db.addListItem(CURRENT_USERNAME, item);
+  if (useSupabase()) return db.addListItem(uid(userId), item);
   return Promise.resolve(local.addToList(item));
 }
 
 /** リストから1件削除 */
-export async function removeFromList(id: string): Promise<ListedCosmeItem[]> {
-  if (useSupabase()) return db.removeListItem(CURRENT_USERNAME, id);
+export async function removeFromList(id: string, userId?: string | null): Promise<ListedCosmeItem[]> {
+  if (useSupabase()) return db.removeListItem(uid(userId), id);
   return Promise.resolve(local.removeFromList(id));
 }
 
 /** 並び替え */
 export async function reorderList(
-  orderedIds: string[]
+  orderedIds: string[],
+  userId?: string | null
 ): Promise<ListedCosmeItem[]> {
-  if (useSupabase()) return db.reorderListItems(CURRENT_USERNAME, orderedIds);
+  if (useSupabase()) return db.reorderListItems(uid(userId), orderedIds);
   return Promise.resolve(local.reorderList(orderedIds));
 }
 

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useUser, UserButton } from "@clerk/nextjs";
 import {
   getMyList,
   setMyList,
@@ -33,66 +34,74 @@ const PERSONAL_COLOR_OPTIONS = [
 ];
 
 export default function InfluencerManagePage() {
-  const [list, setList] = useState<ListedCosmeItem[]>([]);
-  const [savedMessage, setSavedMessage] = useState(false);
-  const saveMessageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { user } = useUser();
+  const userId = user?.id ?? null;
 
+  const [list, setList] = useState<ListedCosmeItem[]>([]);
   const [displayName, setDisplayName] = useState("");
   const [editingName, setEditingName] = useState(false);
   const [tempName, setTempName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [skinType, setSkinType] = useState("");
   const [personalColor, setPersonalColor] = useState("");
+  const initialLoadDone = useRef(false);
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(() => {
-    getMyList().then(setList);
-  }, []);
+    getMyList(userId).then(setList);
+  }, [userId]);
 
   const loadProfile = useCallback(() => {
-    getProfile().then((p) => {
+    getProfile(userId).then((p) => {
       setDisplayName(p?.displayName ?? "");
       setAvatarUrl(p?.avatarUrl ?? "");
       setSkinType(p?.skinType ?? "");
       setPersonalColor(p?.personalColor ?? "");
     });
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
+    if (userId == null) return;
     load();
     loadProfile();
-  }, [load, loadProfile]);
+    const t = setTimeout(() => {
+      initialLoadDone.current = true;
+    }, 500);
+    return () => clearTimeout(t);
+  }, [userId, load, loadProfile]);
 
-  const handleSave = useCallback(async () => {
-    const current = await getMyList();
-    await setMyList(current);
-    const p = await getProfile();
-    await setProfile({
-      username: p?.username ?? "demo",
-      displayName,
-      avatarUrl: avatarUrl || undefined,
-      skinType: skinType || undefined,
-      personalColor: personalColor || undefined,
-      updatedAt: new Date().toISOString(),
-    });
-    if (saveMessageTimerRef.current) clearTimeout(saveMessageTimerRef.current);
-    setSavedMessage(true);
-    saveMessageTimerRef.current = setTimeout(() => setSavedMessage(false), 3000);
-  }, [displayName, avatarUrl, skinType, personalColor]);
+  useEffect(() => {
+    if (!initialLoadDone.current || userId == null) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(async () => {
+      await setProfile({
+        username: userId,
+        displayName,
+        avatarUrl: avatarUrl || undefined,
+        skinType: skinType || undefined,
+        personalColor: personalColor || undefined,
+        updatedAt: new Date().toISOString(),
+      });
+    }, 600);
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    };
+  }, [userId, displayName, avatarUrl, skinType, personalColor]);
 
   const handleRemove = useCallback((id: string) => {
     if (confirm("この商品をリストから削除しますか？")) {
-      removeFromList(id).then(setList);
+      removeFromList(id, userId).then(setList);
     }
-  }, []);
+  }, [userId]);
 
   const moveUp = useCallback(
     (index: number) => {
       if (index <= 0) return;
       const ids = list.map((x) => x.id);
       [ids[index - 1], ids[index]] = [ids[index], ids[index - 1]];
-      reorderList(ids).then(setList);
+      reorderList(ids, userId).then(setList);
     },
-    [list]
+    [list, userId]
   );
 
   const moveDown = useCallback(
@@ -100,9 +109,9 @@ export default function InfluencerManagePage() {
       if (index >= list.length - 1) return;
       const ids = list.map((x) => x.id);
       [ids[index], ids[index + 1]] = [ids[index + 1], ids[index]];
-      reorderList(ids).then(setList);
+      reorderList(ids, userId).then(setList);
     },
-    [list]
+    [list, userId]
   );
 
   const sorted = [...list].sort((a, b) => a.order - b.order);
@@ -123,31 +132,19 @@ export default function InfluencerManagePage() {
             >
               プレビュー
             </Link>
-            <button
-              type="button"
-              onClick={handleSave}
-              className="rounded-lg bg-gold-500 text-white py-2 px-4 text-sm font-medium hover:bg-gold-600 transition-colors"
-            >
-              保存
-            </button>
+            <UserButton afterSignOutUrl="/" />
           </div>
         </div>
       </header>
 
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        {savedMessage && (
-          <p className="mb-4 rounded-lg bg-gold-500/10 text-gold-700 py-2 px-4 text-sm font-medium">
-            保存しました。
-          </p>
-        )}
-
-        <section className="card-cream rounded-2xl p-6 mb-8">
-          <h2 className="text-sm font-medium text-stone-500 tracking-wider mb-4">
-            プロフィール
-          </h2>
-          <div className="flex gap-6 flex-wrap">
-            <div className="flex flex-col items-center gap-2">
-              <div className="relative w-20 h-20 rounded-full overflow-hidden bg-cream-200 border-2 border-cream-300 flex items-center justify-center">
+      <div className="max-w-2xl mx-auto px-4 py-5">
+        <section className="card-cream rounded-xl p-4 mb-5">
+          <div className="flex items-center gap-4 flex-wrap">
+            <label
+              htmlFor="avatar-upload"
+              className="cursor-pointer shrink-0"
+            >
+              <div className="relative w-14 h-14 rounded-full overflow-hidden bg-cream-200 border border-cream-300 flex items-center justify-center ring-2 ring-transparent hover:ring-gold-400/30 transition-all">
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
@@ -158,40 +155,28 @@ export default function InfluencerManagePage() {
                     }}
                   />
                 ) : (
-                  <span className="text-2xl text-stone-400">✨</span>
+                  <span className="text-lg text-stone-400">✨</span>
                 )}
               </div>
-              <label
-                htmlFor="avatar-upload"
-                className="text-xs text-stone-500 w-full text-center cursor-pointer"
-              >
-                <span className="block mb-1">アイコン画像を選択</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onloadend = () => {
-                        setAvatarUrl(reader.result as string);
-                      };
-                      reader.readAsDataURL(file);
-                    }
-                  }}
-                  className="hidden"
-                  id="avatar-upload"
-                />
-                <span className="inline-block rounded-lg border border-gold-500/50 text-gold-700 py-1.5 px-3 text-xs font-medium hover:bg-cream-200 transition-colors">
-                  写真を選択
-                </span>
-              </label>
-            </div>
-            <div className="flex-1 min-w-[200px] space-y-4">
-              <div className="block">
-                <span className="block text-xs font-medium text-stone-600 mb-1">名前</span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => setAvatarUrl(reader.result as string);
+                    reader.readAsDataURL(file);
+                  }
+                }}
+                className="hidden"
+                id="avatar-upload"
+              />
+            </label>
+            <div className="flex-1 min-w-0 flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-1.5 min-w-0">
                 {editingName ? (
-                  <div className="flex items-center gap-2">
+                  <>
                     <input
                       type="text"
                       value={tempName}
@@ -205,8 +190,8 @@ export default function InfluencerManagePage() {
                           setEditingName(false);
                         }
                       }}
-                      placeholder="表示名を入力"
-                      className="flex-1 rounded-lg border border-cream-300 bg-white px-4 py-2 text-stone-800 placeholder-stone-400"
+                      placeholder="表示名"
+                      className="w-32 rounded-md border border-cream-300 bg-white px-2.5 py-1.5 text-sm text-stone-800"
                       autoFocus
                     />
                     <button
@@ -215,9 +200,9 @@ export default function InfluencerManagePage() {
                         setDisplayName(tempName);
                         setEditingName(false);
                       }}
-                      className="rounded-lg bg-gold-500 text-white px-3 py-2 text-xs font-medium hover:bg-gold-600"
+                      className="rounded-md bg-gold-500 text-white px-2 py-1.5 text-xs hover:bg-gold-600"
                     >
-                      保存
+                      OK
                     </button>
                     <button
                       type="button"
@@ -225,15 +210,15 @@ export default function InfluencerManagePage() {
                         setTempName(displayName);
                         setEditingName(false);
                       }}
-                      className="rounded-lg border border-cream-300 text-stone-600 px-3 py-2 text-xs hover:bg-cream-200"
+                      className="rounded-md border border-cream-300 text-stone-500 px-2 py-1.5 text-xs hover:bg-cream-200"
                     >
                       キャンセル
                     </button>
-                  </div>
+                  </>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <span className="flex-1 rounded-lg border border-cream-300 bg-white px-4 py-2 text-stone-800 min-h-[42px] flex items-center">
-                      {displayName || "（未設定）"}
+                  <>
+                    <span className="text-sm font-medium text-stone-800 truncate">
+                      {displayName || "名前を設定"}
                     </span>
                     <button
                       type="button"
@@ -241,82 +226,61 @@ export default function InfluencerManagePage() {
                         setTempName(displayName);
                         setEditingName(true);
                       }}
-                      className="rounded-lg border border-cream-300 text-stone-500 px-3 py-2 hover:bg-cream-200"
+                      className="rounded p-1 text-stone-400 hover:bg-cream-200 hover:text-gold-600 transition-colors"
                       aria-label="名前を編集"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.5}
-                        stroke="currentColor"
-                        className="w-4 h-4"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
-                        />
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" />
                       </svg>
                     </button>
-                  </div>
+                  </>
                 )}
               </div>
-              <label className="block">
-                <span className="block text-xs font-medium text-stone-600 mb-1">肌質</span>
+              <div className="flex items-center gap-2 flex-wrap">
                 <select
                   value={skinType}
                   onChange={(e) => setSkinType(e.target.value)}
-                  className="w-full rounded-lg border border-cream-300 bg-white px-4 py-2 text-stone-800"
+                  className="rounded-md border border-cream-300 bg-white/80 px-2.5 py-1.5 text-xs text-stone-700"
                 >
                   {SKIN_TYPE_OPTIONS.map((opt) => (
-                    <option key={opt.value || "none"} value={opt.value}>
-                      {opt.label}
-                    </option>
+                    <option key={opt.value || "none"} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
-              </label>
-              <label className="block">
-                <span className="block text-xs font-medium text-stone-600 mb-1">パーソナルカラー</span>
                 <select
                   value={personalColor}
                   onChange={(e) => setPersonalColor(e.target.value)}
-                  className="w-full rounded-lg border border-cream-300 bg-white px-4 py-2 text-stone-800"
+                  className="rounded-md border border-cream-300 bg-white/80 px-2.5 py-1.5 text-xs text-stone-700"
                 >
                   {PERSONAL_COLOR_OPTIONS.map((opt) => (
-                    <option key={opt.value || "none"} value={opt.value}>
-                      {opt.label}
-                    </option>
+                    <option key={opt.value || "none"} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
-              </label>
+              </div>
             </div>
           </div>
         </section>
 
-        <h2 className="text-xl font-medium text-stone-800 tracking-wide">
-          マイリスト管理
-        </h2>
-        <p className="mt-1 text-sm text-stone-500">
-          並び替えや削除ができます。公開ページにそのまま反映されます。
-        </p>
-
-        <Link
-          href="/influencer/search"
-          className="mt-4 inline-block text-sm text-gold-600 hover:text-gold-700 font-medium"
-        >
-          ＋ コスメを追加
-        </Link>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h2 className="text-lg font-medium text-stone-800 tracking-wide">
+            マイリスト
+          </h2>
+          <Link
+            href="/influencer/search"
+            className="text-sm text-gold-600 hover:text-gold-700 font-medium"
+          >
+            ＋ コスメを追加
+          </Link>
+        </div>
 
         {sorted.length === 0 ? (
-          <div className="mt-6 card-cream rounded-xl p-8 text-center text-stone-500">
+          <div className="mt-4 card-cream rounded-xl p-6 text-center text-stone-500 text-sm">
             <p>まだアイテムがありません。</p>
             <p className="mt-2 text-sm">
               上の「コスメを追加」から検索して追加できます。
             </p>
           </div>
         ) : (
-          <ul className="mt-6 space-y-4">
+          <ul className="mt-4 space-y-3">
             {sorted.map((item, index) => (
               <li
                 key={item.id}

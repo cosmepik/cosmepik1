@@ -30,3 +30,22 @@ body {
 .card-cream {
   @apply bg-white/90 border border-cream-300/60 shadow-sm;
 }
+
+/* 保存済みチェックマークのポップアニメーション */
+@keyframes checkmark-pop {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-checkmark-pop {
+  animation: checkmark-pop 0.4s ease-out;
+}

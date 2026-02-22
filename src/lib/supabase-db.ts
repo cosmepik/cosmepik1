@@ -157,17 +157,17 @@ export async function fetchProfile(
   };
 }
 
-/** プロフィール保存 */
+/** プロフィール保存（認証ユーザー紐付け前提。現状は username で一意） */
 export async function saveProfile(
   profile: Partial<InfluencerProfile> & { username: string }
 ): Promise<void> {
   const client = getClient();
   if (!client) return;
 
+  await ensureProfileExists(profile.username);
   const existing = await fetchProfile(profile.username);
 
   const row = {
-    username: profile.username,
     display_name: profile.displayName ?? existing?.displayName ?? "",
     avatar_url: profile.avatarUrl ?? existing?.avatarUrl ?? null,
     bio: profile.bio ?? existing?.bio ?? null,
@@ -176,9 +176,17 @@ export async function saveProfile(
     updated_at: new Date().toISOString(),
   };
 
-  await client.from("profiles").upsert(row, {
-    onConflict: "username",
-  });
+  const { error } = await client
+    .from("profiles")
+    .update(row)
+    .eq("username", profile.username);
+
+  if (error) {
+    await client.from("profiles").upsert(
+      { username: profile.username, ...row },
+      { onConflict: "username" }
+    );
+  }
 }
 
 export { CURRENT_USERNAME };
