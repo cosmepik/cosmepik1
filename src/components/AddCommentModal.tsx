@@ -37,17 +37,17 @@ export function AddCommentModal({
       aria-labelledby="modal-title"
     >
       <div
-        className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-cream-300"
+        className="max-w-md w-full overflow-hidden rounded-2xl border border-border bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6 border-b border-cream-200">
-          <h2 id="modal-title" className="text-lg font-medium text-stone-800">
+        <div className="border-b border-border p-6">
+          <h2 id="modal-title" className="text-lg font-medium text-foreground">
             愛用コメントを入力
           </h2>
-          <p className="mt-1 text-sm text-stone-500">{item.brand} / {item.name}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{item.brand} / {item.name}</p>
         </div>
         <form onSubmit={handleSubmit} className="p-6">
-          <label htmlFor="comment" className="block text-sm font-medium text-stone-700 mb-2">
+          <label htmlFor="comment" className="mb-2 block text-sm font-medium text-card-foreground">
             この商品の感想やおすすめポイント（任意）
           </label>
           <textarea
@@ -55,22 +55,22 @@ export function AddCommentModal({
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             placeholder="例：リップがしっとりして一日持つ！"
-            className="w-full rounded-lg border border-cream-300 bg-cream-50 px-4 py-3 text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-gold-400/50 focus:border-gold-400"
+            className="w-full rounded-lg border border-input bg-white px-4 py-3 text-card-foreground placeholder-muted-foreground focus:border-green focus:outline-none focus:ring-2 focus:ring-ring"
             rows={3}
           />
-          <div className="mt-6 flex gap-3 justify-end">
+          <div className="mt-6 flex justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-stone-600 hover:text-stone-800"
+              className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
             >
               キャンセル
             </button>
             <button
               type="submit"
-              className="btn-gold rounded-lg px-5 py-2 text-sm font-medium"
+              className="rounded-lg bg-green px-5 py-2 text-sm font-medium text-white hover:opacity-90"
             >
-              公開リストに追加
+              セクションに追加
             </button>
           </div>
         </form>

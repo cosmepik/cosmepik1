@@ -1,0 +1,299 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import {
+  X,
+  Plus,
+  Package,
+  Link as LinkIcon,
+  Image as ImageIcon,
+  Search,
+} from "lucide-react";
+import { useSections } from "@/lib/section-context";
+import { type SectionItem, type SectionType } from "@/lib/sections";
+
+interface AddItemModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  sectionId: string;
+  sectionType: SectionType;
+}
+
+export function AddItemModal({
+  isOpen,
+  onClose,
+  sectionId,
+  sectionType,
+}: AddItemModalProps) {
+  const { slug, addItemToSection } = useSections();
+
+  const [product, setProduct] = useState("");
+  const [brand, setBrand] = useState("");
+  const [link, setLink] = useState("");
+  const [image, setImage] = useState("");
+  const [price, setPrice] = useState("");
+  const [badge, setBadge] = useState<"NEW" | "BEST" | "SALE" | "">("");
+  const [label, setLabel] = useState("");
+  const [linkLabel, setLinkLabel] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const newItem: SectionItem = {
+      id: `item-${Date.now()}`,
+    };
+
+    if (sectionType === "routine") {
+      if (!product.trim()) return;
+      newItem.product = product.trim();
+      newItem.brand = brand.trim() || undefined;
+      newItem.label = label.trim() || undefined;
+      newItem.link = link.trim() || undefined;
+      newItem.image = image.trim() || undefined;
+    } else if (sectionType === "products") {
+      if (!product.trim()) return;
+      newItem.product = product.trim();
+      newItem.brand = brand.trim() || undefined;
+      newItem.price = price.trim() || undefined;
+      newItem.link = link.trim() || undefined;
+      newItem.image = image.trim() || undefined;
+      newItem.badge = badge || undefined;
+      newItem.rating = 0;
+      newItem.reviewCount = 0;
+    } else if (sectionType === "link") {
+      if (!linkLabel.trim() || !link.trim()) return;
+      newItem.label = linkLabel.trim();
+      newItem.link = link.trim();
+    }
+
+    addItemToSection(sectionId, newItem);
+    handleClose();
+  };
+
+  const handleClose = () => {
+    setProduct("");
+    setBrand("");
+    setLink("");
+    setImage("");
+    setPrice("");
+    setBadge("");
+    setLabel("");
+    setLinkLabel("");
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  const canAddCosme = ["routine", "products"].includes(sectionType);
+  const getTitle = () => {
+    switch (sectionType) {
+      case "routine":
+        return "コレクションにアイテムを追加";
+      case "products":
+        return "商品を追加";
+      case "link":
+        return "リンクを追加";
+      default:
+        return "アイテムを追加";
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center">
+      <div
+        className="absolute inset-0 bg-foreground/20 backdrop-blur-sm"
+        onClick={handleClose}
+        aria-hidden="true"
+      />
+      <div className="relative z-10 flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-card shadow-xl animate-in slide-in-from-bottom duration-300">
+        <div className="flex shrink-0 items-center justify-between border-b border-border px-5 pb-3 pt-5">
+          <h3 className="text-base font-bold text-card-foreground">
+            {getTitle()}
+          </h3>
+          <button
+            type="button"
+            onClick={handleClose}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent"
+            aria-label="閉じる"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-5">
+          {sectionType === "link" ? (
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-card-foreground">
+                  <LinkIcon className="mr-1 inline h-4 w-4" />
+                  リンクタイトル <span className="text-destructive">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={linkLabel}
+                  onChange={(e) => setLinkLabel(e.target.value)}
+                  placeholder="Instagram"
+                  className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                  required
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-card-foreground">
+                  URL <span className="text-destructive">*</span>
+                </label>
+                <input
+                  type="url"
+                  value={link}
+                  onChange={(e) => setLink(e.target.value)}
+                  placeholder="https://instagram.com/username"
+                  className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-primary py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                <Plus className="h-4 w-4" />
+                追加
+              </button>
+            </form>
+          ) : canAddCosme ? (
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <Link
+                href={`/dashboard/search?slug=${encodeURIComponent(slug)}`}
+                onClick={handleClose}
+                className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/40 py-3 text-sm font-medium text-primary transition-colors hover:bg-primary/5 hover:border-primary"
+              >
+                <Search className="h-4 w-4" />
+                検索して追加
+              </Link>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="bg-card px-2 text-muted-foreground">または手動で入力</span>
+                </div>
+              </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-card-foreground">
+                      <Package className="mr-1 inline h-4 w-4" />
+                      商品名 <span className="text-destructive">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={product}
+                      onChange={(e) => setProduct(e.target.value)}
+                      placeholder="グリーンティーシード ヒアルロン セラム"
+                      className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-card-foreground">
+                      ブランド
+                    </label>
+                    <input
+                      type="text"
+                      value={brand}
+                      onChange={(e) => setBrand(e.target.value)}
+                      placeholder="innisfree"
+                      className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                    />
+                  </div>
+                  {sectionType === "routine" && (
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-medium text-card-foreground">
+                        ステップラベル
+                      </label>
+                      <input
+                        type="text"
+                        value={label}
+                        onChange={(e) => setLabel(e.target.value)}
+                        placeholder="洗顔"
+                        className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                  )}
+                  {sectionType === "products" && (
+                    <>
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium text-card-foreground">
+                          価格
+                        </label>
+                        <input
+                          type="text"
+                          value={price}
+                          onChange={(e) => setPrice(e.target.value)}
+                          placeholder="¥3,410"
+                          className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium text-card-foreground">
+                          バッジ
+                        </label>
+                        <div className="flex gap-2">
+                          {(["", "NEW", "BEST", "SALE"] as const).map((b) => (
+                            <button
+                              key={b || "none"}
+                              type="button"
+                              onClick={() => setBadge(b)}
+                              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                                badge === b
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-secondary text-secondary-foreground hover:bg-accent"
+                              }`}
+                            >
+                              {b || "なし"}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-card-foreground">
+                      <LinkIcon className="mr-1 inline h-4 w-4" />
+                      商品リンク
+                    </label>
+                    <input
+                      type="url"
+                      value={link}
+                      onChange={(e) => setLink(e.target.value)}
+                      placeholder="https://example.com/product"
+                      className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-card-foreground">
+                      <ImageIcon className="mr-1 inline h-4 w-4" />
+                      画像URL
+                    </label>
+                    <input
+                      type="url"
+                      value={image}
+                      onChange={(e) => setImage(e.target.value)}
+                      placeholder="https://example.com/image.jpg"
+                      className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      商品画像のURLを入力してください
+                    </p>
+                  </div>
+                  <button
+                    type="submit"
+                    className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-primary py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                  >
+                    <Plus className="h-4 w-4" />
+                    追加
+                  </button>
+                </form>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}

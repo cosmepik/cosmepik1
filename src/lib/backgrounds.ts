@@ -1,0 +1,183 @@
+export type BackgroundType = "solid" | "gradient" | "wallpaper";
+
+export interface Background {
+  id: string;
+  type: BackgroundType;
+  name: string;
+  nameJa: string;
+  preview: string;
+  css: string;
+}
+
+const SOLID_BACKGROUNDS: Background[] = [
+  { id: "solid-white", type: "solid", name: "Pure White", nameJa: "ピュアホワイト", preview: "#ffffff", css: "#ffffff" },
+  { id: "solid-cream", type: "solid", name: "Soft Cream", nameJa: "ソフトクリーム", preview: "#faf8f5", css: "#faf8f5" },
+  { id: "solid-ivory", type: "solid", name: "Warm Ivory", nameJa: "ウォームアイボリー", preview: "#fffff0", css: "#fffff0" },
+  { id: "solid-snow", type: "solid", name: "Snow White", nameJa: "スノーホワイト", preview: "#fffafa", css: "#fffafa" },
+  { id: "solid-mint", type: "solid", name: "Mint Ice", nameJa: "ミントアイス", preview: "#e8f5f0", css: "#e8f5f0" },
+  { id: "solid-seafoam", type: "solid", name: "Seafoam", nameJa: "シーフォーム", preview: "#e0f5f0", css: "#e0f5f0" },
+  { id: "solid-pink", type: "solid", name: "Baby Pink", nameJa: "ベビーピンク", preview: "#fdf2f4", css: "#fdf2f4" },
+  { id: "solid-blush", type: "solid", name: "Soft Blush", nameJa: "ソフトブラッシュ", preview: "#fff0f3", css: "#fff0f3" },
+  { id: "solid-rose", type: "solid", name: "Rose Mist", nameJa: "ローズミスト", preview: "#fff5f6", css: "#fff5f6" },
+  { id: "solid-lavender", type: "solid", name: "Lavender Mist", nameJa: "ラベンダーミスト", preview: "#f5f3fa", css: "#f5f3fa" },
+  { id: "solid-lilac", type: "solid", name: "Soft Lilac", nameJa: "ソフトライラック", preview: "#f8f4ff", css: "#f8f4ff" },
+  { id: "solid-peach", type: "solid", name: "Peach Puff", nameJa: "ピーチパフ", preview: "#fff5ee", css: "#fff5ee" },
+  { id: "solid-apricot", type: "solid", name: "Apricot Glow", nameJa: "アプリコットグロウ", preview: "#fff3e8", css: "#fff3e8" },
+  { id: "solid-sky", type: "solid", name: "Sky Blue", nameJa: "スカイブルー", preview: "#f0f8ff", css: "#f0f8ff" },
+  { id: "solid-ice", type: "solid", name: "Ice Blue", nameJa: "アイスブルー", preview: "#f0faff", css: "#f0faff" },
+  { id: "solid-lemon", type: "solid", name: "Lemon Chiffon", nameJa: "レモンシフォン", preview: "#fffaed", css: "#fffaed" },
+];
+
+const GRADIENT_BACKGROUNDS: Background[] = [
+  {
+    id: "gradient-aurora",
+    type: "gradient",
+    name: "Aurora Dream",
+    nameJa: "オーロラドリーム",
+    preview: "linear-gradient(135deg, #fdf2f8, #e0f2fe, #f0fdf4)",
+    css: `background-color: #fdf2f8; background-image: radial-gradient(at 40% 20%, hsla(330, 70%, 94%, 1) 0px, transparent 50%), radial-gradient(at 80% 0%, hsla(200, 90%, 92%, 1) 0px, transparent 50%), radial-gradient(at 0% 50%, hsla(150, 60%, 94%, 1) 0px, transparent 50%), radial-gradient(at 80% 50%, hsla(280, 50%, 94%, 1) 0px, transparent 50%), radial-gradient(at 0% 100%, hsla(22, 70%, 94%, 1) 0px, transparent 50%), radial-gradient(at 80% 100%, hsla(190, 70%, 92%, 1) 0px, transparent 50%);`,
+  },
+  {
+    id: "gradient-sakura",
+    type: "gradient",
+    name: "Sakura Bloom",
+    nameJa: "桜ブルーム",
+    preview: "linear-gradient(135deg, #fff0f3, #ffe4ec, #ffd6e0)",
+    css: `background-color: #fff5f7; background-image: radial-gradient(at 0% 0%, hsla(340, 80%, 95%, 1) 0px, transparent 50%), radial-gradient(at 100% 0%, hsla(350, 70%, 92%, 1) 0px, transparent 50%), radial-gradient(at 50% 50%, hsla(330, 60%, 96%, 1) 0px, transparent 50%), radial-gradient(at 0% 100%, hsla(10, 70%, 94%, 1) 0px, transparent 50%), radial-gradient(at 100% 100%, hsla(320, 50%, 94%, 1) 0px, transparent 50%);`,
+  },
+  {
+    id: "gradient-ocean",
+    type: "gradient",
+    name: "Ocean Breeze",
+    nameJa: "オーシャンブリーズ",
+    preview: "linear-gradient(135deg, #e0f7fa, #e0f2fe, #dbeafe)",
+    css: `background-color: #ecfeff; background-image: radial-gradient(at 20% 20%, hsla(180, 70%, 92%, 1) 0px, transparent 50%), radial-gradient(at 80% 10%, hsla(200, 80%, 92%, 1) 0px, transparent 50%), radial-gradient(at 40% 60%, hsla(190, 60%, 94%, 1) 0px, transparent 50%), radial-gradient(at 0% 90%, hsla(170, 50%, 94%, 1) 0px, transparent 50%), radial-gradient(at 90% 80%, hsla(210, 70%, 92%, 1) 0px, transparent 50%);`,
+  },
+  {
+    id: "gradient-sunset",
+    type: "gradient",
+    name: "Sunset Glow",
+    nameJa: "サンセットグロウ",
+    preview: "linear-gradient(135deg, #fff7ed, #fef3c7, #fce7f3)",
+    css: `background-color: #fffbeb; background-image: radial-gradient(at 0% 0%, hsla(35, 90%, 94%, 1) 0px, transparent 50%), radial-gradient(at 100% 20%, hsla(45, 80%, 92%, 1) 0px, transparent 50%), radial-gradient(at 30% 60%, hsla(15, 70%, 94%, 1) 0px, transparent 50%), radial-gradient(at 80% 70%, hsla(330, 60%, 94%, 1) 0px, transparent 50%), radial-gradient(at 50% 100%, hsla(20, 80%, 94%, 1) 0px, transparent 50%);`,
+  },
+  {
+    id: "gradient-lavender",
+    type: "gradient",
+    name: "Lavender Field",
+    nameJa: "ラベンダーフィールド",
+    preview: "linear-gradient(135deg, #f5f3ff, #ede9fe, #fae8ff)",
+    css: `background-color: #faf5ff; background-image: radial-gradient(at 10% 10%, hsla(270, 60%, 95%, 1) 0px, transparent 50%), radial-gradient(at 90% 20%, hsla(290, 50%, 94%, 1) 0px, transparent 50%), radial-gradient(at 50% 50%, hsla(260, 50%, 96%, 1) 0px, transparent 50%), radial-gradient(at 20% 80%, hsla(280, 60%, 94%, 1) 0px, transparent 50%), radial-gradient(at 80% 90%, hsla(300, 40%, 95%, 1) 0px, transparent 50%);`,
+  },
+  {
+    id: "gradient-mint",
+    type: "gradient",
+    name: "Mint Fresh",
+    nameJa: "ミントフレッシュ",
+    preview: "linear-gradient(135deg, #ecfdf5, #d1fae5, #cffafe)",
+    css: `background-color: #ecfdf5; background-image: radial-gradient(at 0% 20%, hsla(160, 70%, 94%, 1) 0px, transparent 50%), radial-gradient(at 80% 0%, hsla(170, 60%, 92%, 1) 0px, transparent 50%), radial-gradient(at 40% 50%, hsla(180, 50%, 95%, 1) 0px, transparent 50%), radial-gradient(at 100% 60%, hsla(150, 60%, 93%, 1) 0px, transparent 50%), radial-gradient(at 20% 100%, hsla(190, 50%, 94%, 1) 0px, transparent 50%);`,
+  },
+  {
+    id: "gradient-honey",
+    type: "gradient",
+    name: "Honey Glow",
+    nameJa: "ハニーグロウ",
+    preview: "linear-gradient(135deg, #fefce8, #fef9c3, #fef3c7)",
+    css: `background-color: #fefce8; background-image: radial-gradient(at 20% 10%, hsla(50, 80%, 92%, 1) 0px, transparent 50%), radial-gradient(at 70% 0%, hsla(45, 70%, 94%, 1) 0px, transparent 50%), radial-gradient(at 50% 50%, hsla(55, 60%, 95%, 1) 0px, transparent 50%), radial-gradient(at 0% 80%, hsla(40, 70%, 93%, 1) 0px, transparent 50%), radial-gradient(at 90% 90%, hsla(35, 60%, 94%, 1) 0px, transparent 50%);`,
+  },
+  {
+    id: "gradient-rose",
+    type: "gradient",
+    name: "Rose Garden",
+    nameJa: "ローズガーデン",
+    preview: "linear-gradient(135deg, #fff1f2, #ffe4e6, #fecdd3)",
+    css: `background-color: #fff1f2; background-image: radial-gradient(at 30% 0%, hsla(350, 80%, 94%, 1) 0px, transparent 50%), radial-gradient(at 80% 20%, hsla(340, 70%, 92%, 1) 0px, transparent 50%), radial-gradient(at 10% 50%, hsla(355, 60%, 95%, 1) 0px, transparent 50%), radial-gradient(at 70% 60%, hsla(345, 65%, 93%, 1) 0px, transparent 50%), radial-gradient(at 40% 100%, hsla(350, 50%, 94%, 1) 0px, transparent 50%);`,
+  },
+  {
+    id: "gradient-cotton-candy",
+    type: "gradient",
+    name: "Cotton Candy",
+    nameJa: "コットンキャンディー",
+    preview: "linear-gradient(135deg, #fce7f3, #dbeafe, #f0fdf4)",
+    css: `background-color: #fdf2f8; background-image: radial-gradient(at 0% 0%, hsla(330, 70%, 95%, 1) 0px, transparent 50%), radial-gradient(at 100% 0%, hsla(210, 80%, 94%, 1) 0px, transparent 50%), radial-gradient(at 50% 40%, hsla(170, 50%, 95%, 1) 0px, transparent 50%), radial-gradient(at 0% 100%, hsla(270, 60%, 95%, 1) 0px, transparent 50%), radial-gradient(at 100% 100%, hsla(50, 60%, 94%, 1) 0px, transparent 50%);`,
+  },
+  {
+    id: "gradient-mermaid",
+    type: "gradient",
+    name: "Mermaid Scale",
+    nameJa: "マーメイドスケール",
+    preview: "linear-gradient(135deg, #c7f9e8, #a8edea, #fed6e3)",
+    css: `background-color: #e8faf5; background-image: radial-gradient(at 0% 30%, hsla(160, 80%, 90%, 1) 0px, transparent 50%), radial-gradient(at 100% 0%, hsla(175, 70%, 88%, 1) 0px, transparent 50%), radial-gradient(at 60% 60%, hsla(340, 70%, 92%, 1) 0px, transparent 50%), radial-gradient(at 20% 100%, hsla(190, 60%, 90%, 1) 0px, transparent 50%), radial-gradient(at 90% 80%, hsla(280, 50%, 93%, 1) 0px, transparent 50%);`,
+  },
+  {
+    id: "gradient-unicorn",
+    type: "gradient",
+    name: "Unicorn Dream",
+    nameJa: "ユニコーンドリーム",
+    preview: "linear-gradient(135deg, #fae8ff, #e0e7ff, #fce7f3)",
+    css: `background-color: #fdf4ff; background-image: radial-gradient(at 20% 0%, hsla(290, 80%, 94%, 1) 0px, transparent 50%), radial-gradient(at 80% 10%, hsla(230, 70%, 94%, 1) 0px, transparent 50%), radial-gradient(at 0% 50%, hsla(330, 70%, 94%, 1) 0px, transparent 50%), radial-gradient(at 100% 50%, hsla(180, 60%, 93%, 1) 0px, transparent 50%), radial-gradient(at 50% 100%, hsla(50, 70%, 94%, 1) 0px, transparent 50%);`,
+  },
+  {
+    id: "gradient-twilight",
+    type: "gradient",
+    name: "Twilight Sky",
+    nameJa: "トワイライトスカイ",
+    preview: "linear-gradient(135deg, #fce7f3, #e9d5ff, #dbeafe)",
+    css: `background-color: #fdf2f8; background-image: radial-gradient(at 10% 10%, hsla(330, 70%, 93%, 1) 0px, transparent 50%), radial-gradient(at 90% 0%, hsla(270, 60%, 92%, 1) 0px, transparent 50%), radial-gradient(at 50% 50%, hsla(220, 70%, 94%, 1) 0px, transparent 50%), radial-gradient(at 0% 80%, hsla(280, 50%, 94%, 1) 0px, transparent 50%), radial-gradient(at 80% 100%, hsla(200, 60%, 93%, 1) 0px, transparent 50%);`,
+  },
+  {
+    id: "gradient-spring",
+    type: "gradient",
+    name: "Spring Garden",
+    nameJa: "スプリングガーデン",
+    preview: "linear-gradient(135deg, #d1fae5, #fef3c7, #fce7f3)",
+    css: `background-color: #ecfdf5; background-image: radial-gradient(at 0% 20%, hsla(150, 70%, 92%, 1) 0px, transparent 50%), radial-gradient(at 80% 0%, hsla(50, 70%, 93%, 1) 0px, transparent 50%), radial-gradient(at 50% 50%, hsla(330, 60%, 95%, 1) 0px, transparent 50%), radial-gradient(at 100% 70%, hsla(160, 60%, 93%, 1) 0px, transparent 50%), radial-gradient(at 20% 100%, hsla(40, 60%, 94%, 1) 0px, transparent 50%);`,
+  },
+  {
+    id: "gradient-crystal",
+    type: "gradient",
+    name: "Crystal Clear",
+    nameJa: "クリスタルクリア",
+    preview: "linear-gradient(135deg, #f0f9ff, #e0f2fe, #ecfeff)",
+    css: `background-color: #f0f9ff; background-image: radial-gradient(at 30% 10%, hsla(200, 80%, 95%, 1) 0px, transparent 50%), radial-gradient(at 70% 20%, hsla(190, 70%, 93%, 1) 0px, transparent 50%), radial-gradient(at 20% 60%, hsla(210, 60%, 95%, 1) 0px, transparent 50%), radial-gradient(at 90% 50%, hsla(180, 60%, 94%, 1) 0px, transparent 50%), radial-gradient(at 50% 90%, hsla(195, 70%, 94%, 1) 0px, transparent 50%);`,
+  },
+  {
+    id: "gradient-cherry",
+    type: "gradient",
+    name: "Cherry Pop",
+    nameJa: "チェリーポップ",
+    preview: "linear-gradient(135deg, #fee2e2, #fecaca, #fce7f3)",
+    css: `background-color: #fff1f2; background-image: radial-gradient(at 0% 0%, hsla(0, 80%, 94%, 1) 0px, transparent 50%), radial-gradient(at 100% 20%, hsla(350, 70%, 92%, 1) 0px, transparent 50%), radial-gradient(at 40% 50%, hsla(340, 60%, 95%, 1) 0px, transparent 50%), radial-gradient(at 80% 80%, hsla(355, 65%, 93%, 1) 0px, transparent 50%), radial-gradient(at 20% 100%, hsla(10, 60%, 94%, 1) 0px, transparent 50%);`,
+  },
+  {
+    id: "gradient-forest",
+    type: "gradient",
+    name: "Forest Dew",
+    nameJa: "フォレストデュー",
+    preview: "linear-gradient(135deg, #d1fae5, #a7f3d0, #6ee7b7)",
+    css: `background-color: #ecfdf5; background-image: radial-gradient(at 10% 10%, hsla(150, 70%, 90%, 1) 0px, transparent 50%), radial-gradient(at 90% 0%, hsla(160, 60%, 88%, 1) 0px, transparent 50%), radial-gradient(at 50% 40%, hsla(155, 50%, 92%, 1) 0px, transparent 50%), radial-gradient(at 0% 80%, hsla(165, 60%, 90%, 1) 0px, transparent 50%), radial-gradient(at 80% 100%, hsla(145, 55%, 91%, 1) 0px, transparent 50%);`,
+  },
+];
+
+const WALLPAPER_BACKGROUNDS: Background[] = [
+  { id: "wallpaper-flowers", type: "wallpaper", name: "Cherry Blossom", nameJa: "チェリーブロッサム", preview: "/images/wallpaper-flowers.jpg", css: "url('/images/wallpaper-flowers.jpg')" },
+  { id: "wallpaper-skincare", type: "wallpaper", name: "K-Beauty", nameJa: "Kビューティー", preview: "/images/wallpaper-skincare.jpg", css: "url('/images/wallpaper-skincare.jpg')" },
+  { id: "wallpaper-bubbles", type: "wallpaper", name: "Hydra Bubbles", nameJa: "ハイドラバブル", preview: "/images/wallpaper-bubbles.jpg", css: "url('/images/wallpaper-bubbles.jpg')" },
+  { id: "wallpaper-peach", type: "wallpaper", name: "Juicy Peach", nameJa: "ジューシーピーチ", preview: "/images/wallpaper-peach.jpg", css: "url('/images/wallpaper-peach.jpg')" },
+  { id: "wallpaper-stars", type: "wallpaper", name: "Starry Night", nameJa: "スターリーナイト", preview: "/images/wallpaper-stars.jpg", css: "url('/images/wallpaper-stars.jpg')" },
+  { id: "wallpaper-clouds", type: "wallpaper", name: "Cotton Clouds", nameJa: "コットンクラウド", preview: "/images/wallpaper-clouds.jpg", css: "url('/images/wallpaper-clouds.jpg')" },
+  { id: "wallpaper-hearts", type: "wallpaper", name: "Love Hearts", nameJa: "ラブハート", preview: "/images/wallpaper-hearts.jpg", css: "url('/images/wallpaper-hearts.jpg')" },
+  { id: "wallpaper-leaves", type: "wallpaper", name: "Green Tea Leaves", nameJa: "グリーンティーリーフ", preview: "/images/wallpaper-leaves.jpg", css: "url('/images/wallpaper-leaves.jpg')" },
+  { id: "wallpaper-glitter", type: "wallpaper", name: "Sparkle Glitter", nameJa: "スパークルグリッター", preview: "/images/wallpaper-glitter.jpg", css: "url('/images/wallpaper-glitter.jpg')" },
+  { id: "wallpaper-marble", type: "wallpaper", name: "Rose Marble", nameJa: "ローズマーブル", preview: "/images/wallpaper-marble.jpg", css: "url('/images/wallpaper-marble.jpg')" },
+  { id: "wallpaper-citrus", type: "wallpaper", name: "Vitamin Citrus", nameJa: "ビタミンシトラス", preview: "/images/wallpaper-citrus.jpg", css: "url('/images/wallpaper-citrus.jpg')" },
+  { id: "wallpaper-watercolor", type: "wallpaper", name: "Watercolor Dream", nameJa: "ウォーターカラードリーム", preview: "/images/wallpaper-watercolor.jpg", css: "url('/images/wallpaper-watercolor.jpg')" },
+];
+
+export const backgrounds: Background[] = [...SOLID_BACKGROUNDS, ...GRADIENT_BACKGROUNDS, ...WALLPAPER_BACKGROUNDS];
+
+export const backgroundGroups = [
+  { type: "solid" as const, label: "単色", backgrounds: backgrounds.filter((b) => b.type === "solid") },
+  { type: "gradient" as const, label: "グラデーション", backgrounds: backgrounds.filter((b) => b.type === "gradient") },
+  { type: "wallpaper" as const, label: "壁紙", backgrounds: backgrounds.filter((b) => b.type === "wallpaper") },
+];

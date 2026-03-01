@@ -2,10 +2,11 @@
 
 import { useParams, usePathname } from "next/navigation";
 import Link from "next/link";
-import { useState, useEffect, useMemo, useRef } from "react";
-import { getProfileByUsername, getListByUsername } from "@/lib/store";
+import { useState, useEffect, useRef } from "react";
+import { getProfileByUsername } from "@/lib/store";
 import { PublicProfileContent } from "@/components/PublicProfileContent";
-import type { InfluencerProfile, ListedCosmeItem } from "@/types";
+import { SectionProvider } from "@/lib/section-context";
+import type { InfluencerProfile } from "@/types";
 
 interface PublicProfilePageProps {
   /** /demo から呼ぶときに渡す。未指定時は useParams().username を使用 */
@@ -23,7 +24,6 @@ export default function PublicProfilePage({ username: usernameProp }: PublicProf
   const isPreview = pathname === "/demo";
 
   const [profile, setProfile] = useState<InfluencerProfile | null>(null);
-  const [list, setList] = useState<ListedCosmeItem[]>([]);
   const [publishedMessage, setPublishedMessage] = useState(false);
   const [profileLink, setProfileLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -31,13 +31,7 @@ export default function PublicProfilePage({ username: usernameProp }: PublicProf
 
   useEffect(() => {
     getProfileByUsername(username).then(setProfile);
-    getListByUsername(username).then(setList);
   }, [username]);
-
-  const sortedList = useMemo(
-    () => [...list].sort((a, b) => a.order - b.order),
-    [list]
-  );
 
   const handlePublish = () => {
     if (publishedMessageTimerRef.current) clearTimeout(publishedMessageTimerRef.current);
@@ -67,25 +61,34 @@ export default function PublicProfilePage({ username: usernameProp }: PublicProf
   return (
     <>
       {isPreview && (
-        <div className="max-w-lg mx-auto px-4 pt-10 pb-4">
+        <div className="mx-auto max-w-md px-4 pb-4 pt-10">
           <div className="mb-4 flex items-center justify-between">
             <Link
-              href="/influencer/manage"
-              className="inline-flex items-center text-sm font-medium text-gold-600 hover:text-gold-700"
+              href="/dashboard"
+              className="inline-flex items-center text-sm font-medium text-green hover:underline"
             >
-              ← 管理画面に戻る
+              ← ダッシュボードに戻る
             </Link>
             <button
               type="button"
               onClick={handlePublish}
-              className="rounded-lg bg-gold-500 text-white py-2 px-4 text-sm font-medium hover:bg-gold-600 transition-colors"
+              className="flex items-center gap-2 rounded-lg bg-green py-2 px-4 text-sm font-medium text-white transition-colors hover:opacity-90"
             >
-              公開
+              {publishedMessage ? (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="h-5 w-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                  </svg>
+                  <span>公開しました</span>
+                </>
+              ) : (
+                "公開"
+              )}
             </button>
           </div>
           {publishedMessage && (
-            <div className="mb-4 rounded-xl border border-gold-400/30 bg-gold-500/5 p-4 space-y-3">
-              <p className="text-sm font-medium text-gold-700">
+            <div className="mb-4 space-y-3 rounded-xl border border-border bg-secondary p-4">
+              <p className="text-sm font-medium text-foreground">
                 公開しました。
               </p>
               {profileLink && (
@@ -95,12 +98,12 @@ export default function PublicProfilePage({ username: usernameProp }: PublicProf
                     type="text"
                     readOnly
                     value={profileLink}
-                    className="flex-1 rounded-lg border border-cream-300 bg-white px-3 py-2 text-sm text-stone-800"
+                    className="flex-1 rounded-lg border border-input bg-white px-3 py-2 text-sm text-card-foreground"
                   />
                   <button
                     type="button"
                     onClick={handleCopyLink}
-                    className="shrink-0 rounded-lg bg-gold-500 text-white py-2 px-4 text-sm font-medium hover:bg-gold-600 transition-colors"
+                    className="shrink-0 rounded-lg bg-green py-2 px-4 text-sm font-medium text-white transition-colors hover:opacity-90"
                   >
                     {copied ? "コピーしました" : "コピー"}
                   </button>
@@ -110,11 +113,9 @@ export default function PublicProfilePage({ username: usernameProp }: PublicProf
           )}
         </div>
       )}
-      <PublicProfileContent
-        username={username}
-        profile={profile}
-        sortedList={sortedList}
-      />
+      <SectionProvider slug={username}>
+        <PublicProfileContent username={username} profile={profile} />
+      </SectionProvider>
     </>
   );
 }

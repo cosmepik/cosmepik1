@@ -1,7 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const isInfluencerRoute = (pathname: string) => pathname.startsWith("/influencer");
+const isProtectedRoute = (pathname: string) =>
+  pathname.startsWith("/influencer") || pathname.startsWith("/dashboard");
 
 export async function updateSession(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -30,10 +31,12 @@ export async function updateSession(request: NextRequest) {
   });
 
   const { data } = await supabase.auth.getUser();
+  const hasDemoCookie = request.cookies.get("cosmepik_demo")?.value === "1";
 
   if (
     !data.user &&
-    isInfluencerRoute(request.nextUrl.pathname)
+    !hasDemoCookie &&
+    isProtectedRoute(request.nextUrl.pathname)
   ) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/";

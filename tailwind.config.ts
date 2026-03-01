@@ -5,31 +5,48 @@ const config: Config = {
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/lib/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/contexts/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
       colors: {
-        cream: {
-          50: "#fdfcfb",
-          100: "#f9f6f2",
-          200: "#f2ebe3",
-          300: "#e8dccf",
-          400: "#d4c4b0",
+        background: "var(--background)",
+        foreground: "var(--foreground)",
+        card: "var(--card)",
+        "card-foreground": "var(--card-foreground)",
+        primary: {
+          DEFAULT: "var(--primary)",
+          foreground: "var(--primary-foreground)",
         },
-        gold: {
-          400: "#c9a962",
-          500: "#b8963d",
-          600: "#9a7b2e",
-          700: "#7d6426",
+        secondary: {
+          DEFAULT: "var(--secondary)",
+          foreground: "var(--secondary-foreground)",
         },
-        stone: {
-          50: "#fafaf9",
-          100: "#f5f5f4",
+        muted: {
+          DEFAULT: "var(--muted)",
+          foreground: "var(--muted-foreground)",
         },
+        accent: {
+          DEFAULT: "var(--accent)",
+          foreground: "var(--accent-foreground)",
+        },
+        destructive: {
+          DEFAULT: "var(--destructive)",
+          foreground: "var(--destructive-foreground)",
+        },
+        border: "var(--border)",
+        input: "var(--input)",
+        ring: "var(--ring)",
+        green: "var(--green)",
       },
       fontFamily: {
-        sans: ["var(--font-geist-sans)", "sans-serif"],
-        serif: ["var(--font-geist-mono)", "serif"],
+        sans: ["var(--font-noto-sans)", "Noto Sans JP", "sans-serif"],
+        serif: ["var(--font-serif)", "Cormorant Garamond", "serif"],
+      },
+      borderRadius: {
+        lg: "0.625rem",
+        xl: "calc(0.625rem + 4px)",
       },
     },
   },

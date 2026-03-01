@@ -2,50 +2,81 @@
 @tailwind components;
 @tailwind utilities;
 
+/* default テーマ（グリーンティー）と一致 */
 :root {
-  --cream: #f9f6f2;
-  --cream-dark: #f2ebe3;
-  --gold: #b8963d;
-  --gold-light: #c9a962;
-  --white: #fdfcfb;
-  --text: #2c2c2c;
-  --text-muted: #6b6b6b;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.2 0.01 260);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.01 260);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.01 260);
+  --primary: oklch(0.55 0.15 155);
+  --primary-foreground: oklch(0.99 0 0);
+  --green: oklch(0.55 0.15 155);
+  --secondary: oklch(0.96 0.01 155);
+  --secondary-foreground: oklch(0.2 0.01 260);
+  --muted: oklch(0.96 0.005 155);
+  --muted-foreground: oklch(0.5 0.01 260);
+  --accent: oklch(0.96 0.02 155);
+  --accent-foreground: oklch(0.2 0.01 260);
+  --border: oklch(0.91 0.005 155);
+  --input: oklch(0.91 0.005 155);
+  --ring: oklch(0.55 0.15 155);
+  --destructive: #dc2626;
+  --destructive-foreground: #dc2626;
+  --page-bg: #ffffff;
+  --page-bg-image: none;
 }
 
 body {
-  @apply bg-cream-100 text-stone-900 antialiased;
-  background-color: var(--cream);
-  color: var(--text);
+  @apply antialiased;
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
-/* デパコス風の控えめなアクセント */
-.ring-gold:focus-within {
-  @apply ring-1 ring-gold-500/40;
+/* アニメーションテーマ用 */
+.theme-bg-animated-gradient {
+  background: linear-gradient(135deg, #e8f5f0 0%, #f0fdf4 50%, #d1fae5 100%);
+  background-size: 200% 200%;
+  animation: theme-gradient 8s ease infinite;
+}
+.theme-bg-animated-shimmer {
+  background: linear-gradient(90deg, #f5f5f5 0%, #e8f5f0 50%, #f5f5f5 100%);
+  background-size: 200% 100%;
+  animation: theme-shimmer 4s ease-in-out infinite;
+}
+.theme-bg-animated-pulse {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0fdf4 100%);
+  background-size: 200% 200%;
+  animation: theme-pulse 4s ease-in-out infinite;
+}
+.theme-bg-animated-aurora {
+  background: linear-gradient(135deg, #d1fae5, #e0e7ff, #fce7f3);
+  background-size: 400% 400%;
+  animation: theme-aurora 10s ease infinite;
+}
+@keyframes theme-gradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@keyframes theme-shimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@keyframes theme-pulse {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@keyframes theme-aurora {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
-.btn-gold {
-  @apply bg-gold-500 text-white hover:bg-gold-600 focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-cream-100;
+/* スクロールバー非表示（横スクロール用） */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
-
-.card-cream {
-  @apply bg-white/90 border border-cream-300/60 shadow-sm;
-}
-
-/* 保存済みチェックマークのポップアニメーション */
-@keyframes checkmark-pop {
-  0% {
-    transform: scale(0.5);
-    opacity: 0.5;
-  }
-  50% {
-    transform: scale(1.2);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.animate-checkmark-pop {
-  animation: checkmark-pop 0.4s ease-out;
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }

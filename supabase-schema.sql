@@ -1,6 +1,15 @@
 -- Cosmetree Supabase テーブル（Supabase ダッシュボードの SQL Editor で実行）
 
--- プロフィール（1 username につき1行）
+-- コスメセット（1ユーザーが複数持てる）
+CREATE TABLE IF NOT EXISTS cosme_sets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id TEXT NOT NULL,
+  name TEXT NOT NULL DEFAULT 'マイコスメ',
+  slug TEXT NOT NULL UNIQUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- プロフィール（1 slug につき1行。slug = 公開URL用識別子）
 CREATE TABLE IF NOT EXISTS profiles (
   username TEXT PRIMARY KEY,
   display_name TEXT NOT NULL DEFAULT '',
@@ -11,7 +20,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- リストアイテム（username ごとに複数行）
+-- リストアイテム（username = slug ごとに複数行）
 CREATE TABLE IF NOT EXISTS list_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   username TEXT NOT NULL REFERENCES profiles(username) ON DELETE CASCADE,
@@ -28,17 +37,25 @@ CREATE TABLE IF NOT EXISTS list_items (
   UNIQUE(username, item_id)
 );
 
--- 公開ページで username 指定で読むため RLS は「誰でも読める」にしておく（必要なら後で制限）
+-- RLS
+ALTER TABLE cosme_sets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE list_items ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY "cosme_sets viewable by everyone"
+  ON cosme_sets FOR SELECT USING (true);
+CREATE POLICY "cosme_sets insertable by anon"
+  ON cosme_sets FOR INSERT WITH CHECK (true);
+CREATE POLICY "cosme_sets updatable by anon"
+  ON cosme_sets FOR UPDATE USING (true);
+CREATE POLICY "cosme_sets deletable by anon"
+  ON cosme_sets FOR DELETE USING (true);
+
 CREATE POLICY "profiles are viewable by everyone"
   ON profiles FOR SELECT USING (true);
-
 CREATE POLICY "list_items are viewable by everyone"
   ON list_items FOR SELECT USING (true);
 
--- 書き込みは anon でも許可（本番では認証後に制限する）
 CREATE POLICY "profiles are insertable by anon"
   ON profiles FOR INSERT WITH CHECK (true);
 CREATE POLICY "profiles are updatable by anon"

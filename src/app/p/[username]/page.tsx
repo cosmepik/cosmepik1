@@ -1,10 +1,11 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useState, useEffect, useMemo } from "react";
-import { getProfileByUsername, getListByUsername } from "@/lib/store";
+import { useState, useEffect } from "react";
+import { getProfileByUsername } from "@/lib/store";
 import { PublicProfileContent } from "@/components/PublicProfileContent";
-import type { InfluencerProfile, ListedCosmeItem } from "@/types";
+import { SectionProvider } from "@/lib/section-context";
+import type { InfluencerProfile } from "@/types";
 
 /**
  * ファン向け公開ページ（ユーザーが共有リンクで見る用）
@@ -15,23 +16,14 @@ export default function PublicPageByUsername() {
   const username = (params?.username as string) ?? "demo";
 
   const [profile, setProfile] = useState<InfluencerProfile | null>(null);
-  const [list, setList] = useState<ListedCosmeItem[]>([]);
 
   useEffect(() => {
     getProfileByUsername(username).then(setProfile);
-    getListByUsername(username).then(setList);
   }, [username]);
 
-  const sortedList = useMemo(
-    () => [...list].sort((a, b) => a.order - b.order),
-    [list]
-  );
-
   return (
-    <PublicProfileContent
-      username={username}
-      profile={profile}
-      sortedList={sortedList}
-    />
+    <SectionProvider slug={username}>
+      <PublicProfileContent username={username} profile={profile} />
+    </SectionProvider>
   );
 }

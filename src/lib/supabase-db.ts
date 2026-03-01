@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import type { ListedCosmeItem, InfluencerProfile } from "@/types";
+import type { ListedCosmeItem, InfluencerProfile, CosmeSet } from "@/types";
 
 const CURRENT_USERNAME = "demo";
 
@@ -170,6 +170,7 @@ export async function saveProfile(
   const row = {
     display_name: profile.displayName ?? existing?.displayName ?? "",
     avatar_url: profile.avatarUrl ?? existing?.avatarUrl ?? null,
+    background_image_url: profile.backgroundImageUrl ?? existing?.backgroundImageUrl ?? null,
     bio: profile.bio ?? existing?.bio ?? null,
     skin_type: profile.skinType ?? existing?.skinType ?? null,
     personal_color: profile.personalColor ?? existing?.personalColor ?? null,
@@ -187,6 +188,80 @@ export async function saveProfile(
       { onConflict: "username" }
     );
   }
+}
+
+/** コスメセット一覧取得（user_id 指定）。未登録時は slug=userId のデフォルトセットを1件返す */
+export async function fetchCosmeSets(userId: string): Promise<CosmeSet[]> {
+  const client = getClient();
+  if (!client) return [];
+
+  const { data, error } = await client
+    .from("cosme_sets")
+    .select("id, name, slug")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: true });
+
+  if (error) return [];
+  if (!data?.length) {
+    const profile = await fetchProfile(userId);
+    const list = await fetchList(userId);
+    return [{ id: userId, name: "マイコスメ", slug: userId, itemCount: list.length, avatarUrl: profile?.avatarUrl }];
+  }
+
+  const sets: CosmeSet[] = await Promise.all(
+    data.map(async (row: Record<string, unknown>) => {
+      const slug = row.slug as string;
+      const profile = await fetchProfile(slug);
+      const list = await fetchList(slug);
+      return {
+        id: row.id as string,
+        name: (row.name as string) ?? "マイコスメ",
+        slug,
+        itemCount: list.length,
+        avatarUrl: profile?.avatarUrl,
+      };
+    })
+  );
+  return sets;
+}
+
+/** コスメセット作成 */
+export async function createCosmeSet(
+  userId: string,
+  name: string,
+  slug: string
+): Promise<CosmeSet | null> {
+  const client = getClient();
+  if (!client) return null;
+
+  const { data, error } = await client.from("cosme_sets").insert({
+    user_id: userId,
+    name,
+    slug,
+  }).select("id, name, slug").single();
+
+  if (error) return null;
+  if (!data) return null;
+
+  await ensureProfileExists(slug);
+  return {
+    id: data.id as string,
+    name: data.name as string,
+    slug: data.slug as string,
+    itemCount: 0,
+  };
+}
+
+/** コスメセット削除（cosme_sets, list_items, profiles を削除） */
+export async function deleteCosmeSet(userId: string, slug: string): Promise<boolean> {
+  const client = getClient();
+  if (!client) return false;
+
+  await client.from("list_items").delete().eq("username", slug);
+  await client.from("profiles").delete().eq("username", slug);
+  const { error } = await client.from("cosme_sets").delete().eq("user_id", userId).eq("slug", slug);
+
+  return !error;
 }
 
 export { CURRENT_USERNAME };

@@ -1,7 +1,8 @@
 import PublicProfilePage from "../[username]/page";
 
 /**
- * デモ用：公開ページを同じUIで表示（username=demo として同じコンポーネントを利用）
+ * プレビュー用：編集中の公開ページを表示（username=demo またはユーザーID）
+ * ダッシュボードのプレビューボタンから開く
  */
 export default function DemoPage() {
   return <PublicProfilePage username="demo" />;
