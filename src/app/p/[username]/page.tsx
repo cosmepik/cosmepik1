@@ -21,6 +21,13 @@ export default function PublicPageByUsername() {
     getProfileByUsername(username).then(setProfile);
   }, [username]);
 
+  // 簡易アナリティクス: 閲覧数を1増やす（クライアントで1回だけ）
+  useEffect(() => {
+    fetch(`/api/analytics/view?username=${encodeURIComponent(username)}`, {
+      method: "POST",
+    }).catch(() => {});
+  }, [username]);
+
   return (
     <SectionProvider slug={username}>
       <PublicProfileContent username={username} profile={profile} />

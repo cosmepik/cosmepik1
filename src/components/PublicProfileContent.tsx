@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ProfileHeaderView } from "@/components/ProfileHeader";
 import { SectionRenderer } from "@/components/cosme-link/section-renderer";
 import { useSections } from "@/lib/section-context";
@@ -18,7 +19,6 @@ export function PublicProfileContent({
   profile,
 }: PublicProfileContentProps) {
   const { sections } = useSections();
-  const totalItems = sections.reduce((sum, s) => sum + s.items.length, 0);
 
   const bgStyle = profile?.backgroundImageUrl
     ? {
@@ -42,26 +42,6 @@ export function PublicProfileContent({
         {/* Profile */}
         <ProfileHeaderView username={username} profile={profile} />
 
-        {/* Stats Bar */}
-        <div className="flex items-center justify-around rounded-xl bg-white px-4 py-3 shadow-sm">
-          <div className="flex flex-col items-center gap-0.5">
-            <span className="text-lg font-bold text-foreground">
-              {totalItems}
-            </span>
-            <span className="text-[10px] text-muted-foreground">アイテム</span>
-          </div>
-          <div className="h-8 w-px bg-border" />
-          <div className="flex flex-col items-center gap-0.5">
-            <span className="text-lg font-bold text-foreground">—</span>
-            <span className="text-[10px] text-muted-foreground">フォロワー</span>
-          </div>
-          <div className="h-8 w-px bg-border" />
-          <div className="flex flex-col items-center gap-0.5">
-            <span className="text-lg font-bold text-foreground">—</span>
-            <span className="text-[10px] text-muted-foreground">いいね</span>
-          </div>
-        </div>
-
         {/* セクション */}
         {sections.map((section) => (
           <SectionRenderer key={section.id} section={section} />
@@ -75,9 +55,12 @@ export function PublicProfileContent({
               <span className="font-bold text-green">cosmepik</span>
             </span>
           </div>
-          <p className="text-[10px] text-muted-foreground">
-            愛用コスメをシェアするリンクツリー
-          </p>
+          <Link
+            href="/"
+            className="text-xs font-medium text-green hover:underline"
+          >
+            cosmepikを使ってみる
+          </Link>
         </footer>
       </main>
     </div>

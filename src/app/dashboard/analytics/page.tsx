@@ -1,28 +1,61 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { SidebarNav } from "@/components/SidebarNav";
+import { DashboardHeader } from "@/components/DashboardHeader";
 
 /** アクセス解析：UIBASE 完全準拠 */
 export default function AnalyticsPage() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [totalViews, setTotalViews] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/analytics/views")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data && typeof data.total === "number") {
+          setTotalViews(data.total);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <main className="min-h-screen">
-      <header className="sticky top-0 z-10 border-b border-border bg-white/90 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-4">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <span className="text-lg font-bold tracking-tight text-foreground">cosmepik</span>
+      <SidebarNav open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <DashboardHeader
+        onMenuClick={() => setSidebarOpen(true)}
+        rightContent={
+          <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground">
+            ← ダッシュボード
           </Link>
-          <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground">← ダッシュボード</Link>
-        </div>
-      </header>
+        }
+      />
 
       <div className="mx-auto max-w-2xl px-4 py-8">
         <h1 className="mb-6 text-xl font-bold text-foreground">アクセス解析</h1>
-        <div className="rounded-xl border border-border bg-white p-8 text-center shadow-sm">
-          <p className="mb-4 text-muted-foreground">公開ページの閲覧数など、アクセス解析機能は準備中です。</p>
-          <p className="text-sm text-muted-foreground">プレミアムプランでご提供予定です。</p>
+
+        <div className="rounded-xl border border-border bg-white p-6 shadow-sm">
+          <p className="text-sm text-muted-foreground">あなたのページの閲覧数（合計）</p>
+          {loading ? (
+            <p className="mt-2 text-sm text-muted-foreground">読み込み中...</p>
+          ) : (
+            <p className="mt-1 text-3xl font-bold text-foreground">
+              {(totalViews ?? 0).toLocaleString()} 回
+            </p>
+          )}
+          <p className="mt-2 text-xs text-muted-foreground">
+            すべてのコスメセットの公開ページ（/p/◯◯）へのアクセス合計です。
+          </p>
         </div>
+
         <p className="mt-6">
-          <Link href="/dashboard" className="font-medium text-green hover:underline">← ダッシュボードに戻る</Link>
+          <Link href="/dashboard" className="font-medium text-green hover:underline">
+            ← ダッシュボードに戻る
+          </Link>
         </p>
       </div>
     </main>

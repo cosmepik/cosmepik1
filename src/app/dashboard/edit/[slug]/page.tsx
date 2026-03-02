@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { SidebarNav } from "@/components/SidebarNav";
+import { DashboardHeader } from "@/components/DashboardHeader";
 import { DesignEditButtons } from "@/components/cosme-link/design-edit-buttons";
 import { ProfileHeader } from "@/components/cosme-link/profile-header";
 import { SectionProvider } from "@/lib/section-context";
@@ -66,31 +67,17 @@ function EditPageContent({ slug }: { slug: string }) {
     <>
     <main className="min-h-screen">
       <SidebarNav open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <header className="sticky top-0 z-10 border-b border-border bg-white/90 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-md items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setSidebarOpen(true)}
-              className="-m-2 rounded-lg p-2 text-foreground hover:bg-accent"
-              aria-label="メニューを開く"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-6 w-6">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-              </svg>
-            </button>
-            <Link href="/dashboard" className="text-lg font-bold tracking-tight text-foreground hover:opacity-80">
-              cosmepik
-            </Link>
-          </div>
+      <DashboardHeader
+        onMenuClick={() => setSidebarOpen(true)}
+        rightContent={
           <Link
             href={`/dashboard/preview?slug=${encodeURIComponent(slug)}`}
             className="rounded-lg bg-green px-4 py-2 text-sm font-medium text-white hover:opacity-90"
           >
             プレビュー
           </Link>
-        </div>
-      </header>
+        }
+      />
 
       <div className="mx-auto max-w-md px-4 py-5">
         {/* デザイン編集ボタン群（背景・テーマ） */}

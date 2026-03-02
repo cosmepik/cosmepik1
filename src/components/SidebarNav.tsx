@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Home, BarChart3, Settings, LogOut, Globe } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-type SidebarView = "menu" | "analytics" | "settings";
+type SidebarView = "menu" | "analytics";
 
 interface SidebarNavProps {
   open: boolean;
@@ -45,7 +45,6 @@ export function SidebarNav({ open, onClose }: SidebarNavProps) {
             <span className="font-medium text-foreground">
               {view === "menu" && "メニュー"}
               {view === "analytics" && "アクセス解析"}
-              {view === "settings" && "アカウント設定"}
             </span>
             {view !== "menu" ? (
               <button
@@ -72,7 +71,7 @@ export function SidebarNav({ open, onClose }: SidebarNavProps) {
             {view === "menu" && (
               <nav className="space-y-1">
                 <Link
-                  href="/"
+                  href="/?lp=1"
                   onClick={onClose}
                   className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-foreground transition-colors hover:bg-accent"
                 >
@@ -95,14 +94,14 @@ export function SidebarNav({ open, onClose }: SidebarNavProps) {
                   <BarChart3 className="h-5 w-5 text-green" />
                   <span>アクセス解析</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setView("settings")}
+                <Link
+                  href="/dashboard/settings"
+                  onClick={onClose}
                   className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-foreground transition-colors hover:bg-accent"
                 >
                   <Settings className="h-5 w-5 text-green" />
                   <span>アカウント設定</span>
-                </button>
+                </Link>
                 <button
                   type="button"
                   onClick={handleSignOut}
@@ -120,20 +119,6 @@ export function SidebarNav({ open, onClose }: SidebarNavProps) {
                   <p className="text-xs text-muted-foreground">アクセス解析は準備中です。</p>
                   <p className="mt-1 text-xs text-muted-foreground">プレミアムプランでご提供予定です。</p>
                 </div>
-              </div>
-            )}
-            {view === "settings" && (
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  プロフィール（表示名・アバター・肌質・パーソナルカラーなど）は、編集画面で設定できます。
-                </p>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="w-full rounded-lg bg-green py-2.5 px-4 text-sm font-medium text-white hover:opacity-90"
-                >
-                  編集画面で設定する
-                </button>
               </div>
             )}
           </div>

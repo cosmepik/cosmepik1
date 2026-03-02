@@ -1,278 +1,335 @@
-# セクション追加UIの改善 - インラインの+ボタンで直感的にセクション追加
+# cosmepik ヒーローセクション背景実装ガイド
 
-## 課題
+## 概要
 
-現在、セクションを追加するには左下の鉛筆アイコンを押して編集モードに入り、
-さらに+ボタンを押す必要があり直感的ではない。
-
-## 改善内容
-
-各セクションの下に「--- + ---」のラインを表示し、
-+ボタンをタップするとその場でセクションタイプ選択→タイトル入力→作成ができるインラインUIを追加する。
+Anua（韓国コスメブランド）のビジュアルスタイルを参考にした、ミント/ティールのグラデーション背景と半透明ガラスバブルのデザイン。
 
 ---
 
-## 1. `components/cosme-link/add-section-inline.tsx` を新規作成
+## 1. セクション背景グラデーション
+
+ミント〜ティールの4段階グラデーションを160度の角度で適用。
 
 ```tsx
-"use client"
-
-import { useState } from "react"
-import { Plus, ListOrdered, Grid2X2, Type, AlignLeft, Link, X } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { useSections } from "@/lib/section-context"
-import { type SectionType, type Section } from "@/lib/sections"
-
-const quickOptions: {
-  type: SectionType
-  label: string
-  icon: React.ReactNode
-}[] = [
-  { type: "routine", label: "ルーティン", icon: <ListOrdered className="h-4 w-4" /> },
-  { type: "products", label: "コスメ", icon: <Grid2X2 className="h-4 w-4" /> },
-  { type: "heading", label: "見出し", icon: <Type className="h-4 w-4" /> },
-  { type: "text", label: "テキスト", icon: <AlignLeft className="h-4 w-4" /> },
-  { type: "link", label: "リンク", icon: <Link className="h-4 w-4" /> },
-]
-
-interface AddSectionInlineProps {
-  insertIndex?: number
-}
-
-export function AddSectionInline({ insertIndex }: AddSectionInlineProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const [selectedType, setSelectedType] = useState<SectionType | null>(null)
-  const [title, setTitle] = useState("")
-  const [subtitle, setSubtitle] = useState("")
-  const [icon, setIcon] = useState("")
-  const { sections, setSections, addSection } = useSections()
-
-  const handleSelectType = (type: SectionType) => {
-    setSelectedType(type)
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedType || !title.trim()) return
-
-    const newSection: Section = {
-      id: `section-${Date.now()}`,
-      type: selectedType,
-      title: title.trim(),
-      subtitle: subtitle.trim() || undefined,
-      icon: icon.trim() || undefined,
-      items: [],
-      showSteps: selectedType === "routine",
-      columns: selectedType === "products" ? 2 : undefined,
-    }
-
-    if (insertIndex !== undefined) {
-      const newSections = [...sections]
-      newSections.splice(insertIndex, 0, newSection)
-      setSections(newSections)
-    } else {
-      addSection(newSection)
-    }
-
-    handleClose()
-  }
-
-  const handleClose = () => {
-    setIsExpanded(false)
-    setSelectedType(null)
-    setTitle("")
-    setSubtitle("")
-    setIcon("")
-  }
-
-  // Collapsed state: + line
-  if (!isExpanded) {
-    return (
-      <div className="group flex items-center gap-3 py-1">
-        <div className="h-px flex-1 bg-border transition-colors group-hover:bg-primary/40" />
-        <button
-          onClick={() => setIsExpanded(true)}
-          className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-border bg-card text-muted-foreground shadow-sm transition-all hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-md active:scale-95"
-          aria-label="セクションを追加"
-        >
-          <Plus className="h-4 w-4" />
-        </button>
-        <div className="h-px flex-1 bg-border transition-colors group-hover:bg-primary/40" />
-      </div>
-    )
-  }
-
-  // Expanded: type selection or form
-  return (
-    <div className="relative rounded-2xl border-2 border-primary/30 bg-card p-4 shadow-sm animate-in fade-in slide-in-from-top-2 duration-200">
-      <button
-        onClick={handleClose}
-        className="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent"
-      >
-        <X className="h-3 w-3" />
-      </button>
-
-      {!selectedType ? (
-        <div className="flex flex-col gap-3">
-          <p className="text-sm font-medium text-card-foreground">
-            追加するセクション
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {quickOptions.map((opt) => (
-              <button
-                key={opt.type}
-                onClick={() => handleSelectType(opt.type)}
-                className="flex items-center gap-1.5 rounded-full border-2 border-border px-3 py-1.5 text-sm font-medium text-card-foreground transition-all hover:border-primary hover:bg-primary/5"
-              >
-                {opt.icon}
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setSelectedType(null)}
-              className="text-xs text-primary hover:underline"
-            >
-              戻る
-            </button>
-            <span className="text-xs text-muted-foreground">
-              {quickOptions.find((o) => o.type === selectedType)?.label}
-            </span>
-          </div>
-
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder={
-              selectedType === "routine"
-                ? "例: 朝のスキンケアルーティン"
-                : selectedType === "products"
-                ? "例: お気に入りコスメ"
-                : selectedType === "heading"
-                ? "例: スキンケア"
-                : selectedType === "link"
-                ? "例: SNSリンク"
-                : "セクション名"
-            }
-            className="rounded-xl border-2 border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-            autoFocus
-            required
-          />
-
-          {(selectedType === "heading" || selectedType === "text") && (
-            <input
-              type="text"
-              value={subtitle}
-              onChange={(e) => setSubtitle(e.target.value)}
-              placeholder="補足テキスト（任意）"
-              className="rounded-xl border-2 border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-            />
-          )}
-
-          {selectedType === "routine" && (
-            <input
-              type="text"
-              value={icon}
-              onChange={(e) => setIcon(e.target.value.slice(0, 2))}
-              placeholder="アイコン（例: AM）"
-              maxLength={2}
-              className="w-32 rounded-xl border-2 border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-            />
-          )}
-
-          <button
-            type="submit"
-            disabled={!title.trim()}
-            className="flex items-center justify-center gap-1.5 rounded-xl bg-primary py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
-          >
-            <Plus className="h-4 w-4" />
-            追加
-          </button>
-        </form>
-      )}
-    </div>
-  )
-}
+<section
+  className="relative pt-20 pb-6 md:pt-32 md:pb-16 overflow-hidden"
+  style={{
+    background: "linear-gradient(160deg, #9de0d8 0%, #b8eae4 30%, #cff2ee 60%, #e0f7f5 100%)"
+  }}
+>
 ```
+
+### カラーパレット
+- `#9de0d8` - 濃いミント（上部）
+- `#b8eae4` - ミント
+- `#cff2ee` - 薄いミント
+- `#e0f7f5` - 最も薄いミント（下部）
 
 ---
 
-## 2. `lib/section-context.tsx` に `setSections` を追加
+## 2. ガラスバブル装飾
 
-SectionContextType に以下を追加（なければ）:
+### バブルの基本構造
 
-```typescript
-interface SectionContextType {
-  sections: Section[]
-  setSections: (sections: Section[]) => void  // これを追加
-  // ... 他のプロパティはそのまま
-}
-```
+半透明のガラス玉エフェクトは以下の3要素で構成：
 
-Provider内に setSections を公開:
+1. **radial-gradient**: 光の反射を表現（左上から明るく）
+2. **inset box-shadow**: 内側の光沢と影
+3. **border**: 微細な白い輪郭
 
-```typescript
-<SectionContext.Provider value={{ sections, setSections, /* 他のプロパティ */ }}>
-```
-
----
-
-## 3. page.tsx のセクション表示部分を変更
-
-セクション一覧の表示部分を以下に変更:
+### 大きいバブル（左上）
 
 ```tsx
-import { AddSectionInline } from "@/components/cosme-link/add-section-inline"
+<div
+  className="absolute -top-16 -left-16 w-52 h-52 md:w-72 md:h-72 rounded-full"
+  style={{
+    background: "radial-gradient(circle at 35% 35%, rgba(255,255,255,0.55) 0%, rgba(180,235,230,0.25) 50%, rgba(140,215,210,0.1) 100%)",
+    boxShadow: "inset -4px -4px 12px rgba(255,255,255,0.4), inset 4px 4px 8px rgba(100,200,195,0.15)",
+    border: "1.5px solid rgba(255,255,255,0.45)"
+  }}
+/>
+```
 
-// ... PageContent コンポーネント内のセクション表示部分:
+### 大きいバブル（右下）
 
-{/* Dynamic Sections with inline add buttons */}
-{sections.length === 0 && isEditMode && (
-  <AddSectionInline insertIndex={0} />
-)}
-{sections.map((section, index) => (
-  <div key={section.id} className="flex flex-col gap-4">
-    <SectionRenderer section={section} />
-    {isEditMode && (
-      <AddSectionInline insertIndex={index + 1} />
-    )}
+```tsx
+<div
+  className="absolute -bottom-20 -right-20 w-60 h-60 md:w-80 md:h-80 rounded-full"
+  style={{
+    background: "radial-gradient(circle at 35% 35%, rgba(255,255,255,0.5) 0%, rgba(180,235,230,0.2) 50%, rgba(140,215,210,0.08) 100%)",
+    boxShadow: "inset -4px -4px 12px rgba(255,255,255,0.4), inset 4px 4px 8px rgba(100,200,195,0.15)",
+    border: "1.5px solid rgba(255,255,255,0.4)"
+  }}
+/>
+```
+
+### 中サイズバブル（右上）
+
+```tsx
+<div
+  className="absolute top-8 -right-8 w-28 h-28 md:w-40 md:h-40 rounded-full"
+  style={{
+    background: "radial-gradient(circle at 35% 35%, rgba(255,255,255,0.6) 0%, rgba(180,235,230,0.25) 55%, rgba(140,215,210,0.08) 100%)",
+    boxShadow: "inset -3px -3px 8px rgba(255,255,255,0.45), inset 2px 2px 6px rgba(100,200,195,0.15)",
+    border: "1.5px solid rgba(255,255,255,0.5)"
+  }}
+/>
+```
+
+### 小サイズバブル（左中央）
+
+```tsx
+<div
+  className="absolute top-1/2 -left-6 w-16 h-16 md:w-24 md:h-24 rounded-full"
+  style={{
+    background: "radial-gradient(circle at 35% 35%, rgba(255,255,255,0.65) 0%, rgba(180,235,230,0.3) 55%, transparent 100%)",
+    boxShadow: "inset -2px -2px 6px rgba(255,255,255,0.5), inset 2px 2px 4px rgba(100,200,195,0.1)",
+    border: "1px solid rgba(255,255,255,0.55)"
+  }}
+/>
+```
+
+### 極小バブル（アクセント用）
+
+```tsx
+{/* 右上エリア */}
+<div
+  className="absolute top-1/3 right-[12%] w-8 h-8 md:w-12 md:h-12 rounded-full"
+  style={{
+    background: "radial-gradient(circle at 35% 35%, rgba(255,255,255,0.7) 0%, rgba(180,235,230,0.3) 60%, transparent 100%)",
+    border: "1px solid rgba(255,255,255,0.6)"
+  }}
+/>
+
+{/* 左下エリア */}
+<div
+  className="absolute bottom-16 left-[20%] w-6 h-6 md:w-9 md:h-9 rounded-full"
+  style={{
+    background: "radial-gradient(circle at 35% 35%, rgba(255,255,255,0.65) 0%, rgba(180,235,230,0.25) 60%, transparent 100%)",
+    border: "1px solid rgba(255,255,255,0.55)"
+  }}
+/>
+```
+
+### スパークル（キラキラ）
+
+```tsx
+<div className="absolute top-16 left-[40%] text-white/50 text-xs select-none">+</div>
+<div className="absolute top-28 right-[30%] text-white/40 text-[10px] select-none">✦</div>
+<div className="absolute bottom-24 right-[20%] text-white/45 text-xs select-none">+</div>
+```
+
+---
+
+## 3. テキストスタイル
+
+ミント背景に対してコントラストを確保するため、濃いティールグリーンを使用。
+
+### カラー定義
+
+| 用途 | カラーコード | 説明 |
+|------|-------------|------|
+| 見出し | `#0d4f4a` | 最も濃いティール |
+| 本文 | `#1a6b66` | 濃いティール |
+| アクセント | `#2a8a84` | 中間ティール |
+
+### サブタイトル
+
+```tsx
+<p 
+  className="text-[10px] md:text-xs tracking-[0.2em] mb-3 md:mb-4 font-medium"
+  style={{ color: "#1a6b66" }}
+>
+  COSME PROFILE LINK
+</p>
+```
+
+### メイン見出し
+
+```tsx
+<h1 
+  className="font-serif text-3xl md:text-5xl lg:text-6xl font-normal tracking-tight leading-[1.15] mb-4 md:mb-6"
+  style={{ 
+    color: "#0d4f4a",
+    textShadow: "0 2px 12px rgba(255,255,255,0.5)"
+  }}
+>
+  一軍コスメを
+  <br />
+  ファンに<span className="italic" style={{ color: "#2a8a84" }}>シェア</span>
+</h1>
+```
+
+**ポイント:**
+- `textShadow: "0 2px 12px rgba(255,255,255,0.5)"` で白い影を追加し、背景から浮き上がらせる
+- 「シェア」部分はアクセントカラー `#2a8a84` でイタリック
+
+### 説明文
+
+```tsx
+<p 
+  className="text-sm md:text-base leading-[1.7] mb-6 md:mb-8"
+  style={{ color: "#1a6b66" }}
+>
+  お気に入りのコスメやスキンケアルーティンを
+  <br className="hidden sm:block" />
+  1つのリンクにまとめて共有できます。
+</p>
+```
+
+---
+
+## 4. CTAボタン
+
+白背景に濃いティール文字で、グラデーション背景上での視認性を確保。
+
+```tsx
+<Link 
+  href="/signup"
+  className="inline-flex items-center justify-center rounded-full px-8 md:px-10 py-3.5 md:py-4 text-sm md:text-base font-semibold transition-all hover:scale-[1.02]"
+  style={{
+    background: "#ffffff",
+    color: "#0d4f4a",
+    boxShadow: "0 4px 24px rgba(13,79,74,0.2)"
+  }}
+>
+  無料でページを作成
+</Link>
+```
+
+### 補足テキスト
+
+```tsx
+<p className="text-xs mt-3" style={{ color: "#2a8a84" }}>
+  登録無料 / クレジットカード不要
+</p>
+```
+
+---
+
+## 5. 完全なコード例
+
+```tsx
+{/* Hero Section */}
+<section
+  className="relative pt-20 pb-6 md:pt-32 md:pb-16 overflow-hidden"
+  style={{
+    background: "linear-gradient(160deg, #9de0d8 0%, #b8eae4 30%, #cff2ee 60%, #e0f7f5 100%)"
+  }}
+>
+  {/* Glass bubble decorations */}
+  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    {/* Large glass bubble - top left */}
+    <div
+      className="absolute -top-16 -left-16 w-52 h-52 md:w-72 md:h-72 rounded-full"
+      style={{
+        background: "radial-gradient(circle at 35% 35%, rgba(255,255,255,0.55) 0%, rgba(180,235,230,0.25) 50%, rgba(140,215,210,0.1) 100%)",
+        boxShadow: "inset -4px -4px 12px rgba(255,255,255,0.4), inset 4px 4px 8px rgba(100,200,195,0.15)",
+        border: "1.5px solid rgba(255,255,255,0.45)"
+      }}
+    />
+    {/* Large glass bubble - bottom right */}
+    <div
+      className="absolute -bottom-20 -right-20 w-60 h-60 md:w-80 md:h-80 rounded-full"
+      style={{
+        background: "radial-gradient(circle at 35% 35%, rgba(255,255,255,0.5) 0%, rgba(180,235,230,0.2) 50%, rgba(140,215,210,0.08) 100%)",
+        boxShadow: "inset -4px -4px 12px rgba(255,255,255,0.4), inset 4px 4px 8px rgba(100,200,195,0.15)",
+        border: "1.5px solid rgba(255,255,255,0.4)"
+      }}
+    />
+    {/* Medium glass bubble - top right */}
+    <div
+      className="absolute top-8 -right-8 w-28 h-28 md:w-40 md:h-40 rounded-full"
+      style={{
+        background: "radial-gradient(circle at 35% 35%, rgba(255,255,255,0.6) 0%, rgba(180,235,230,0.25) 55%, rgba(140,215,210,0.08) 100%)",
+        boxShadow: "inset -3px -3px 8px rgba(255,255,255,0.45), inset 2px 2px 6px rgba(100,200,195,0.15)",
+        border: "1.5px solid rgba(255,255,255,0.5)"
+      }}
+    />
+    {/* Small glass bubble - mid left */}
+    <div
+      className="absolute top-1/2 -left-6 w-16 h-16 md:w-24 md:h-24 rounded-full"
+      style={{
+        background: "radial-gradient(circle at 35% 35%, rgba(255,255,255,0.65) 0%, rgba(180,235,230,0.3) 55%, transparent 100%)",
+        boxShadow: "inset -2px -2px 6px rgba(255,255,255,0.5), inset 2px 2px 4px rgba(100,200,195,0.1)",
+        border: "1px solid rgba(255,255,255,0.55)"
+      }}
+    />
+    {/* Tiny bubble accents */}
+    <div
+      className="absolute top-1/3 right-[12%] w-8 h-8 md:w-12 md:h-12 rounded-full"
+      style={{
+        background: "radial-gradient(circle at 35% 35%, rgba(255,255,255,0.7) 0%, rgba(180,235,230,0.3) 60%, transparent 100%)",
+        border: "1px solid rgba(255,255,255,0.6)"
+      }}
+    />
+    <div
+      className="absolute bottom-16 left-[20%] w-6 h-6 md:w-9 md:h-9 rounded-full"
+      style={{
+        background: "radial-gradient(circle at 35% 35%, rgba(255,255,255,0.65) 0%, rgba(180,235,230,0.25) 60%, transparent 100%)",
+        border: "1px solid rgba(255,255,255,0.55)"
+      }}
+    />
+    {/* Star sparkles */}
+    <div className="absolute top-16 left-[40%] text-white/50 text-xs select-none">+</div>
+    <div className="absolute top-28 right-[30%] text-white/40 text-[10px] select-none">✦</div>
+    <div className="absolute bottom-24 right-[20%] text-white/45 text-xs select-none">+</div>
   </div>
-))}
+
+  <div className="relative mx-auto max-w-6xl px-4 md:px-6">
+    <div className="text-center max-w-2xl mx-auto">
+      <p 
+        className="text-[10px] md:text-xs tracking-[0.2em] mb-3 md:mb-4 font-medium"
+        style={{ color: "#1a6b66" }}
+      >
+        COSME PROFILE LINK
+      </p>
+      <h1 
+        className="font-serif text-3xl md:text-5xl lg:text-6xl font-normal tracking-tight leading-[1.15] mb-4 md:mb-6"
+        style={{ 
+          color: "#0d4f4a",
+          textShadow: "0 2px 12px rgba(255,255,255,0.5)"
+        }}
+      >
+        一軍コスメを
+        <br />
+        ファンに<span className="italic" style={{ color: "#2a8a84" }}>シェア</span>
+      </h1>
+      
+      <p 
+        className="text-sm md:text-base leading-[1.7] mb-6 md:mb-8"
+        style={{ color: "#1a6b66" }}
+      >
+        お気に入りのコスメやスキンケアルーティンを
+        <br className="hidden sm:block" />
+        1つのリンクにまとめて共有できます。
+      </p>
+
+      {/* CTA Button */}
+      <Link 
+        href="/signup"
+        className="inline-flex items-center justify-center rounded-full px-8 md:px-10 py-3.5 md:py-4 text-sm md:text-base font-semibold transition-all hover:scale-[1.02]"
+        style={{
+          background: "#ffffff",
+          color: "#0d4f4a",
+          boxShadow: "0 4px 24px rgba(13,79,74,0.2)"
+        }}
+      >
+        無料でページを作成
+      </Link>
+      <p className="text-xs mt-3" style={{ color: "#2a8a84" }}>
+        登録無料 / クレジットカード不要
+      </p>
+    </div>
+  </div>
+</section>
 ```
 
 ---
 
-## UI動作の説明
+## デザインのポイント
 
-### 折りたたみ状態（デフォルト）
-
-- 水平線の中央に小さな + ボタンが表示される
-- ホバーするとラインが強調色に変わり、ボタンがプライマリカラーになる
-
-### 展開状態（+ボタンタップ後）
-
-- カード型UIが展開し、5つのセクションタイプがピル型ボタンで並ぶ
-  - ルーティン / コスメ / 見出し / テキスト / リンク
-- 右上にXボタンで閉じられる
-
-### タイプ選択後
-
-- 選んだタイプに応じた入力フォームが表示
-  - タイトル入力（必須）
-  - 見出し/テキストはサブタイトル入力欄あり
-  - ルーティンはアイコン入力欄（2文字まで、例: AM）あり
-- 「追加」ボタンで insertIndex の位置にセクションが挿入される
-
----
-
-## ポイント
-
-- `insertIndex` を渡すことで、セクション間の任意の位置に新しいセクションを挿入できる
-- セクションがゼロの場合は `insertIndex={0}` で最初の位置に表示
-- 既存の左下の編集モードトグルはそのまま残してOK（セクション並び替え・削除は編集モードで行う）
+1. **グラスモーフィズム**: `radial-gradient` + `inset box-shadow` + 半透明 `border` の組み合わせでガラス玉のような質感を表現
+2. **光の位置統一**: すべてのバブルで `circle at 35% 35%` を使用し、光源を左上に統一
+3. **レスポンシブ対応**: `md:` プレフィックスでモバイル/デスクトップのサイズを分岐
+4. **テキスト可読性**: 濃いティールグリーン + 白い textShadow でグラデーション背景上での視認性を確保

@@ -15,7 +15,7 @@ export default function ContactPage() {
           <p className="text-muted-foreground">
             ご質問・ご要望がありましたら、以下のメールアドレスまでお送りください。
           </p>
-          <p className="font-medium text-green">support@example.com</p>
+          <a href="mailto:cosmepik.team@gmail.com" className="font-medium text-green hover:underline">cosmepik.team@gmail.com</a>
           <p className="text-sm text-muted-foreground">
             ※ 返信までお時間をいただく場合がございます。
           </p>

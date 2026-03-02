@@ -32,7 +32,11 @@ function isDemoMode(): boolean {
 /** コスメセット一覧取得（Supabase 時は userId、localStorage 時は "demo"） */
 export async function getCosmeSets(userId?: string | null): Promise<CosmeSet[]> {
   if (useLocalForCosmeSets(userId) || !useSupabase()) return Promise.resolve(local.getCosmeSets());
-  return db.fetchCosmeSets(uid(userId));
+  const dbSets = await db.fetchCosmeSets(uid(userId));
+  const localSets = local.getCosmeSets();
+  const dbSlugs = new Set(dbSets.map((s) => s.slug));
+  const localOnly = localSets.filter((s) => !dbSlugs.has(s.slug));
+  return [...dbSets, ...localOnly];
 }
 
 /** コスメセット削除 */
@@ -57,9 +61,8 @@ export async function createCosmeSet(
   if (useLocalForCosmeSets(userId) || !useSupabase()) return Promise.resolve(local.createCosmeSet(name, slug));
   const result = await db.createCosmeSet(u, name, slug);
   if (result) return result;
-  // Supabase 失敗時（cosme_sets テーブル未作成等）: デモユーザーは localStorage にフォールバック
-  if (u === "demo") return local.createCosmeSet(name, slug);
-  return null;
+  // Supabase 失敗時（cosme_sets テーブル未作成・RLS等）: localStorage にフォールバックして作成を継続
+  return local.createCosmeSet(name, slug);
 }
 
 /** 自分のリストを取得（slug = コスメセット識別子） */

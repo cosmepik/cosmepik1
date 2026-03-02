@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ブラウザのダークモードの影響を受けない（常にライト表示） */
+html {
+  color-scheme: light;
+}
+
 /* default テーマ（グリーンティー）と一致 */
 :root {
   --background: oklch(1 0 0);

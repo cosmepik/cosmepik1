@@ -240,7 +240,10 @@ export async function createCosmeSet(
     slug,
   }).select("id, name, slug").single();
 
-  if (error) return null;
+  if (error) {
+    console.warn("[createCosmeSet] Supabase error:", error.message, error.code);
+    return null;
+  }
   if (!data) return null;
 
   await ensureProfileExists(slug);
@@ -262,6 +265,47 @@ export async function deleteCosmeSet(userId: string, slug: string): Promise<bool
   const { error } = await client.from("cosme_sets").delete().eq("user_id", userId).eq("slug", slug);
 
   return !error;
+}
+
+/** 公開ページ閲覧数を1増やす（簡易アナリティクス） */
+export async function incrementProfileView(username: string): Promise<void> {
+  const client = getClient();
+  if (!client) return;
+
+  const { data: row } = await client
+    .from("profile_views")
+    .select("view_count")
+    .eq("username", username)
+    .single();
+
+  if (row) {
+    await client
+      .from("profile_views")
+      .update({ view_count: (Number(row.view_count) || 0) + 1 })
+      .eq("username", username);
+  } else {
+    await client.from("profile_views").insert({ username, view_count: 1 });
+  }
+}
+
+/** 複数 username の閲覧数を取得 */
+export async function getViewCounts(
+  usernames: string[]
+): Promise<Record<string, number>> {
+  const client = getClient();
+  if (!client || usernames.length === 0) return {};
+
+  const { data } = await client
+    .from("profile_views")
+    .select("username, view_count")
+    .in("username", usernames);
+
+  const out: Record<string, number> = {};
+  for (const u of usernames) out[u] = 0;
+  for (const row of data ?? []) {
+    out[row.username as string] = Number((row as { view_count: number }).view_count) || 0;
+  }
+  return out;
 }
 
 export { CURRENT_USERNAME };

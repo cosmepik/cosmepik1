@@ -69,7 +69,7 @@ export interface Profile {
 function toProfile(p: InfluencerProfile | null, slug: string): Profile {
   if (!p) {
     return {
-      name: `@${slug}`,
+      name: "",
       username: slug,
       bio: "",
       bioSub: "",
@@ -86,7 +86,7 @@ function toProfile(p: InfluencerProfile | null, slug: string): Profile {
     (p.personalColor as PersonalColor) ||
     "";
   return {
-    name: p.displayName || `@${slug}`,
+    name: p.displayName?.trim() ?? "",
     username: p.username || slug,
     bio: p.bio ?? "",
     bioSub: p.bioSub ?? "",
@@ -148,7 +148,7 @@ interface ProfileProviderProps {
 
 export function ProfileProvider({ children, slug }: ProfileProviderProps) {
   const [profile, setProfileState] = useState<Profile>({
-    name: `@${slug}`,
+    name: "",
     username: slug,
     bio: "",
     bioSub: "",

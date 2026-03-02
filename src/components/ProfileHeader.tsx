@@ -43,10 +43,10 @@ interface ProfileHeaderViewProps {
 
 /** 表示専用：UIBASE 完全準拠 */
 export function ProfileHeaderView({ username, profile }: ProfileHeaderViewProps) {
-  const displayName = profile?.displayName ?? "コスメ好き";
+  const displayName = profile?.displayName?.trim() ? profile.displayName : "username";
   const skinType = profile?.skinType;
   const personalColor = profile?.personalColor;
-  const initial = (displayName || "K").charAt(0).toUpperCase();
+  const initial = (profile?.displayName?.trim() || "U").charAt(0).toUpperCase();
 
   return (
     <header className="flex flex-col items-center gap-4 pb-6">
@@ -94,7 +94,7 @@ export function ProfileHeaderView({ username, profile }: ProfileHeaderViewProps)
         )}
       </div>
 
-      {(profile?.snsLinks?.length ?? 0) > 0 ? (
+      {(profile?.snsLinks?.length ?? 0) > 0 && (
         <div className="flex items-center gap-3">
           {profile!.snsLinks!.map((link) => {
             const Icon = getSnsIcon(link.type);
@@ -117,30 +117,6 @@ export function ProfileHeaderView({ username, profile }: ProfileHeaderViewProps)
           >
             <Share2 className="h-4 w-4" />
           </button>
-        </div>
-      ) : (
-        <div className="flex items-center gap-3">
-          <a
-            href="#"
-            aria-label="Instagram"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-green hover:text-white"
-          >
-            <Instagram className="h-4 w-4" />
-          </a>
-          <a
-            href="#"
-            aria-label="X"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-green hover:text-white"
-          >
-            <XIcon className="h-4 w-4" />
-          </a>
-          <a
-            href="#"
-            aria-label="YouTube"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-green hover:text-white"
-          >
-            <Youtube className="h-4 w-4" />
-          </a>
         </div>
       )}
     </header>
@@ -181,7 +157,7 @@ export function ProfileHeaderEdit({
   onCancelEditName,
   onTempNameChange,
 }: ProfileHeaderEditProps) {
-  const initial = (displayName || "K").charAt(0).toUpperCase();
+  const initial = (displayName?.trim() || "U").charAt(0).toUpperCase();
 
   return (
     <header className="flex flex-col items-center gap-4 pb-6">
@@ -239,7 +215,7 @@ export function ProfileHeaderEdit({
         ) : (
           <div className="flex items-center gap-1.5 justify-center">
             <h1 className="text-xl font-bold tracking-tight text-foreground">
-              {displayName || "名前を設定"}
+              {displayName || "username"}
             </h1>
             <button
               type="button"

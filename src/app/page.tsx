@@ -8,14 +8,23 @@ import { HeroLinkInput } from "@/components/landing/HeroLinkInput";
 /**
  * トップページ (LP) - cosmepik ランディングページ
  * 未ログイン: サービス概要・新規登録・ログイン誘導
- * ログイン済み: ダッシュボードへリダイレクト
+ * ログイン済み: ダッシュボードへリダイレクト（?lp=1 のときはLPを表示）
  */
-export default async function LandingPage() {
-  const supabase = await createClient();
-  if (supabase) {
-    const { data } = await supabase.auth.getUser();
-    if (data.user) {
-      redirect("/dashboard");
+export default async function LandingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ lp?: string }>;
+}) {
+  const params = await searchParams;
+  const forceLp = params?.lp === "1";
+
+  if (!forceLp) {
+    const supabase = await createClient();
+    if (supabase) {
+      const { data } = await supabase.auth.getUser();
+      if (data.user) {
+        redirect("/dashboard");
+      }
     }
   }
 
@@ -362,7 +371,7 @@ export default async function LandingPage() {
               今すぐ始めよう
             </h2>
             <p className="text-xs md:text-sm mb-8 md:mb-10" style={{ color: "#1a6b66" }}>
-              完全無料。クレジットカード不要。
+              登録無料。クレジットカード不要。
             </p>
             <Link
               href="/register"
@@ -395,7 +404,7 @@ export default async function LandingPage() {
               <Link href="/faq" className="hover:opacity-80 transition-opacity" style={{ color: "#1a6b66" }}>
                 TERMS
               </Link>
-              <Link href="/faq" className="hover:opacity-80 transition-opacity" style={{ color: "#1a6b66" }}>
+              <Link href="/privacy" className="hover:opacity-80 transition-opacity" style={{ color: "#1a6b66" }}>
                 PRIVACY
               </Link>
               <Link href="/contact" className="hover:opacity-80 transition-opacity" style={{ color: "#1a6b66" }}>

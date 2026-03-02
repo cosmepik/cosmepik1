@@ -37,7 +37,8 @@ export function ProfileHeader() {
   const { isEditMode } = useSections();
   const [showEditor, setShowEditor] = useState(false);
 
-  const initial = (profile.name || "K").charAt(0).toUpperCase();
+  const displayName = profile.name?.trim() ? profile.name : "username";
+  const initial = (profile.name?.trim() || "U").charAt(0).toUpperCase();
 
   return (
     <>
@@ -73,7 +74,7 @@ export function ProfileHeader() {
 
         <div className="flex flex-col items-center gap-1">
           <h1 className="text-xl font-bold tracking-tight text-foreground">
-            {profile.name}
+            {displayName}
           </h1>
           <p className="text-xs text-muted-foreground">@{profile.username}</p>
           <p className="max-w-[280px] text-center text-sm leading-relaxed text-muted-foreground">

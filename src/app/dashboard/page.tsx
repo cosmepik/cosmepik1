@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SidebarNav } from "@/components/SidebarNav";
+import { DashboardHeader } from "@/components/DashboardHeader";
 import { useUser } from "@/hooks/use-user";
 import { getCosmeSets, createCosmeSet, deleteCosmeSet } from "@/lib/store";
 import type { CosmeSet } from "@/types";
@@ -121,25 +122,7 @@ export default function DashboardHomePage() {
   return (
     <main className="min-h-screen">
       <SidebarNav open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <header className="sticky top-0 z-10 border-b border-border bg-white/90 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-md items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setSidebarOpen(true)}
-              className="-m-2 rounded-lg p-2 text-foreground hover:bg-accent"
-              aria-label="メニューを開く"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-6 w-6">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-              </svg>
-            </button>
-            <Link href="/dashboard" className="text-lg font-bold tracking-tight text-foreground hover:opacity-80">
-              cosmepik
-            </Link>
-          </div>
-        </div>
-      </header>
+      <DashboardHeader onMenuClick={() => setSidebarOpen(true)} />
 
       <div className="mx-auto max-w-md px-4 py-8">
         <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
@@ -257,7 +240,7 @@ export default function DashboardHomePage() {
                     新しいコスメセットを作成
                   </h2>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    名前とURLを入力してください
+                    名前とあなた専用のURLを決めましょう
                   </p>
                 </div>
                 <form onSubmit={handleCreateSet} className="p-6 space-y-4">
@@ -275,20 +258,27 @@ export default function DashboardHomePage() {
                     />
                   </div>
                   <div>
-                    <label htmlFor="create-slug" className="mb-1 block text-sm font-medium text-foreground">
-                      URL（英数字・ハイフン・アンダースコア）
-                    </label>
-                    <input
-                      id="create-slug"
-                      type="text"
-                      value={createSlug}
-                      onChange={(e) => setCreateSlug(e.target.value)}
-                      placeholder="例：my-cosme"
-                      className="w-full rounded-lg border border-input bg-white px-4 py-2.5 text-sm text-card-foreground placeholder-muted-foreground focus:border-green focus:outline-none focus:ring-2 focus:ring-ring"
-                    />
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {typeof window !== "undefined" ? `${window.location.origin}/p/` : ""}{createSlug || "..."}
+                    <p className="mb-2 text-sm font-medium text-foreground">
+                      URLを決めましょう😃
                     </p>
+                    <p className="mb-2 text-xs text-muted-foreground">
+                      あなたのコスメリンクのアドレスです。英数字・ハイフン・アンダースコアで入力
+                    </p>
+                    <div className="flex rounded-xl border-2 border-input bg-white overflow-hidden focus-within:border-green focus-within:ring-2 focus-within:ring-ring transition-all">
+                      <span className="flex items-center pl-4 text-sm text-muted-foreground font-medium shrink-0">
+                        {typeof window !== "undefined" && window.location?.origin
+                          ? `${new URL(window.location.origin).host}/p/`
+                          : "cosmepik.com/p/"}
+                      </span>
+                      <input
+                        id="create-slug"
+                        type="text"
+                        value={createSlug}
+                        onChange={(e) => setCreateSlug(e.target.value)}
+                        placeholder="あなたのID"
+                        className="flex-1 min-w-0 py-3 px-3 text-sm text-card-foreground placeholder-muted-foreground focus:outline-none"
+                      />
+                    </div>
                   </div>
                   {createFormError && (
                     <p className="text-sm text-destructive">{createFormError}</p>

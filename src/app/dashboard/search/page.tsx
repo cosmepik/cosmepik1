@@ -7,11 +7,14 @@ import { searchMockCosme } from "@/lib/mock-data";
 import { getSections, addItemToSection } from "@/lib/store";
 import { CosmeCard } from "@/components/CosmeCard";
 import { AddCommentModal } from "@/components/AddCommentModal";
+import { ProfileIcon } from "@/components/DashboardHeader";
+import { useUser } from "@/hooks/use-user";
 import type { CosmeItem } from "@/types";
 
 function SearchContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const user = useUser();
   const slug = searchParams.get("slug") ?? "demo";
 
   const [keyword, setKeyword] = useState("");
@@ -137,7 +140,10 @@ function SearchContent() {
           <Link href={`/dashboard/edit/${slug}`} className="text-sm font-medium text-green hover:underline">
             ← 編集画面に戻る
           </Link>
-          <span className="text-sm text-muted-foreground">{totalItems} 件</span>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">{totalItems} 件</span>
+            {user && <ProfileIcon user={user} />}
+          </div>
         </div>
       </header>
 

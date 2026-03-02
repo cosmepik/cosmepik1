@@ -37,6 +37,12 @@ CREATE TABLE IF NOT EXISTS list_items (
   UNIQUE(username, item_id)
 );
 
+-- 公開ページ閲覧数（slug ごと。簡易アナリティクス用）
+CREATE TABLE IF NOT EXISTS profile_views (
+  username TEXT PRIMARY KEY,
+  view_count BIGINT NOT NULL DEFAULT 0
+);
+
 -- RLS
 ALTER TABLE cosme_sets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -67,3 +73,11 @@ CREATE POLICY "list_items are updatable by anon"
   ON list_items FOR UPDATE USING (true);
 CREATE POLICY "list_items are deletable by anon"
   ON list_items FOR DELETE USING (true);
+
+ALTER TABLE profile_views ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "profile_views viewable by everyone"
+  ON profile_views FOR SELECT USING (true);
+CREATE POLICY "profile_views insertable by anon"
+  ON profile_views FOR INSERT WITH CHECK (true);
+CREATE POLICY "profile_views updatable by anon"
+  ON profile_views FOR UPDATE USING (true);

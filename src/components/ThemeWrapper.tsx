@@ -10,6 +10,8 @@ import { StylePickerProvider, StylePicker } from "@/components/cosme-link/style-
 export function ThemeWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isTopPage = pathname === "/";
+  const isPreview =
+    pathname === "/demo" || pathname?.startsWith("/dashboard/preview");
 
   return (
     <ThemeProvider>
@@ -17,7 +19,7 @@ export function ThemeWrapper({ children }: { children: React.ReactNode }) {
         <ThemeBackground>
           {children}
         </ThemeBackground>
-        {!isTopPage && (
+        {!isTopPage && !isPreview && (
           <Suspense fallback={null}>
             <StylePicker />
           </Suspense>

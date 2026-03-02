@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { CosmeItem } from "@/types";
 
 const RAKUTEN_API_URL =
-  "https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20220601";
+  "https://app.rakuten.co.jp/services/api/IchibaItem/Search/20170706";
 
 /**
  * 楽天市場商品検索API（Ichiba Item Search）のレスポンス型
@@ -44,9 +44,9 @@ export async function GET(request: NextRequest) {
   const appId = process.env.RAKUTEN_APPLICATION_ID;
   const accessKey = process.env.RAKUTEN_ACCESS_KEY;
 
-  if (!appId || !accessKey) {
+  if (!appId) {
     return NextResponse.json(
-      { error: "楽天APIが設定されていません。RAKUTEN_APPLICATION_ID と RAKUTEN_ACCESS_KEY を .env.local に設定してください。" },
+      { error: "楽天APIが設定されていません。RAKUTEN_APPLICATION_ID を .env.local に設定してください。" },
       { status: 503 }
     );
   }
@@ -67,12 +67,13 @@ export async function GET(request: NextRequest) {
 
   const params = new URLSearchParams({
     applicationId: appId,
-    accessKey,
     keyword,
+    genreId: "100939", // 美容・コスメ・香水
     format: "json",
     formatVersion: "2",
     hits: String(hits),
   });
+  if (accessKey) params.set("accessKey", accessKey);
 
   try {
     const res = await fetch(`${RAKUTEN_API_URL}?${params}`, {
@@ -100,7 +101,12 @@ export async function GET(request: NextRequest) {
     if (Array.isArray(data.Items)) {
       rawItems.push(...data.Items.map((x) => x.Item).filter(Boolean));
     } else if (Array.isArray(data.items)) {
-      rawItems.push(...data.items);
+      // formatVersion=2: flat items / formatVersion=1: items[].item
+      rawItems.push(
+        ...data.items.map((x: { item?: RakutenItem; itemName?: string }) =>
+          x.item ?? x
+        )
+      );
     }
 
     const items = rawItems.map(mapToCosmeItem);
