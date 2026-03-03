@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { CosmeItem } from "@/types";
 
+// 公式ドキュメント準拠: openapi.rakuten.co.jp（app.rakuten.co.jp は非推奨の可能性）
 const RAKUTEN_API_URL =
-  "https://app.rakuten.co.jp/services/api/IchibaItem/Search/20170706";
+  "https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20170706";
 
 /**
  * 楽天市場商品検索API（Ichiba Item Search）のレスポンス型
@@ -53,8 +54,8 @@ function mapToCosmeItem(item: RakutenItem, index: number): CosmeItem {
 }
 
 export async function GET(request: NextRequest) {
-  const appId = process.env.RAKUTEN_APPLICATION_ID;
-  const accessKey = process.env.RAKUTEN_ACCESS_KEY;
+  const appId = process.env.RAKUTEN_APPLICATION_ID?.trim();
+  const accessKey = process.env.RAKUTEN_ACCESS_KEY?.trim();
 
   if (!appId) {
     return NextResponse.json(
@@ -62,6 +63,18 @@ export async function GET(request: NextRequest) {
         items: [],
         error: "RAKUTEN_APPLICATION_ID が未設定です。Netlifyの環境変数に RAKUTEN_APPLICATION_ID を設定してください。",
         _debug: "サーバーで applicationId が取得できていません",
+      },
+      { status: 503 }
+    );
+  }
+
+  if (!accessKey) {
+    return NextResponse.json(
+      {
+        items: [],
+        error:
+          "RAKUTEN_ACCESS_KEY が未設定です。楽天API（openapi）では applicationId と accessKey の両方が必須です。Netlifyの環境変数に RAKUTEN_ACCESS_KEY を追加してください。楽天デベロッパーズの「Access Key」をコピーしてください。",
+        _debug: { appIdSet: true, accessKeySet: false },
       },
       { status: 503 }
     );
@@ -92,9 +105,14 @@ export async function GET(request: NextRequest) {
   });
   if (accessKey) params.set("accessKey", accessKey);
 
+  const headers: HeadersInit = { Accept: "application/json" };
+  if (accessKey) {
+    headers["Authorization"] = `Bearer ${accessKey}`;
+  }
+
   try {
     const res = await fetch(`${RAKUTEN_API_URL}?${params}`, {
-      headers: { Accept: "application/json" },
+      headers,
     });
 
     const data: RakutenResponse = await res.json();

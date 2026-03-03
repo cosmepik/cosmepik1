@@ -75,7 +75,8 @@ RAKUTEN_ACCESS_KEY=あなたのAccess Key
 
 - キーは**サーバー側のみ**で使用され、ブラウザには送信されません
 - Netlify でデプロイする場合は、**Site settings → Environment variables** に同じ2つを登録してください
-  - `RAKUTEN_APPLICATION_ID` と `RAKUTEN_ACCESS_KEY` を**両方**設定しないと本番で楽天の実データが表示されず、ダミーのみになります
+  - 楽天API（openapi.rakuten.co.jp）では **Application ID と Access Key の両方が必須**です。どちらか一方だけだと「specify valid applicationId」エラーになります
+  - 値の前後に**余計なスペースや引用符を入れない**でください（環境変数はそのままの値で設定）
 
 ---
 
@@ -90,7 +91,15 @@ RAKUTEN_ACCESS_KEY=あなたのAccess Key
 
 ---
 
-## 5. 「楽天APIでエラーが発生しました」が出る場合
+## 5. 「specify valid applicationId」が出る場合（本番）
+
+- **Application ID と Access Key の両方**を Netlify の環境変数に設定しているか確認してください（楽天の新APIは両方必須です）
+- 楽天デベロッパーズで、アプリの **「Application ID」** と **「Access Key」** を再度コピーし、Netlify に貼り直してください（Application ID と Access Key を混同していないか確認）
+- 環境変数に値を設定したあと、**Netlify でビルドの再デプロイ**を行ってください
+
+---
+
+## 6. 「楽天APIでエラーが発生しました」が出る場合
 
 ### 403エラー（ドメイン制限）
 
