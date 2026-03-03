@@ -42,6 +42,7 @@ export function AddItemModal({
   const [searchKeyword, setSearchKeyword] = useState("");
   const [searchResults, setSearchResults] = useState<CosmeItem[]>([]);
   const [searchApiError, setSearchApiError] = useState<string | null>(null);
+  const [searchApiDebug, setSearchApiDebug] = useState<object | null>(null);
   const [commentModalItem, setCommentModalItem] = useState<CosmeItem | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -90,35 +91,57 @@ export function AddItemModal({
     setSearchKeyword("");
     setSearchResults([]);
     setSearchApiError(null);
+    setSearchApiDebug(null);
     setCommentModalItem(null);
     onClose();
   };
 
-  // モーダル内検索：即座にモック表示 → 楽天APIで取得して置き換え
+  // モーダル内検索：本番ではダミー表示せずAPI結果のみ。開発ではモック→API置き換え
   useEffect(() => {
     const k = searchKeyword.trim();
     if (!k) {
       setSearchResults([]);
       setSearchApiError(null);
+      setSearchApiDebug(null);
       return;
     }
-    setSearchResults(searchMockCosme(k));
+
+    const isProduction =
+      typeof window !== "undefined" &&
+      !["localhost", "127.0.0.1"].includes(window.location.hostname);
+
+    if (!isProduction) {
+      setSearchResults(searchMockCosme(k));
+    } else {
+      setSearchResults([]);
+    }
     setSearchApiError(null);
+    setSearchApiDebug(null);
 
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=20`);
+        const debugParam = isProduction ? "&debug=1" : "";
+        const res = await fetch(`/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=20${debugParam}`);
         const data = await res.json().catch(() => ({}));
         const items = Array.isArray(data?.items) ? data.items : [];
+        const errMsg = data?.error ?? data?.error_description;
+
         if (res.ok && items.length > 0) {
           setSearchResults(items);
           setSearchApiError(null);
-        } else if (!res.ok) {
-          const errMsg = data?.error ?? data?.error_description ?? (res.status === 403 ? "楽天APIのドメイン制限" : `APIエラー (${res.status})`);
-          setSearchApiError(errMsg);
+        } else if (!res.ok || errMsg) {
+          const msg =
+            errMsg ??
+            (res.status === 403 ? "楽天APIのドメイン制限" : `APIエラー (${res.status})`);
+          setSearchApiError(msg);
+          if (isProduction) setSearchResults([]);
+        } else if (res.ok && items.length === 0) {
+          setSearchApiError(isProduction ? "該当する商品がありません（楽天API）" : null);
+          if (isProduction) setSearchResults([]);
         }
       } catch (e) {
         setSearchApiError(e instanceof Error ? e.message : "楽天APIへの接続に失敗");
+        if (isProduction) setSearchResults([]);
       }
     }, 300);
     return () => clearTimeout(timer);
@@ -234,9 +257,16 @@ export function AddItemModal({
                 />
               </div>
               {searchApiError && (
-                <p className="mb-2 text-xs text-amber-600" title="原因追求用">
-                  {searchApiError}
-                </p>
+                <div className="mb-2 space-y-1">
+                  <p className="text-xs text-amber-600" title="原因追求用">
+                    {searchApiError}
+                  </p>
+                  {searchApiDebug && (
+                    <pre className="max-h-24 overflow-auto rounded bg-muted p-1.5 text-[10px] text-muted-foreground">
+                      {JSON.stringify(searchApiDebug, null, 2)}
+                    </pre>
+                  )}
+                </div>
               )}
               {searchResults.length > 0 && (
                 <div className="max-h-96 overflow-y-auto space-y-0.5 rounded-xl border border-border p-1.5">

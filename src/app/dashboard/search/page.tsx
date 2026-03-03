@@ -22,6 +22,7 @@ function SearchContent() {
   const [searchResults, setSearchResults] = useState<CosmeItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchDebug, setSearchDebug] = useState<object | null>(null);
   const [modalItem, setModalItem] = useState<CosmeItem | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
   const [sectionPicker, setSectionPicker] = useState<{ item: CosmeItem; comment: string } | null>(null);
@@ -35,32 +36,55 @@ function SearchContent() {
     if (!k) {
       setSearchResults([]);
       setSearchError(null);
+      setSearchDebug(null);
       return;
     }
-    // 即座にモックを表示（UX向上）、その後APIを試す
-    const mockItems = searchMockCosme(k);
-    setSearchResults(mockItems);
+
+    const isProduction =
+      typeof window !== "undefined" &&
+      !["localhost", "127.0.0.1"].includes(window.location.hostname);
+
+    if (!isProduction) {
+      setSearchResults(searchMockCosme(k));
+    } else {
+      setSearchResults([]);
+    }
     setSearchError(null);
+    setSearchDebug(null);
 
     const timer = setTimeout(async () => {
       setIsSearching(true);
       setSearchError(null);
+      setSearchDebug(null);
       try {
-        const res = await fetch(`/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=20`);
+        const debugParam = isProduction ? "&debug=1" : "";
+        const res = await fetch(`/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=20${debugParam}`);
         const data = await res.json().catch(() => ({}));
         const items = Array.isArray(data?.items) ? data.items : [];
+        const errMsg = data?.error ?? data?.error_description;
+
         if (res.ok && items.length > 0) {
           setSearchResults(items);
           setSearchError(null);
-        } else if (!res.ok) {
-          const errMsg =
-            data?.error ?? data?.error_description ?? (res.status === 403 ? "楽天APIのドメイン制限のため、本番環境でお試しください" : `APIエラー (${res.status})`);
-          setSearchError(errMsg);
-          // APIがエラーならモックのまま（既に表示済み）
+          setSearchDebug(null);
+        } else if (!res.ok || errMsg) {
+          const msg =
+            errMsg ??
+            (res.status === 403
+              ? "楽天APIのドメイン制限のため、許可されたウェブサイトに本番URLを追加してください"
+              : `APIエラー (${res.status})`);
+          setSearchError(msg);
+          setSearchDebug(data?._debug ?? null);
+          if (isProduction) setSearchResults([]);
+        } else if (res.ok && items.length === 0) {
+          setSearchError(isProduction ? "該当する商品がありません（楽天API）" : null);
+          setSearchDebug(isProduction ? (data?._debug ?? null) : null);
+          if (isProduction) setSearchResults([]);
         }
-        // res.ok && items.length===0 の場合はモックのまま、エラー表示なし
       } catch (e) {
         setSearchError(e instanceof Error ? e.message : "楽天APIへの接続に失敗しました");
+        setSearchDebug(null);
+        if (isProduction) setSearchResults([]);
       } finally {
         setIsSearching(false);
       }
@@ -168,7 +192,16 @@ function SearchContent() {
 
         <div className="mt-6 space-y-4">
           {isSearching && <p className="text-sm text-muted-foreground">検索中...</p>}
-          {searchError && <p className="text-sm text-destructive">{searchError}</p>}
+          {searchError && (
+            <div className="space-y-1">
+              <p className="text-sm text-destructive">{searchError}</p>
+              {searchDebug && (
+                <pre className="max-h-32 overflow-auto rounded bg-muted p-2 text-xs text-muted-foreground">
+                  {JSON.stringify(searchDebug, null, 2)}
+                </pre>
+              )}
+            </div>
+          )}
           {!isSearching && searchResults.length === 0 && keyword.trim() && !searchError && <p className="text-sm text-muted-foreground">該当する商品がありません</p>}
           {!isSearching && searchResults.length === 0 && !keyword.trim() && <p className="text-sm text-muted-foreground">検索窓に文字を入れると候補が表示されます</p>}
           {searchResults.map((item) => (

@@ -57,7 +57,14 @@ export async function GET(request: NextRequest) {
   const accessKey = process.env.RAKUTEN_ACCESS_KEY;
 
   if (!appId) {
-    return NextResponse.json({ items: [] });
+    return NextResponse.json(
+      {
+        items: [],
+        error: "RAKUTEN_APPLICATION_ID が未設定です。Netlifyの環境変数に RAKUTEN_APPLICATION_ID を設定してください。",
+        _debug: "サーバーで applicationId が取得できていません",
+      },
+      { status: 503 }
+    );
   }
 
   const { searchParams } = new URL(request.url);
@@ -73,6 +80,8 @@ export async function GET(request: NextRequest) {
       { status: 400 }
     );
   }
+
+  const debugMode = searchParams.get("debug") === "1";
 
   const params = new URLSearchParams({
     applicationId: appId,
@@ -93,20 +102,25 @@ export async function GET(request: NextRequest) {
     if (!res.ok) {
       const msg = data.error_description ?? data.error ?? "楽天APIでエラーが発生しました";
       console.error("[Rakuten API]", res.status, msg, data);
-      // applicationId 等の設定エラーは空で返し、フロントでモック表示
+      // applicationId 等の設定エラーはエラーメッセージを返す（原因追求のため）
       if (/applicationId|specify valid/i.test(String(msg))) {
-        return NextResponse.json({ items: [] });
+        return NextResponse.json({
+          items: [],
+          error: `楽天API認証エラー: ${msg}`,
+          _debug: { status: res.status, raw: String(msg) },
+        }, { status: res.status });
       }
       return NextResponse.json({ error: msg }, { status: res.status });
     }
 
     if (data.error) {
       const errMsg = data.error_description ?? data.error ?? "";
-      if (/applicationId|specify valid/i.test(String(errMsg))) {
-        return NextResponse.json({ items: [] });
-      }
       return NextResponse.json(
-        { error: errMsg },
+        {
+          items: [],
+          error: `楽天API: ${errMsg}`,
+          _debug: { error: data.error, error_description: data.error_description },
+        },
         { status: 400 }
       );
     }
@@ -125,12 +139,28 @@ export async function GET(request: NextRequest) {
 
     const items = rawItems.map(mapToCosmeItem);
 
-    return NextResponse.json({ items });
+    const body: { items: CosmeItem[]; _debug?: object } = { items };
+    if (debugMode) {
+      body._debug = {
+        appIdSet: !!appId,
+        accessKeySet: !!accessKey,
+        rawItemCount: rawItems.length,
+        apiUrl: RAKUTEN_API_URL,
+      };
+    }
+    return NextResponse.json(body);
   } catch (e) {
     console.error("Rakuten API error:", e);
-    return NextResponse.json(
-      { error: "楽天APIへの接続に失敗しました" },
-      { status: 500 }
-    );
+    const debugMode = searchParams.get("debug") === "1";
+    const body: { error: string; _debug?: object } = {
+      error: "楽天APIへの接続に失敗しました",
+    };
+    if (debugMode) {
+      body._debug = {
+        message: e instanceof Error ? e.message : String(e),
+        appIdSet: !!appId,
+      };
+    }
+    return NextResponse.json(body, { status: 500 });
   }
 }
