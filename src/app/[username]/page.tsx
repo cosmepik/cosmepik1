@@ -72,7 +72,7 @@ export default function PublicProfilePage({ username: usernameProp }: PublicProf
             <button
               type="button"
               onClick={handlePublish}
-              className="flex items-center gap-2 rounded-lg bg-green py-2 px-4 text-sm font-medium text-white transition-colors hover:opacity-90"
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-md transition-all hover:bg-primary/90 active:scale-95"
             >
               {publishedMessage ? (
                 <>
