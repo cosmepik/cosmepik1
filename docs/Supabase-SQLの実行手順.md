@@ -84,3 +84,11 @@ CREATE POLICY "profile_views updatable by anon"
 | 確認（任意）   | Table Editor   | `profile_views` が一覧にあるか |
 
 これでダッシュボードの「あなたのページの閲覧数」が正しく動くようになります。
+
+---
+
+## 本番でコスメセット作成が失敗する場合
+
+ログイン済みユーザー（authenticated）が Supabase に INSERT するには、RLS ポリシーに `authenticated` 用の設定が必要です。
+
+プロジェクトルートの `supabase-migration-authenticated-policies.sql` を SQL Editor で実行してください。

@@ -48,33 +48,74 @@ ALTER TABLE cosme_sets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE list_items ENABLE ROW LEVEL SECURITY;
 
+-- cosme_sets（既存ポリシーは DROP してから作成＝再実行可能）
+DROP POLICY IF EXISTS "cosme_sets viewable by everyone" ON cosme_sets;
+DROP POLICY IF EXISTS "cosme_sets insertable by anon" ON cosme_sets;
+DROP POLICY IF EXISTS "cosme_sets insertable by authenticated" ON cosme_sets;
+DROP POLICY IF EXISTS "cosme_sets updatable by anon" ON cosme_sets;
+DROP POLICY IF EXISTS "cosme_sets updatable by authenticated" ON cosme_sets;
+DROP POLICY IF EXISTS "cosme_sets deletable by anon" ON cosme_sets;
+DROP POLICY IF EXISTS "cosme_sets deletable by authenticated" ON cosme_sets;
 CREATE POLICY "cosme_sets viewable by everyone"
   ON cosme_sets FOR SELECT USING (true);
 CREATE POLICY "cosme_sets insertable by anon"
   ON cosme_sets FOR INSERT WITH CHECK (true);
+CREATE POLICY "cosme_sets insertable by authenticated"
+  ON cosme_sets FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "cosme_sets updatable by anon"
   ON cosme_sets FOR UPDATE USING (true);
+CREATE POLICY "cosme_sets updatable by authenticated"
+  ON cosme_sets FOR UPDATE TO authenticated USING (true);
 CREATE POLICY "cosme_sets deletable by anon"
   ON cosme_sets FOR DELETE USING (true);
+CREATE POLICY "cosme_sets deletable by authenticated"
+  ON cosme_sets FOR DELETE TO authenticated USING (true);
 
+-- profiles
+DROP POLICY IF EXISTS "profiles are viewable by everyone" ON profiles;
+DROP POLICY IF EXISTS "profiles are insertable by anon" ON profiles;
+DROP POLICY IF EXISTS "profiles are insertable by authenticated" ON profiles;
+DROP POLICY IF EXISTS "profiles are updatable by anon" ON profiles;
+DROP POLICY IF EXISTS "profiles are updatable by authenticated" ON profiles;
 CREATE POLICY "profiles are viewable by everyone"
   ON profiles FOR SELECT USING (true);
-CREATE POLICY "list_items are viewable by everyone"
-  ON list_items FOR SELECT USING (true);
-
 CREATE POLICY "profiles are insertable by anon"
   ON profiles FOR INSERT WITH CHECK (true);
+CREATE POLICY "profiles are insertable by authenticated"
+  ON profiles FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "profiles are updatable by anon"
   ON profiles FOR UPDATE USING (true);
+CREATE POLICY "profiles are updatable by authenticated"
+  ON profiles FOR UPDATE TO authenticated USING (true);
 
+-- list_items
+DROP POLICY IF EXISTS "list_items are viewable by everyone" ON list_items;
+DROP POLICY IF EXISTS "list_items are insertable by anon" ON list_items;
+DROP POLICY IF EXISTS "list_items are insertable by authenticated" ON list_items;
+DROP POLICY IF EXISTS "list_items are updatable by anon" ON list_items;
+DROP POLICY IF EXISTS "list_items are updatable by authenticated" ON list_items;
+DROP POLICY IF EXISTS "list_items are deletable by anon" ON list_items;
+DROP POLICY IF EXISTS "list_items are deletable by authenticated" ON list_items;
+CREATE POLICY "list_items are viewable by everyone"
+  ON list_items FOR SELECT USING (true);
 CREATE POLICY "list_items are insertable by anon"
   ON list_items FOR INSERT WITH CHECK (true);
+CREATE POLICY "list_items are insertable by authenticated"
+  ON list_items FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "list_items are updatable by anon"
   ON list_items FOR UPDATE USING (true);
+CREATE POLICY "list_items are updatable by authenticated"
+  ON list_items FOR UPDATE TO authenticated USING (true);
 CREATE POLICY "list_items are deletable by anon"
   ON list_items FOR DELETE USING (true);
+CREATE POLICY "list_items are deletable by authenticated"
+  ON list_items FOR DELETE TO authenticated USING (true);
 
+-- profile_views
 ALTER TABLE profile_views ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "profile_views viewable by everyone" ON profile_views;
+DROP POLICY IF EXISTS "profile_views insertable by anon" ON profile_views;
+DROP POLICY IF EXISTS "profile_views updatable by anon" ON profile_views;
 CREATE POLICY "profile_views viewable by everyone"
   ON profile_views FOR SELECT USING (true);
 CREATE POLICY "profile_views insertable by anon"

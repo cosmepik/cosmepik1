@@ -59,10 +59,18 @@ export async function createCosmeSet(
 ): Promise<CosmeSet | null> {
   const u = uid(userId);
   if (useLocalForCosmeSets(userId) || !useSupabase()) return Promise.resolve(local.createCosmeSet(name, slug));
-  const result = await db.createCosmeSet(u, name, slug);
-  if (result) return result;
-  // Supabase 失敗時（cosme_sets テーブル未作成・RLS等）: localStorage にフォールバックして作成を継続
-  return local.createCosmeSet(name, slug);
+  try {
+    const result = await db.createCosmeSet(u, name, slug);
+    if (result) return result;
+  } catch {
+    // db が例外を投げた場合もフォールバック
+  }
+  // Supabase 失敗時（RLS・ネットワーク等）: localStorage にフォールバックして作成を継続
+  try {
+    return local.createCosmeSet(name, slug);
+  } catch {
+    return null;
+  }
 }
 
 /** 自分のリストを取得（slug = コスメセット識別子） */
