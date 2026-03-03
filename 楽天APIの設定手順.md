@@ -31,10 +31,11 @@ localhost:3001
 ### 本番環境（Netlify デプロイ時）
 
 ```
-あなたのサイト名.netlify.app
+https://あなたのサイト名.netlify.app
 ```
 
-- 例：`cosmepik.netlify.app`
+- 例：`https://cosmepikdemo1.netlify.app`
+- **楽天API（openapi）はリクエストに Origin ヘッダが必要です**。`NEXT_PUBLIC_APP_URL` に本番URLを設定していると、その値が Origin として送られます。上記「許可されたウェブサイト」には **https:// 付き**で同じドメインを登録してください。
 - プレビューデプロイ用にワイルドカードを使う場合：`*.netlify.app`
 
 ### 独自ドメインを使う場合

@@ -26,6 +26,7 @@ interface RakutenResponse {
   items?: RakutenItem[];
   error?: string;
   error_description?: string;
+  errors?: { errorCode?: number; errorMessage?: string };
 }
 
 function toImageUrl(val: unknown): string | undefined {
@@ -105,30 +106,58 @@ export async function GET(request: NextRequest) {
   });
   if (accessKey) params.set("accessKey", accessKey);
 
-  const headers: HeadersInit = { Accept: "application/json" };
-  if (accessKey) {
-    headers["Authorization"] = `Bearer ${accessKey}`;
-  }
+  const origin =
+    process.env.NEXT_PUBLIC_APP_URL?.trim() || "https://www.rakuten.co.jp";
+  const headers: HeadersInit = {
+    Accept: "application/json",
+    Origin: origin,
+    Referer: origin + "/",
+    "User-Agent": "Cosmetree/1.0",
+  };
 
   try {
     const res = await fetch(`${RAKUTEN_API_URL}?${params}`, {
       headers,
     });
 
-    const data: RakutenResponse = await res.json();
+    let data: RakutenResponse & { [key: string]: unknown };
+    const rawText = await res.text();
+    try {
+      data = JSON.parse(rawText) as RakutenResponse & { [key: string]: unknown };
+    } catch {
+      data = {};
+      console.error("[Rakuten API] レスポンスがJSONではありません", res.status, rawText.slice(0, 500));
+    }
+
+    const errorsObj = data.errors as { errorCode?: number; errorMessage?: string } | undefined;
+    const errMsgFromErrors = errorsObj?.errorMessage ?? (typeof errorsObj === "object" && errorsObj !== null ? JSON.stringify(errorsObj) : undefined);
 
     if (!res.ok) {
-      const msg = data.error_description ?? data.error ?? "楽天APIでエラーが発生しました";
+      const msg =
+        data.error_description ??
+        data.error ??
+        errMsgFromErrors ??
+        `楽天APIでエラーが発生しました (HTTP ${res.status})`;
       console.error("[Rakuten API]", res.status, msg, data);
-      // applicationId 等の設定エラーはエラーメッセージを返す（原因追求のため）
+      const debugPayload = {
+        status: res.status,
+        error: data.error,
+        error_description: data.error_description,
+        errors: data.errors,
+        rawPreview: rawText.slice(0, 300),
+      };
       if (/applicationId|specify valid/i.test(String(msg))) {
         return NextResponse.json({
           items: [],
           error: `楽天API認証エラー: ${msg}`,
-          _debug: { status: res.status, raw: String(msg) },
+          _debug: debugPayload,
         }, { status: res.status });
       }
-      return NextResponse.json({ error: msg }, { status: res.status });
+      return NextResponse.json({
+        items: [],
+        error: String(msg),
+        _debug: debugPayload,
+      }, { status: res.status });
     }
 
     if (data.error) {
