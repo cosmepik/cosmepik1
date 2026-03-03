@@ -37,30 +37,30 @@ function SearchContent() {
       setSearchError(null);
       return;
     }
+    // 即座にモックを表示（UX向上）、その後APIを試す
+    const mockItems = searchMockCosme(k);
+    setSearchResults(mockItems);
+    setSearchError(null);
+
     const timer = setTimeout(async () => {
       setIsSearching(true);
-      setSearchError(null);
       try {
         const res = await fetch(`/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=20`);
-        const data = await res.json();
-        if (res.ok && Array.isArray(data.items)) {
-          setSearchResults(data.items);
+        const data = await res.json().catch(() => ({}));
+        const items = Array.isArray(data?.items) ? data.items : [];
+        if (res.ok && items.length > 0) {
+          setSearchResults(items);
           setSearchError(null);
-        } else if (res.status === 503 || res.status === 403 || res.status >= 500) {
-          setSearchResults(searchMockCosme(k));
-          setSearchError(res.status === 403 ? "楽天APIのドメイン制限のため、本番環境でお試しください" : null);
-        } else if (data.error) {
-          setSearchError(data.error);
-          setSearchResults([]);
         } else {
-          setSearchResults(searchMockCosme(k));
+          setSearchError(res.status === 403 ? "楽天APIのドメイン制限のため、本番環境でお試しください" : null);
+          // APIが空/エラーならモックのまま（既に表示済み）
         }
       } catch {
-        setSearchResults(searchMockCosme(k));
+        // 既にモック表示済み
       } finally {
         setIsSearching(false);
       }
-    }, 400);
+    }, 300);
     return () => clearTimeout(timer);
   }, [keyword]);
 

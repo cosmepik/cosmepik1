@@ -43,7 +43,7 @@ interface ProfileHeaderViewProps {
 
 /** 表示専用：UIBASE 完全準拠 */
 export function ProfileHeaderView({ username, profile }: ProfileHeaderViewProps) {
-  const displayName = profile?.displayName?.trim() ? profile.displayName : "username";
+  const displayName = profile?.displayName?.trim() ? profile.displayName : "USER";
   const skinType = profile?.skinType;
   const personalColor = profile?.personalColor;
   const initial = (profile?.displayName?.trim() || "U").charAt(0).toUpperCase();
@@ -215,7 +215,7 @@ export function ProfileHeaderEdit({
         ) : (
           <div className="flex items-center gap-1.5 justify-center">
             <h1 className="text-xl font-bold tracking-tight text-foreground">
-              {displayName || "username"}
+              {displayName || "USER"}
             </h1>
             <button
               type="button"

@@ -14,6 +14,8 @@ interface RakutenItem {
   affiliateUrl?: string;
   smallImageUrls?: string[];
   mediumImageUrls?: string[];
+  smallImageUrl?: string;
+  mediumImageUrl?: string;
   genreName?: string;
   shopName?: string;
 }
@@ -28,8 +30,9 @@ interface RakutenResponse {
 function mapToCosmeItem(item: RakutenItem, index: number): CosmeItem {
   const id = item.itemCode ?? `rakuten-${index}`;
   const imgUrls = item.mediumImageUrls ?? item.smallImageUrls ?? [];
+  const imgSingle = item.mediumImageUrl ?? item.smallImageUrl;
   const imageUrl =
-    imgUrls[0] ?? "https://placehold.co/96x96/f2ebe3/c9a962?text=No+Image";
+    imgUrls[0] ?? imgSingle ?? "https://placehold.co/96x96/f2ebe3/c9a962?text=No+Image";
   return {
     id,
     name: item.itemName ?? "（商品名なし）",
@@ -45,10 +48,7 @@ export async function GET(request: NextRequest) {
   const accessKey = process.env.RAKUTEN_ACCESS_KEY;
 
   if (!appId) {
-    return NextResponse.json(
-      { error: "楽天APIが設定されていません。RAKUTEN_APPLICATION_ID を .env.local に設定してください。" },
-      { status: 503 }
-    );
+    return NextResponse.json({ items: [] });
   }
 
   const { searchParams } = new URL(request.url);
@@ -70,7 +70,6 @@ export async function GET(request: NextRequest) {
     keyword,
     genreId: "100939", // 美容・コスメ・香水
     format: "json",
-    formatVersion: "2",
     hits: String(hits),
   });
   if (accessKey) params.set("accessKey", accessKey);
@@ -85,14 +84,20 @@ export async function GET(request: NextRequest) {
     if (!res.ok) {
       const msg = data.error_description ?? data.error ?? "楽天APIでエラーが発生しました";
       console.error("[Rakuten API]", res.status, msg, data);
+      // applicationId 等の設定エラーは空で返し、フロントでモック表示
+      if (/applicationId|specify valid/i.test(String(msg))) {
+        return NextResponse.json({ items: [] });
+      }
       return NextResponse.json({ error: msg }, { status: res.status });
     }
 
     if (data.error) {
+      const errMsg = data.error_description ?? data.error ?? "";
+      if (/applicationId|specify valid/i.test(String(errMsg))) {
+        return NextResponse.json({ items: [] });
+      }
       return NextResponse.json(
-        {
-          error: data.error_description ?? data.error,
-        },
+        { error: errMsg },
         { status: 400 }
       );
     }

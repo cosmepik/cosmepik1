@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useState, useEffect } from "react";
 import {
   X,
   Plus,
@@ -12,6 +11,10 @@ import {
 } from "lucide-react";
 import { useSections } from "@/lib/section-context";
 import { type SectionItem, type SectionType } from "@/lib/sections";
+import { searchMockCosme } from "@/lib/mock-data";
+import { CosmeCard } from "@/components/CosmeCard";
+import { AddCommentModal } from "@/components/AddCommentModal";
+import type { CosmeItem } from "@/types";
 
 interface AddItemModalProps {
   isOpen: boolean;
@@ -36,6 +39,9 @@ export function AddItemModal({
   const [badge, setBadge] = useState<"NEW" | "BEST" | "SALE" | "">("");
   const [label, setLabel] = useState("");
   const [linkLabel, setLinkLabel] = useState("");
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [searchResults, setSearchResults] = useState<CosmeItem[]>([]);
+  const [commentModalItem, setCommentModalItem] = useState<CosmeItem | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,7 +86,38 @@ export function AddItemModal({
     setBadge("");
     setLabel("");
     setLinkLabel("");
+    setSearchKeyword("");
+    setSearchResults([]);
+    setCommentModalItem(null);
     onClose();
+  };
+
+  // モーダル内検索：キーワード入力で即座にダミー表示
+  useEffect(() => {
+    const k = searchKeyword.trim();
+    if (!k) {
+      setSearchResults([]);
+      return;
+    }
+    setSearchResults(searchMockCosme(k));
+  }, [searchKeyword]);
+
+  const handleAddFromSearch = (item: CosmeItem, comment: string) => {
+    const newItem: SectionItem = {
+      id: `item-${Date.now()}`,
+      product: item.name,
+      brand: item.brand,
+      image: item.imageUrl,
+      link: item.rakutenUrl ?? item.amazonUrl,
+      label: comment.trim() || undefined,
+    };
+    if (sectionType === "routine") {
+      addItemToSection(sectionId, { ...newItem });
+    } else if (sectionType === "products") {
+      addItemToSection(sectionId, { ...newItem, rating: 0, reviewCount: 0 });
+    }
+    setCommentModalItem(null);
+    handleClose();
   };
 
   if (!isOpen) return null;
@@ -161,14 +198,32 @@ export function AddItemModal({
             </form>
           ) : canAddCosme ? (
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <Link
-                href={`/dashboard/search?slug=${encodeURIComponent(slug)}`}
-                onClick={handleClose}
-                className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/40 py-3 text-sm font-medium text-primary transition-colors hover:bg-primary/5 hover:border-primary"
-              >
-                <Search className="h-4 w-4" />
-                検索して追加
-              </Link>
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-card-foreground">
+                  <Search className="mr-1 inline h-4 w-4" />
+                  コスメを検索
+                </label>
+                <input
+                  type="search"
+                  value={searchKeyword}
+                  onChange={(e) => setSearchKeyword(e.target.value)}
+                  placeholder="ファンデーション、SHISEIDO など"
+                  className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                />
+              </div>
+              {searchResults.length > 0 && (
+                <div className="max-h-96 overflow-y-auto space-y-0.5 rounded-xl border border-border p-1.5">
+                  {searchResults.slice(0, 12).map((item) => (
+                    <CosmeCard
+                      key={item.id}
+                      item={item}
+                      onAdd={(i) => setCommentModalItem(i)}
+                      isInList={false}
+                      compact
+                    />
+                  ))}
+                </div>
+              )}
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <span className="w-full border-t border-border" />
@@ -294,6 +349,13 @@ export function AddItemModal({
           ) : null}
         </div>
       </div>
+      {canAddCosme && (
+        <AddCommentModal
+          item={commentModalItem}
+          onClose={() => setCommentModalItem(null)}
+          onConfirm={handleAddFromSearch}
+        />
+      )}
     </div>
   );
 }

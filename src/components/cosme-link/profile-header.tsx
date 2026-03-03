@@ -37,7 +37,7 @@ export function ProfileHeader() {
   const { isEditMode } = useSections();
   const [showEditor, setShowEditor] = useState(false);
 
-  const displayName = profile.name?.trim() ? profile.name : "username";
+  const displayName = profile.name?.trim() ? profile.name : "USER";
   const initial = (profile.name?.trim() || "U").charAt(0).toUpperCase();
 
   return (

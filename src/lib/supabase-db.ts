@@ -1,10 +1,15 @@
 import { supabase } from "@/lib/supabase";
+import { createClient as createBrowserClient } from "@/lib/supabase/client";
 import type { ListedCosmeItem, InfluencerProfile, CosmeSet } from "@/types";
 
 const CURRENT_USERNAME = "demo";
 
+/** ブラウザではセッション付きクライアントを返す（RLS・認証が必要な操作のため） */
 function getClient() {
-  if (!supabase) return null;
+  if (typeof window !== "undefined") {
+    const browser = createBrowserClient();
+    if (browser) return browser;
+  }
   return supabase;
 }
 

@@ -239,14 +239,16 @@ export const MOCK_COSME_ITEMS: CosmeItem[] = [
 
 /**
  * キーワードでダミー商品を検索する（商品名・ブランド・カテゴリの部分一致）
+ * 該当なしの場合は先頭12件を返す（必ず何か表示されるようにする）
  */
 export function searchMockCosme(keyword: string): CosmeItem[] {
   if (!keyword.trim()) return [];
   const k = keyword.trim().toLowerCase();
-  return MOCK_COSME_ITEMS.filter(
+  const matched = MOCK_COSME_ITEMS.filter(
     (item) =>
       item.name.toLowerCase().includes(k) ||
       item.brand.toLowerCase().includes(k) ||
       item.category.toLowerCase().includes(k)
   );
+  return matched.length > 0 ? matched : MOCK_COSME_ITEMS.slice(0, 12);
 }
