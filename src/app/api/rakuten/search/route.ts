@@ -12,8 +12,8 @@ interface RakutenItem {
   itemName?: string;
   itemUrl?: string;
   affiliateUrl?: string;
-  smallImageUrls?: string[];
-  mediumImageUrls?: string[];
+  smallImageUrls?: (string | { imageUrl?: string })[];
+  mediumImageUrls?: (string | { imageUrl?: string })[];
   smallImageUrl?: string;
   mediumImageUrl?: string;
   genreName?: string;
@@ -27,12 +27,21 @@ interface RakutenResponse {
   error_description?: string;
 }
 
+function toImageUrl(val: unknown): string | undefined {
+  if (typeof val === "string" && val.startsWith("http")) return val;
+  if (val && typeof val === "object" && "imageUrl" in val && typeof (val as { imageUrl: string }).imageUrl === "string") {
+    return (val as { imageUrl: string }).imageUrl;
+  }
+  return undefined;
+}
+
 function mapToCosmeItem(item: RakutenItem, index: number): CosmeItem {
   const id = item.itemCode ?? `rakuten-${index}`;
   const imgUrls = item.mediumImageUrls ?? item.smallImageUrls ?? [];
+  const first = imgUrls[0];
   const imgSingle = item.mediumImageUrl ?? item.smallImageUrl;
   const imageUrl =
-    imgUrls[0] ?? imgSingle ?? "https://placehold.co/96x96/f2ebe3/c9a962?text=No+Image";
+    toImageUrl(first) ?? (typeof imgSingle === "string" ? imgSingle : undefined) ?? "https://placehold.co/96x96/f2ebe3/c9a962?text=No+Image";
   return {
     id,
     name: item.itemName ?? "（商品名なし）",

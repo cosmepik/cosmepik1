@@ -74,7 +74,8 @@ RAKUTEN_ACCESS_KEY=あなたのAccess Key
 ```
 
 - キーは**サーバー側のみ**で使用され、ブラウザには送信されません
-- Netlify でデプロイする場合は、Site settings → Environment variables に同じ2つを登録してください
+- Netlify でデプロイする場合は、**Site settings → Environment variables** に同じ2つを登録してください
+  - `RAKUTEN_APPLICATION_ID` と `RAKUTEN_ACCESS_KEY` を**両方**設定しないと本番で楽天の実データが表示されず、ダミーのみになります
 
 ---
 

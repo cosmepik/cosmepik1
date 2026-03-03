@@ -246,8 +246,9 @@ export async function createCosmeSet(
   }).select("id, name, slug").single();
 
   if (error) {
-    console.warn("[createCosmeSet] Supabase error:", error.message, error.code);
-    return null;
+    const msg = `Supabase: ${error.message} (code: ${error.code ?? "—"})`;
+    console.warn("[createCosmeSet]", msg);
+    throw new Error(msg);
   }
   if (!data) return null;
 

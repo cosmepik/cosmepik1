@@ -41,6 +41,7 @@ export function AddItemModal({
   const [linkLabel, setLinkLabel] = useState("");
   const [searchKeyword, setSearchKeyword] = useState("");
   const [searchResults, setSearchResults] = useState<CosmeItem[]>([]);
+  const [searchApiError, setSearchApiError] = useState<string | null>(null);
   const [commentModalItem, setCommentModalItem] = useState<CosmeItem | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -88,18 +89,39 @@ export function AddItemModal({
     setLinkLabel("");
     setSearchKeyword("");
     setSearchResults([]);
+    setSearchApiError(null);
     setCommentModalItem(null);
     onClose();
   };
 
-  // モーダル内検索：キーワード入力で即座にダミー表示
+  // モーダル内検索：即座にモック表示 → 楽天APIで取得して置き換え
   useEffect(() => {
     const k = searchKeyword.trim();
     if (!k) {
       setSearchResults([]);
+      setSearchApiError(null);
       return;
     }
     setSearchResults(searchMockCosme(k));
+    setSearchApiError(null);
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=20`);
+        const data = await res.json().catch(() => ({}));
+        const items = Array.isArray(data?.items) ? data.items : [];
+        if (res.ok && items.length > 0) {
+          setSearchResults(items);
+          setSearchApiError(null);
+        } else if (!res.ok) {
+          const errMsg = data?.error ?? data?.error_description ?? (res.status === 403 ? "楽天APIのドメイン制限" : `APIエラー (${res.status})`);
+          setSearchApiError(errMsg);
+        }
+      } catch (e) {
+        setSearchApiError(e instanceof Error ? e.message : "楽天APIへの接続に失敗");
+      }
+    }, 300);
+    return () => clearTimeout(timer);
   }, [searchKeyword]);
 
   const handleAddFromSearch = (item: CosmeItem, comment: string) => {
@@ -211,6 +233,11 @@ export function AddItemModal({
                   className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                 />
               </div>
+              {searchApiError && (
+                <p className="mb-2 text-xs text-amber-600" title="原因追求用">
+                  {searchApiError}
+                </p>
+              )}
               {searchResults.length > 0 && (
                 <div className="max-h-96 overflow-y-auto space-y-0.5 rounded-xl border border-border p-1.5">
                   {searchResults.slice(0, 12).map((item) => (

@@ -44,6 +44,7 @@ function SearchContent() {
 
     const timer = setTimeout(async () => {
       setIsSearching(true);
+      setSearchError(null);
       try {
         const res = await fetch(`/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=20`);
         const data = await res.json().catch(() => ({}));
@@ -51,12 +52,15 @@ function SearchContent() {
         if (res.ok && items.length > 0) {
           setSearchResults(items);
           setSearchError(null);
-        } else {
-          setSearchError(res.status === 403 ? "楽天APIのドメイン制限のため、本番環境でお試しください" : null);
-          // APIが空/エラーならモックのまま（既に表示済み）
+        } else if (!res.ok) {
+          const errMsg =
+            data?.error ?? data?.error_description ?? (res.status === 403 ? "楽天APIのドメイン制限のため、本番環境でお試しください" : `APIエラー (${res.status})`);
+          setSearchError(errMsg);
+          // APIがエラーならモックのまま（既に表示済み）
         }
-      } catch {
-        // 既にモック表示済み
+        // res.ok && items.length===0 の場合はモックのまま、エラー表示なし
+      } catch (e) {
+        setSearchError(e instanceof Error ? e.message : "楽天APIへの接続に失敗しました");
       } finally {
         setIsSearching(false);
       }
