@@ -35,7 +35,7 @@ export function ProfileIcon({ user, onClick, className }: { user: User; onClick?
 }
 
 export function DashboardHeader({ onMenuClick, rightContent }: DashboardHeaderProps) {
-  const user = useUser();
+  const { user } = useUser();
   const isLoggedIn = !!user;
 
   return (

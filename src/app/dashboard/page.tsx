@@ -17,7 +17,7 @@ function normalizeSlug(raw: string): string {
 /** ホーム画面：UIBASE 完全準拠 */
 export default function DashboardHomePage() {
   const router = useRouter();
-  const user = useUser();
+  const { user, loading: authLoading } = useUser();
   const userId = user?.id ?? "demo";
 
   const [sets, setSets] = useState<CosmeSet[]>([]);
@@ -30,15 +30,23 @@ export default function DashboardHomePage() {
   const [createFormError, setCreateFormError] = useState<string | null>(null);
 
   const load = useCallback(() => {
-    getCosmeSets(userId).then((data) => {
-      setSets(data);
-      setLoading(false);
-    });
+    const timeout = setTimeout(() => setLoading(false), 10000);
+    getCosmeSets(userId)
+      .then((data) => {
+        setSets(data ?? []);
+      })
+      .catch(() => {
+        setSets([]);
+      })
+      .finally(() => {
+        clearTimeout(timeout);
+        setLoading(false);
+      });
   }, [userId]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (!authLoading) load();
+  }, [load, authLoading]);
 
   const handleDeleteSet = useCallback(
     async (set: CosmeSet) => {
@@ -130,7 +138,7 @@ export default function DashboardHomePage() {
         </div>
         <p className="mt-1 text-sm text-muted-foreground">タップして編集</p>
 
-        {loading ? (
+        {(loading || authLoading) ? (
           <div className="mt-8 text-center text-sm text-muted-foreground">読み込み中...</div>
         ) : (
           <>

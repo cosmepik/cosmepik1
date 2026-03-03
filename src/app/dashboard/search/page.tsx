@@ -14,7 +14,7 @@ import type { CosmeItem } from "@/types";
 function SearchContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const user = useUser();
+  const { user } = useUser();
   const slug = searchParams.get("slug") ?? "demo";
 
   const [keyword, setKeyword] = useState("");
