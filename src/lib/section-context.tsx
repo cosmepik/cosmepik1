@@ -23,6 +23,7 @@ interface SectionContextType {
   updateItemInSection: (sectionId: string, itemId: string, item: Partial<SectionItem>) => void;
   deleteItemFromSection: (sectionId: string, itemId: string) => void;
   moveItemInSection: (sectionId: string, itemId: string, direction: "up" | "down") => void;
+  reorderItemsInSection: (sectionId: string, itemIds: string[]) => void;
   createSectionQuick: (type: "routine" | "products") => void;
   showAddSectionModal: boolean;
   setShowAddSectionModal: (value: boolean) => void;
@@ -47,6 +48,7 @@ export function useSections(): SectionContextType {
       updateItemInSection: () => {},
       deleteItemFromSection: () => {},
       moveItemInSection: () => {},
+      reorderItemsInSection: () => {},
       createSectionQuick: () => {},
       showAddSectionModal: false,
       setShowAddSectionModal: () => {},
@@ -219,6 +221,23 @@ export function SectionProvider({ children, slug, defaultEditMode = false }: Sec
     [slug]
   );
 
+  const reorderItemsInSection = useCallback(
+    (sectionId: string, itemIds: string[]) => {
+      setSectionsState((prev) => {
+        const next = prev.map((s) => {
+          if (s.id !== sectionId) return s;
+          const idToItem = new Map(s.items.map((i) => [i.id, i]));
+          const items = itemIds.map((id) => idToItem.get(id)).filter(Boolean) as typeof s.items;
+          if (items.length !== s.items.length) return s;
+          return { ...s, items };
+        });
+        store.setSections(next, slug);
+        return next;
+      });
+    },
+    [slug]
+  );
+
   const createSectionQuick = useCallback(
     (type: "routine" | "products") => {
       const defaultTitles = {
@@ -256,6 +275,7 @@ export function SectionProvider({ children, slug, defaultEditMode = false }: Sec
         updateItemInSection,
         deleteItemFromSection,
         moveItemInSection,
+        reorderItemsInSection,
         createSectionQuick,
         showAddSectionModal,
         setShowAddSectionModal,

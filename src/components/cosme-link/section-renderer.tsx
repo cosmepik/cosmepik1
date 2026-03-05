@@ -7,15 +7,30 @@ import {
   ChevronUp,
   ChevronDown,
   Trash2,
-  GripVertical,
   Plus,
   Package,
   Grid2X2,
   Link as LinkIcon,
   X,
+  Pencil,
 } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
-import { type Section } from "@/lib/sections";
+import { type Section, type SectionItem } from "@/lib/sections";
 import { useSections } from "@/lib/section-context";
 import { useState } from "react";
 import { CosmeImage } from "@/components/CosmeImage";
@@ -49,20 +64,122 @@ function StarRating({ rating, count }: { rating: number; count: number }) {
   );
 }
 
+function SortableRoutineItem({
+  item,
+  isEditMode,
+  onDelete,
+}: {
+  item: SectionItem;
+  isEditMode: boolean;
+  onDelete: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.id,
+  });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+  const cardContent = (
+    <>
+      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-secondary">
+        {item.image && (
+          <CosmeImage
+            src={item.image}
+            alt={item.product || ""}
+            fill
+            className="object-cover"
+            sizes="48px"
+          />
+        )}
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <span className="text-[10px] font-medium uppercase tracking-wider text-primary">
+          {item.brand}
+        </span>
+        <span className="truncate text-sm font-medium text-card-foreground">
+          {item.product}
+        </span>
+        {item.label && (
+          <span className="text-xs text-muted-foreground">{item.label}</span>
+        )}
+      </div>
+      <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+    </>
+  );
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn("group relative", isDragging && "z-50 opacity-90")}
+    >
+      {isEditMode ? (
+        <div
+          className="flex cursor-grab active:cursor-grabbing items-center gap-3 rounded-xl bg-card p-3 shadow-sm transition-all hover:shadow-md touch-manipulation"
+          {...listeners}
+          {...attributes}
+          onClick={(e) => {
+            if (!isDragging && item.link) {
+              e.preventDefault();
+              window.open(item.link, "_blank");
+            }
+          }}
+        >
+          {cardContent}
+        </div>
+      ) : (
+        <a
+          href={item.link || "#"}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 rounded-xl bg-card p-3 shadow-sm transition-all hover:shadow-md"
+        >
+          {cardContent}
+        </a>
+      )}
+      {isEditMode && (
+        <div
+          className="absolute -top-1 right-2 flex items-center opacity-100 transition-opacity group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100"
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              onDelete();
+            }}
+            className="flex h-6 w-6 items-center justify-center rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RoutineSection({ section, onAddItem }: SectionContentProps) {
-  const { isEditMode, deleteItemFromSection, moveItemInSection } = useSections();
+  const { isEditMode, deleteItemFromSection, reorderItemsInSection } = useSections();
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { delay: 150, tolerance: 5 },
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const itemIds = section.items.map((i) => i.id);
+    const oldIndex = itemIds.indexOf(active.id as string);
+    const newIndex = itemIds.indexOf(over.id as string);
+    if (oldIndex === -1 || newIndex === -1) return;
+    const reordered = arrayMove(itemIds, oldIndex, newIndex);
+    reorderItemsInSection(section.id, reordered);
+  };
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-2">
-        {section.icon && (
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
-            {section.icon}
-          </div>
-        )}
-        <h2 className="text-base font-bold text-foreground">{section.title}</h2>
-      </div>
-
       <div className="flex flex-col gap-2">
         {section.items.length === 0 && isEditMode && onAddItem && (
           <div className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border py-8 text-center">
@@ -78,75 +195,36 @@ function RoutineSection({ section, onAddItem }: SectionContentProps) {
             </button>
           </div>
         )}
-        {section.items.map((item, index) => (
-          <div key={item.id} className="group relative">
-            <a
-              href={item.link || "#"}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 rounded-xl bg-card p-3 shadow-sm transition-all hover:shadow-md"
+        {isEditMode && section.items.length > 0 ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={section.items.map((i) => i.id)}
+              strategy={verticalListSortingStrategy}
             >
-              {section.showSteps && (
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                  {index + 1}
-                </div>
-              )}
-              <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-secondary">
-                {item.image && (
-                  <CosmeImage
-                    src={item.image}
-                    alt={item.product || ""}
-                    fill
-                    className="object-cover"
-                    sizes="48px"
-                  />
-                )}
-              </div>
-              <div className="flex min-w-0 flex-1 flex-col">
-                <span className="text-[10px] font-medium uppercase tracking-wider text-primary">
-                  {item.brand}
-                </span>
-                <span className="truncate text-sm font-medium text-card-foreground">
-                  {item.product}
-                </span>
-                {item.label && (
-                  <span className="text-xs text-muted-foreground">{item.label}</span>
-                )}
-              </div>
-              <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
-            </a>
-            {isEditMode && (
-              <div className="absolute -top-1 right-2 flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-                <button
-                  type="button"
-                  onClick={() => moveItemInSection(section.id, item.id, "up")}
-                  disabled={index === 0}
-                  className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-secondary-foreground hover:bg-accent disabled:opacity-40"
-                >
-                  <ChevronUp className="h-3 w-3" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => moveItemInSection(section.id, item.id, "down")}
-                  disabled={index === section.items.length - 1}
-                  className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-secondary-foreground hover:bg-accent disabled:opacity-40"
-                >
-                  <ChevronDown className="h-3 w-3" />
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    deleteItemFromSection(section.id, item.id);
-                  }}
-                  className="flex h-6 w-6 items-center justify-center rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
+              {section.items.map((item) => (
+                <SortableRoutineItem
+                  key={item.id}
+                  item={item}
+                  isEditMode={isEditMode}
+                  onDelete={() => deleteItemFromSection(section.id, item.id)}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
+        ) : (
+          section.items.map((item) => (
+            <SortableRoutineItem
+              key={item.id}
+              item={item}
+              isEditMode={false}
+              onDelete={() => {}}
+            />
+          ))
+        )}
         {isEditMode && section.items.length > 0 && onAddItem && (
           <button
             type="button"
@@ -180,12 +258,13 @@ function ProductsSection({ section, onAddItem }: SectionContentProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-bold text-foreground">{section.title}</h2>
-        <span className="text-xs text-muted-foreground">
-          {section.items.length}個のアイテム
-        </span>
-      </div>
+      {section.items.length > 0 && (
+        <div className="flex items-center justify-end">
+          <span className="text-xs text-muted-foreground">
+            {section.items.length}個のアイテム
+          </span>
+        </div>
+      )}
 
       {section.items.length === 0 && isEditMode && onAddItem && (
         <div className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border py-8 text-center">
@@ -259,9 +338,6 @@ function ProductsSection({ section, onAddItem }: SectionContentProps) {
                 <h3 className="line-clamp-2 text-sm font-semibold leading-tight text-card-foreground">
                   {item.product}
                 </h3>
-                {item.rating != null && item.reviewCount != null && (
-                  <StarRating rating={item.rating} count={item.reviewCount} />
-                )}
                 <div className="mt-0.5 flex items-center justify-between">
                   {item.price && (
                     <span className="text-sm font-bold text-card-foreground">
@@ -389,10 +465,24 @@ export function SectionRenderer({ section }: SectionRendererProps) {
     moveSection,
     deleteSection,
     sections,
+    updateSection,
   } = useSections();
   const [showAddItemModal, setShowAddItemModal] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(section.title);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
   const currentIndex = sections.findIndex((s) => s.id === section.id);
   const canAddItems = ["routine", "products", "link"].includes(section.type);
+
+  const handleTitleCommit = () => {
+    const next = editingTitle.trim();
+    if (!next || next === section.title) {
+      setEditingTitle(section.title);
+      setIsEditingTitle(false);
+      return;
+    }
+    updateSection(section.id, { title: next });
+    setIsEditingTitle(false);
+  };
 
   const handleAddItem = () => setShowAddItemModal(true);
 
@@ -429,53 +519,89 @@ export function SectionRenderer({ section }: SectionRendererProps) {
   };
 
   if (!isEditMode) {
-    return <section>{renderContent()}</section>;
+    const showReadOnlyTitle = !["heading", "text"].includes(section.type);
+    return (
+      <section className="relative">
+        {showReadOnlyTitle && (
+          <div className="mb-2 flex items-center gap-1 px-1 py-0.5">
+            <span className="text-sm font-semibold text-foreground">
+              {section.title}
+            </span>
+          </div>
+        )}
+        <div>{renderContent()}</div>
+      </section>
+    );
   }
 
   return (
     <section className="relative rounded-2xl border-2 border-dashed border-primary/40 p-4">
-      <div className="absolute -top-3 left-4 flex items-center gap-1 rounded-full bg-primary px-2 py-1">
-        <GripVertical className="h-3 w-3 text-primary-foreground" />
-        <span className="text-xs font-medium text-primary-foreground">
-          {section.title}
-        </span>
-      </div>
-      <div className="absolute -top-3 right-4 flex items-center gap-1">
-        {canAddItems && (
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1">
+          {isEditingTitle ? (
+            <input
+              value={editingTitle}
+              onChange={(e) => setEditingTitle(e.target.value)}
+              onBlur={handleTitleCommit}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.currentTarget.blur();
+                } else if (e.key === "Escape") {
+                  setEditingTitle(section.title);
+                  setIsEditingTitle(false);
+                  e.currentTarget.blur();
+                }
+              }}
+              className="max-w-[200px] rounded bg-transparent px-1 text-sm font-semibold text-foreground placeholder:text-muted-foreground focus:outline-none"
+              placeholder="セクション名"
+              autoFocus
+            />
+          ) : (
+            <>
+              <span className="max-w-[200px] truncate text-sm font-semibold text-foreground">
+                {section.title || "セクション名"}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingTitle(section.title);
+                  setIsEditingTitle(true);
+                }}
+                className="ml-1 flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
+                aria-label="セクション名を編集"
+              >
+                <Pencil className="h-3 w-3" />
+              </button>
+            </>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
           <button
             type="button"
-            onClick={handleAddItem}
-            className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/80"
-            title="アイテムを追加"
+            onClick={() => moveSection(section.id, "up")}
+            disabled={currentIndex === 0}
+            className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent disabled:opacity-40"
           >
-            <Plus className="h-3 w-3" />
+            <ChevronUp className="h-3 w-3" />
           </button>
-        )}
-        <button
-          type="button"
-          onClick={() => moveSection(section.id, "up")}
-          disabled={currentIndex === 0}
-          className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent disabled:opacity-40"
-        >
-          <ChevronUp className="h-3 w-3" />
-        </button>
-        <button
-          type="button"
-          onClick={() => moveSection(section.id, "down")}
-          disabled={currentIndex === sections.length - 1}
-          className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent disabled:opacity-40"
-        >
-          <ChevronDown className="h-3 w-3" />
-        </button>
-        <button
-          type="button"
-          onClick={() => deleteSection(section.id)}
-          className="flex h-6 w-6 items-center justify-center rounded-full bg-destructive/10 text-destructive transition-colors hover:bg-destructive/20"
-        >
-          <Trash2 className="h-3 w-3" />
-        </button>
+          <button
+            type="button"
+            onClick={() => moveSection(section.id, "down")}
+            disabled={currentIndex === sections.length - 1}
+            className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent disabled:opacity-40"
+          >
+            <ChevronDown className="h-3 w-3" />
+          </button>
+          <button
+            type="button"
+            onClick={() => deleteSection(section.id)}
+            className="flex h-6 w-6 items-center justify-center rounded-full bg-destructive/10 text-destructive transition-colors hover:bg-destructive/20"
+          >
+            <Trash2 className="h-3 w-3" />
+          </button>
+        </div>
       </div>
-      <div className="mt-4">{renderContent()}</div>
+      <div className="mt-1">{renderContent()}</div>
 
       <AddItemModal
         isOpen={showAddItemModal}

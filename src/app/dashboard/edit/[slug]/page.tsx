@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { ExternalLink, Upload } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { SidebarNav } from "@/components/SidebarNav";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -13,6 +14,7 @@ import { SectionRenderer } from "@/components/cosme-link/section-renderer";
 import { AddSectionInline } from "@/components/cosme-link/add-section-inline";
 import { useSections } from "@/lib/section-context";
 import { getProfile, renameCosmeSet } from "@/lib/store";
+import { ShareModal } from "@/components/ShareModal";
 
 function EditPageContent({ slug }: { slug: string }) {
   const router = useRouter();
@@ -32,6 +34,7 @@ function EditPageContent({ slug }: { slug: string }) {
   }, [slug, loadProfile]);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [profileUrl, setProfileUrl] = useState("");
   const [editingUrl, setEditingUrl] = useState(false);
   const [tempSlug, setTempSlug] = useState(slug);
@@ -70,12 +73,22 @@ function EditPageContent({ slug }: { slug: string }) {
       <DashboardHeader
         onMenuClick={() => setSidebarOpen(true)}
         rightContent={
-          <Link
-            href={`/dashboard/preview?slug=${encodeURIComponent(slug)}`}
-            className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-md transition-all hover:bg-primary/90 active:scale-95"
-          >
-            プレビュー
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/dashboard/preview?slug=${encodeURIComponent(slug)}`}
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-md transition-all hover:bg-primary/90 active:scale-95"
+            >
+              プレビュー
+            </Link>
+            <button
+              type="button"
+              onClick={() => setShareOpen(true)}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-white text-foreground shadow-sm transition-colors hover:bg-muted/50"
+              aria-label="リンクを共有"
+            >
+              <Upload className="h-5 w-5" strokeWidth={1.5} />
+            </button>
+          </div>
         }
       />
 
@@ -115,9 +128,10 @@ function EditPageContent({ slug }: { slug: string }) {
                 href={profileUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="min-w-0 flex-1 truncate text-sm text-green hover:underline"
+                className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-border bg-white px-4 py-3 text-sm text-foreground no-underline shadow-sm transition-colors hover:bg-muted/50"
               >
-                {profileUrl}
+                <span className="min-w-0 truncate">{profileUrl}</span>
+                <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
               </a>
               <button
                 type="button"
@@ -129,27 +143,13 @@ function EditPageContent({ slug }: { slug: string }) {
                   <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" />
                 </svg>
               </button>
-              <button
-                type="button"
-                onClick={() => profileUrl && navigator.clipboard.writeText(profileUrl)}
-                className="shrink-0 rounded p-2 text-muted-foreground hover:bg-accent hover:text-foreground"
-                aria-label="URLをコピー"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-5 w-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" />
-                </svg>
-              </button>
             </>
           )}
         </div>
 
         <ProfileHeader />
 
-        {/* セクション */}
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-base font-bold text-foreground">セクション</h2>
-        </div>
-        <div className="mt-4 flex flex-col gap-6">
+        <div className="mt-6 flex flex-col gap-6">
           {isEditMode && sections.length === 0 && (
             <AddSectionInline insertIndex={0} />
           )}
@@ -164,6 +164,12 @@ function EditPageContent({ slug }: { slug: string }) {
         </div>
       </div>
     </main>
+    <ShareModal
+      open={shareOpen}
+      onClose={() => setShareOpen(false)}
+      url={profileUrl}
+      title="共有"
+    />
     </>
   );
 }

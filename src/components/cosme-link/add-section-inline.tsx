@@ -34,7 +34,6 @@ export function AddSectionInline({ insertIndex }: AddSectionInlineProps) {
   const [selectedType, setSelectedType] = useState<SectionType | null>(null);
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
-  const [icon, setIcon] = useState("");
   const { sections, setSections, addSection } = useSections();
 
   const handleSelectType = (type: SectionType) => {
@@ -50,7 +49,6 @@ export function AddSectionInline({ insertIndex }: AddSectionInlineProps) {
       type: selectedType,
       title: title.trim(),
       subtitle: subtitle.trim() || undefined,
-      icon: icon.trim() || undefined,
       items: [],
       showSteps: selectedType === "routine",
       columns: selectedType === "products" ? 2 : undefined,
@@ -72,7 +70,6 @@ export function AddSectionInline({ insertIndex }: AddSectionInlineProps) {
     setSelectedType(null);
     setTitle("");
     setSubtitle("");
-    setIcon("");
   };
 
   // Collapsed state: + line
@@ -165,17 +162,6 @@ export function AddSectionInline({ insertIndex }: AddSectionInlineProps) {
               onChange={(e) => setSubtitle(e.target.value)}
               placeholder="補足テキスト（任意）"
               className="rounded-xl border-2 border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-            />
-          )}
-
-          {selectedType === "routine" && (
-            <input
-              type="text"
-              value={icon}
-              onChange={(e) => setIcon(e.target.value.slice(0, 2))}
-              placeholder="アイコン（例: AM）"
-              maxLength={2}
-              className="w-32 rounded-xl border-2 border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
             />
           )}
 

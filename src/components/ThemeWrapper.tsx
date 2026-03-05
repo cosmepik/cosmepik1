@@ -9,17 +9,14 @@ import { StylePickerProvider, StylePicker } from "@/components/cosme-link/style-
 /** テーマプロバイダー＋背景適用＋スタイルピッカーのラッパー */
 export function ThemeWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isTopPage = pathname === "/";
-  const isPreview =
-    pathname === "/demo" || pathname?.startsWith("/dashboard/preview");
+  const isEditPage = pathname?.startsWith("/dashboard/edit");
+  const showStylePicker = !!isEditPage;
 
   return (
     <ThemeProvider>
       <StylePickerProvider>
-        <ThemeBackground>
-          {children}
-        </ThemeBackground>
-        {!isTopPage && !isPreview && (
+        <ThemeBackground>{children}</ThemeBackground>
+        {showStylePicker && (
           <Suspense fallback={null}>
             <StylePicker />
           </Suspense>

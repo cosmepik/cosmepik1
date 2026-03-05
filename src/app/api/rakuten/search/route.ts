@@ -37,6 +37,43 @@ function toImageUrl(val: unknown): string | undefined {
   return undefined;
 }
 
+/**
+ * 楽天APIにはブランド名フィールドが無いため、
+ * itemName から先頭の語を「ブランド名」として推測する。
+ * 例: 「SHISEIDO スキンケアセット」→ brand: SHISEIDO
+ */
+function extractBrand(itemName?: string, shopName?: string): string {
+  if (!itemName && shopName) return shopName;
+  if (!itemName) return "";
+
+  let name = itemName.trim();
+
+  // 先頭の【タグ】や［タグ］などを除去
+  while (true) {
+    const brackets =
+      (name.startsWith("【") && name.indexOf("】") > 0) ||
+      (name.startsWith("[") && name.indexOf("]") > 0);
+    if (!brackets) break;
+    const end =
+      name.startsWith("【") && name.indexOf("】") > 0
+        ? name.indexOf("】")
+        : name.indexOf("]");
+    name = name.slice(end + 1).trim();
+  }
+
+  const separators = ["　", " ", "｜", "|", "／", "/"];
+  let cut = name.length;
+  for (const sep of separators) {
+    const i = name.indexOf(sep);
+    if (i > 0 && i < cut) cut = i;
+  }
+
+  const brand = name.slice(0, cut).trim();
+  if (brand) return brand;
+  if (shopName) return shopName;
+  return "";
+}
+
 function mapToCosmeItem(item: RakutenItem, index: number): CosmeItem {
   const id = item.itemCode ?? `rakuten-${index}`;
   const imgUrls = item.mediumImageUrls ?? item.smallImageUrls ?? [];
@@ -47,7 +84,7 @@ function mapToCosmeItem(item: RakutenItem, index: number): CosmeItem {
   return {
     id,
     name: item.itemName ?? "（商品名なし）",
-    brand: item.shopName ?? "",
+    brand: extractBrand(item.itemName, item.shopName),
     category: item.genreName ?? "",
     imageUrl,
     rakutenUrl: item.affiliateUrl ?? item.itemUrl ?? undefined,

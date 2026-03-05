@@ -12,11 +12,34 @@ import { usePathname, useParams, useSearchParams } from "next/navigation";
 import { useTheme } from "@/lib/theme-context";
 import { themes } from "@/lib/themes";
 import type { ThemeId } from "@/lib/themes";
-import { backgroundGroups } from "@/lib/backgrounds";
+import { backgroundGroups, backgrounds } from "@/lib/backgrounds";
 import type { Background } from "@/lib/backgrounds";
 import { setProfile, getProfile } from "@/lib/store";
-import { Palette, X, Check, Paintbrush, Upload } from "lucide-react";
+import { fonts, getFontFamily, type FontId } from "@/lib/fonts";
+import { Palette, X, Check, Paintbrush, Upload, Plus, Type } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// Deduplicate backgrounds by id to prevent React key conflicts
+const deduped = new Set<string>();
+const safeBackgroundGroups = backgroundGroups.map((group) => ({
+  ...group,
+  backgrounds: group.backgrounds.filter((bg) => {
+    if (deduped.has(bg.id)) return false;
+    deduped.add(bg.id);
+    return true;
+  }),
+}));
+
+if (process.env.NODE_ENV !== "production") {
+  const seen = new Set<string>();
+  for (const bg of backgrounds) {
+    if (seen.has(bg.id)) {
+      // eslint-disable-next-line no-console
+      console.warn("[StylePicker] Duplicate background id detected:", bg.id);
+    }
+    seen.add(bg.id);
+  }
+}
 
 /** 画像を圧縮して data URL を返す */
 function compressImage(file: File, maxWidth = 1200): Promise<string> {
@@ -54,20 +77,22 @@ function compressImage(file: File, maxWidth = 1200): Promise<string> {
   });
 }
 
+type TabType = "color" | "background" | "font";
+
 type StylePickerContextValue = {
   open: boolean;
   setOpen: (open: boolean) => void;
-  openTab: "color" | "background";
-  setOpenTab: (tab: "color" | "background") => void;
-  openWithTab: (tab: "color" | "background") => void;
+  openTab: TabType;
+  setOpenTab: (tab: TabType) => void;
+  openWithTab: (tab: TabType) => void;
 };
 
 const StylePickerContext = createContext<StylePickerContextValue | null>(null);
 
 export function StylePickerProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
-  const [openTab, setOpenTab] = useState<"color" | "background">("color");
-  const openWithTab = (tab: "color" | "background") => {
+  const [openTab, setOpenTab] = useState<TabType>("color");
+  const openWithTab = (tab: TabType) => {
     setOpenTab(tab);
     setOpen(true);
   };
@@ -91,10 +116,51 @@ export function useStylePickerOpen() {
     : {
         open: false,
         setOpen: () => {},
-        openTab: "color" as const,
+        openTab: "color" as TabType,
         setOpenTab: () => {},
         openWithTab: () => {},
       };
+}
+
+function FontGrid({
+  currentFontId,
+  onSelect,
+  onClose,
+}: {
+  currentFontId: FontId;
+  onSelect: (id: FontId) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-2.5">
+      {fonts.map((font) => {
+        const selected = currentFontId === font.id;
+        return (
+          <button
+            key={font.id}
+            type="button"
+            onClick={() => {
+              onSelect(font.id);
+              onClose();
+            }}
+            className={cn(
+              "relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 text-center transition-all",
+              selected ? "border-primary bg-accent" : "border-border bg-card hover:border-primary/40"
+            )}
+            style={{ fontFamily: getFontFamily(font.id) }}
+          >
+            {selected && (
+              <div className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+                <Check className="h-3 w-3" />
+              </div>
+            )}
+            <span className="text-sm font-bold text-card-foreground">{font.nameJa}</span>
+            <span className="text-[10px] text-muted-foreground">{font.name}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 function ThemeGrid({
@@ -235,6 +301,205 @@ function BackgroundUploadSection({
   );
 }
 
+function CustomColorButton({
+  selected,
+  onSelect,
+  onClose,
+}: {
+  selected: boolean;
+  onSelect: (id: string) => void;
+  onClose: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleClick = () => {
+    inputRef.current?.click();
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const hex = e.target.value;
+    onSelect(`custom-${hex}`);
+    onClose();
+  };
+
+  const isCustomSelected = selected;
+
+  return (
+    <>
+      <input
+        ref={inputRef}
+        type="color"
+        className="sr-only"
+        onChange={handleChange}
+        aria-label="好きな色を選択"
+      />
+      <button
+        type="button"
+        onClick={handleClick}
+        className={cn(
+          "relative aspect-square overflow-hidden rounded-xl border-2 transition-all",
+          isCustomSelected ? "border-primary ring-2 ring-primary/30" : "border-dashed border-border hover:border-primary/40"
+        )}
+        title="好きな色を選ぶ"
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "linear-gradient(135deg, #ff0000, #ff8000, #ffff00, #00ff00, #00ffff, #0080ff, #8000ff, #ff0080)",
+          }}
+        />
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+          <Plus className="h-6 w-6 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]" strokeWidth={2.5} />
+          <span className="text-[9px] font-medium text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">カスタム</span>
+        </div>
+        {isCustomSelected && (
+          <div className="absolute right-1 top-1 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+            <Check className="h-2.5 w-2.5" />
+          </div>
+        )}
+      </button>
+    </>
+  );
+}
+
+function CustomGradientButton({
+  selected,
+  currentId,
+  onSelect,
+  onClose,
+}: {
+  selected: boolean;
+  currentId: string;
+  onSelect: (id: string) => void;
+  onClose: () => void;
+}) {
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [color1, setColor1] = useState("#ff9a9e");
+  const [color2, setColor2] = useState("#fecfef");
+  const input1Ref = useRef<HTMLInputElement>(null);
+  const input2Ref = useRef<HTMLInputElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!pickerOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setPickerOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [pickerOpen]);
+
+  useEffect(() => {
+    if (currentId.startsWith("custom-gradient-")) {
+      const rest = currentId.slice("custom-gradient-".length);
+      const hexes = rest.split("-").filter((h) => /^#[0-9A-Fa-f]{6}$/.test(h));
+      if (hexes.length >= 2) {
+        setColor1(hexes[0]!);
+        setColor2(hexes[1]!);
+      }
+    }
+  }, [currentId]);
+
+  const handleApply = () => {
+    onSelect(`custom-gradient-${color1}-${color2}`);
+    setPickerOpen(false);
+    onClose();
+  };
+
+  const gradientStyle = {
+    background: `linear-gradient(135deg, ${color1}, ${color2})`,
+  };
+
+  return (
+    <div className="relative aspect-square w-full" ref={popoverRef}>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setPickerOpen((prev) => !prev);
+        }}
+        className={cn(
+          "relative h-full w-full overflow-hidden rounded-xl border-2 transition-all",
+          selected ? "border-primary ring-2 ring-primary/30" : "border-dashed border-border hover:border-primary/40 hover:opacity-90"
+        )}
+        title="好きなグラデーションを作る"
+        style={gradientStyle}
+      >
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+          <Plus className="h-6 w-6 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]" strokeWidth={2.5} />
+          <span className="text-[9px] font-medium text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">カスタム</span>
+        </div>
+        {selected && (
+          <div className="pointer-events-none absolute right-1 top-1 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+            <Check className="h-2.5 w-2.5" />
+          </div>
+        )}
+      </button>
+
+      {pickerOpen && (
+        <div className="absolute left-0 top-full z-20 mt-2 w-64 rounded-xl border border-border bg-card p-3 shadow-xl">
+          <p className="mb-2 text-xs font-medium text-muted-foreground">色を選んでグラデーションを作る</p>
+          <div className="flex gap-2">
+            <input
+              ref={input1Ref}
+              type="color"
+              value={color1}
+              onChange={(e) => setColor1(e.target.value)}
+              className="sr-only"
+              aria-label="色1"
+            />
+            <input
+              ref={input2Ref}
+              type="color"
+              value={color2}
+              onChange={(e) => setColor2(e.target.value)}
+              className="sr-only"
+              aria-label="色2"
+            />
+            <button
+              type="button"
+              onClick={() => input1Ref.current?.click()}
+              className="h-10 w-10 shrink-0 rounded-lg border-2 border-border shadow-sm"
+              style={{ backgroundColor: color1 }}
+              aria-label="色1を変更"
+            />
+            <button
+              type="button"
+              onClick={() => input2Ref.current?.click()}
+              className="h-10 w-10 shrink-0 rounded-lg border-2 border-border shadow-sm"
+              style={{ backgroundColor: color2 }}
+              aria-label="色2を変更"
+            />
+            <div
+              className="h-10 flex-1 rounded-lg border border-border"
+              style={gradientStyle}
+            />
+          </div>
+          <div className="mt-2 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setPickerOpen(false)}
+              className="rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent"
+            >
+              キャンセル
+            </button>
+            <button
+              type="button"
+              onClick={handleApply}
+              className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              適用
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function BackgroundGrid({
   currentBackgroundId,
   onSelect,
@@ -266,7 +531,7 @@ function BackgroundGrid({
         onUpload={() => setHasCustomBackground(true)}
         onRemove={() => setHasCustomBackground(false)}
       />
-      {backgroundGroups.map((group) => (
+      {safeBackgroundGroups.map((group) => (
         <div key={group.type} className="flex flex-col gap-2.5">
           <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{group.label}</h4>
           <div
@@ -275,6 +540,21 @@ function BackgroundGrid({
               group.type === "wallpaper" ? "grid-cols-3" : "grid-cols-4"
             )}
           >
+            {group.type === "solid" && (
+              <CustomColorButton
+                selected={currentBackgroundId.startsWith("custom-") && !currentBackgroundId.startsWith("custom-gradient-")}
+                onSelect={onSelect}
+                onClose={onClose}
+              />
+            )}
+            {group.type === "gradient" && (
+              <CustomGradientButton
+                selected={currentBackgroundId.startsWith("custom-gradient-")}
+                currentId={currentBackgroundId}
+                onSelect={onSelect}
+                onClose={onClose}
+              />
+            )}
             {group.backgrounds.map((bg) => (
               <BackgroundItem
                 key={bg.id}
@@ -335,7 +615,7 @@ function BackgroundItem({
 
 export function StylePicker() {
   const slug = useCurrentSlug();
-  const { themeId, setThemeId, backgroundId, setBackgroundId } = useTheme();
+  const { themeId, setThemeId, backgroundId, setBackgroundId, fontId, setFontId } = useTheme();
   const ctx = useContext(StylePickerContext);
   const open = ctx?.open ?? false;
   const setOpen = ctx?.setOpen ?? (() => {});
@@ -419,11 +699,26 @@ export function StylePicker() {
                 <Paintbrush className="h-4 w-4" />
                 背景
               </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("font")}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-colors",
+                  activeTab === "font"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground hover:bg-accent"
+                )}
+              >
+                <Type className="h-4 w-4" />
+                フォント
+              </button>
             </div>
 
             <div className="flex-1 overflow-y-auto px-5 py-4">
               {activeTab === "color" ? (
                 <ThemeGrid currentThemeId={themeId} onSelect={(id) => setThemeId(id as ThemeId)} onClose={() => setOpen(false)} />
+              ) : activeTab === "font" ? (
+                <FontGrid currentFontId={fontId} onSelect={setFontId} onClose={() => setOpen(false)} />
               ) : (
                 <BackgroundGrid
                   currentBackgroundId={backgroundId}

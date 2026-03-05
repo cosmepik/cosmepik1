@@ -43,6 +43,8 @@ const config: Config = {
       fontFamily: {
         sans: ["var(--font-noto-sans)", "Noto Sans JP", "sans-serif"],
         serif: ["var(--font-serif)", "Cormorant Garamond", "serif"],
+        rounded: ["var(--font-rounded)", "M PLUS Rounded 1c", "sans-serif"],
+        mincho: ["var(--font-mincho)", "Shippori Mincho", "serif"],
       },
       borderRadius: {
         lg: "0.625rem",

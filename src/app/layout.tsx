@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Noto_Sans_JP, Cormorant_Garamond } from "next/font/google";
+import { Noto_Sans_JP, Cormorant_Garamond, M_PLUS_Rounded_1c, Shippori_Mincho } from "next/font/google";
 import { ThemeWrapper } from "@/components/ThemeWrapper";
 import "./globals.css";
 
@@ -13,6 +13,18 @@ const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-serif",
+});
+
+const mPlusRounded = M_PLUS_Rounded_1c({
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+  variable: "--font-rounded",
+});
+
+const shipporiMincho = Shippori_Mincho({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-mincho",
 });
 
 export const metadata: Metadata = {
@@ -33,8 +45,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja" className={`${notoSans.variable} ${cormorant.variable}`}>
-      <body className="min-h-screen font-sans antialiased">
+    <html lang="ja" className={`${notoSans.variable} ${cormorant.variable} ${mPlusRounded.variable} ${shipporiMincho.variable}`}>
+      <body className="min-h-screen antialiased">
         <div
           className="min-h-screen transition-all duration-300"
           style={{

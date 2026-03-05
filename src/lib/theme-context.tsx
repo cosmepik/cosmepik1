@@ -10,15 +10,19 @@ import {
 } from "react";
 import { themes, themeVariables, type ThemeId } from "@/lib/themes";
 import { backgrounds } from "@/lib/backgrounds";
+import { getFontFamily, type FontId } from "@/lib/fonts";
 
 const THEME_STORAGE_KEY = "cosmepik-theme";
 const BACKGROUND_STORAGE_KEY = "cosmepik-background";
+const FONT_STORAGE_KEY = "cosmepik-font";
 
 type ThemeContextValue = {
   themeId: ThemeId;
   setThemeId: (id: ThemeId) => void;
   backgroundId: string;
   setBackgroundId: (id: string) => void;
+  fontId: FontId;
+  setFontId: (id: FontId) => void;
 };
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -33,13 +37,37 @@ function applyTheme(themeId: ThemeId) {
   root.style.setProperty("--green", vars.primary);
 }
 
+const CUSTOM_COLOR_PREFIX = "custom-";
+const CUSTOM_GRADIENT_PREFIX = "custom-gradient-";
+
 function applyBackground(backgroundId: string) {
-  const bg = backgrounds.find((b) => b.id === backgroundId);
   const root = document.documentElement;
 
   root.style.removeProperty("--page-bg");
   root.style.removeProperty("--page-bg-image");
 
+  if (backgroundId.startsWith(CUSTOM_GRADIENT_PREFIX)) {
+    const rest = backgroundId.slice(CUSTOM_GRADIENT_PREFIX.length);
+    const hexes = rest.split("-").filter((h) => /^#[0-9A-Fa-f]{6}$/.test(h));
+    if (hexes.length >= 2) {
+      root.style.setProperty("--page-bg", hexes[0]!);
+      root.style.setProperty(
+        "--page-bg-image",
+        `linear-gradient(135deg, ${hexes.join(", ")})`
+      );
+    }
+    return;
+  }
+
+  if (backgroundId.startsWith(CUSTOM_COLOR_PREFIX)) {
+    const hex = backgroundId.slice(CUSTOM_COLOR_PREFIX.length);
+    if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+      root.style.setProperty("--page-bg", hex);
+    }
+    return;
+  }
+
+  const bg = backgrounds.find((b) => b.id === backgroundId);
   if (!bg) return;
 
   if (bg.type === "solid") {
@@ -69,10 +97,17 @@ function applyBackground(backgroundId: string) {
 
 const DEFAULT_THEME_ID: ThemeId = "mint-sparkle";
 const DEFAULT_BACKGROUND_ID = "gradient-mermaid";
+const DEFAULT_FONT_ID: FontId = "sans";
+
+function applyFont(fontId: FontId) {
+  const root = document.documentElement;
+  root.style.setProperty("--font-body", getFontFamily(fontId));
+}
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [themeId, setThemeIdState] = useState<ThemeId>(DEFAULT_THEME_ID);
   const [backgroundId, setBackgroundIdState] = useState<string>(DEFAULT_BACKGROUND_ID);
+  const [fontId, setFontIdState] = useState<FontId>(DEFAULT_FONT_ID);
 
   useEffect(() => {
     try {
@@ -85,15 +120,29 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       }
 
       const storedBg = localStorage.getItem(BACKGROUND_STORAGE_KEY);
-      if (storedBg && backgrounds.some((b) => b.id === storedBg)) {
+      if (
+        storedBg &&
+        (storedBg.startsWith(CUSTOM_COLOR_PREFIX) ||
+          storedBg.startsWith(CUSTOM_GRADIENT_PREFIX) ||
+          backgrounds.some((b) => b.id === storedBg))
+      ) {
         setBackgroundIdState(storedBg);
         applyBackground(storedBg);
       } else {
         applyBackground(DEFAULT_BACKGROUND_ID);
       }
+
+      const storedFont = localStorage.getItem(FONT_STORAGE_KEY) as FontId | null;
+      if (storedFont && ["sans", "rounded", "mincho", "serif"].includes(storedFont)) {
+        setFontIdState(storedFont);
+        applyFont(storedFont);
+      } else {
+        applyFont(DEFAULT_FONT_ID);
+      }
     } catch {
       applyTheme(DEFAULT_THEME_ID);
       applyBackground(DEFAULT_BACKGROUND_ID);
+      applyFont(DEFAULT_FONT_ID);
     }
   }, []);
 
@@ -117,8 +166,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const setFontId = useCallback((id: FontId) => {
+    setFontIdState(id);
+    applyFont(id);
+    try {
+      localStorage.setItem(FONT_STORAGE_KEY, id);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   return (
-    <ThemeContext.Provider value={{ themeId, setThemeId, backgroundId, setBackgroundId }}>
+    <ThemeContext.Provider value={{ themeId, setThemeId, backgroundId, setBackgroundId, fontId, setFontId }}>
       {children}
     </ThemeContext.Provider>
   );
@@ -132,6 +191,8 @@ export function useTheme() {
       setThemeId: () => {},
       backgroundId: DEFAULT_BACKGROUND_ID,
       setBackgroundId: () => {},
+      fontId: DEFAULT_FONT_ID,
+      setFontId: () => {},
     };
   }
   return ctx;

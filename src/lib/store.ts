@@ -42,13 +42,17 @@ export async function getCosmeSets(userId?: string | null): Promise<CosmeSet[]> 
 /** コスメセット削除 */
 export async function deleteCosmeSet(userId: string | null | undefined, slug: string): Promise<boolean> {
   const u = uid(userId);
-  if (useLocalForCosmeSets(userId) || !useSupabase()) {
+  const useLocalOnly = useLocalForCosmeSets(userId) || !useSupabase();
+
+  // demo ユーザー or Supabase 未設定: 完全に localStorage のみ
+  if (useLocalOnly) {
     return Promise.resolve(local.deleteCosmeSet(slug));
   }
-  const ok = await db.deleteCosmeSet(u, slug);
-  if (ok) return true;
-  if (u === "demo") return local.deleteCosmeSet(slug);
-  return false;
+
+  // Supabase + localStorage を両方削除（以前フォールバックで作成されたローカルセットが残らないようにする）
+  const dbOk = await db.deleteCosmeSet(u, slug);
+  const localOk = local.deleteCosmeSet(slug);
+  return dbOk || localOk;
 }
 
 /** コスメセット作成 */
@@ -183,13 +187,10 @@ export async function getListByUsername(
   return db.fetchList(username);
 }
 
-/** セクション一覧取得（slug ごと） */
+/** セクション一覧取得（slug ごと）。セクションは DB にテーブルがないため常に localStorage から取得 */
 export async function getSections(slug?: string | null): Promise<import("@/lib/sections").Section[] | null> {
   const s = slug ?? FALLBACK_USER_ID;
-  if (isDemoMode() || !useSupabase() || local.hasSetInLocal(s)) {
-    return Promise.resolve(local.getSections(s));
-  }
-  return null;
+  return Promise.resolve(local.getSections(s));
 }
 
 /** セクションにアイテムを追加（検索ページ用） */
@@ -218,14 +219,11 @@ export async function addItemToSection(
   return true;
 }
 
-/** セクション一覧保存（slug ごと） */
+/** セクション一覧保存（slug ごと）。セクションは DB にテーブルがないため常に localStorage に保存（編集→プレビューで反映） */
 export async function setSections(
   sections: import("@/lib/sections").Section[],
   slug?: string | null
 ): Promise<void> {
   const s = slug ?? FALLBACK_USER_ID;
-  if (isDemoMode() || !useSupabase() || local.hasSetInLocal(s)) {
-    local.setSections(s, sections);
-    return;
-  }
+  local.setSections(s, sections);
 }
