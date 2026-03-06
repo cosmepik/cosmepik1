@@ -4,12 +4,11 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { ExternalLink, Upload } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { SidebarNav } from "@/components/SidebarNav";
+import { SideMenu } from "@/components/cosme-link/side-menu";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DesignEditButtons } from "@/components/cosme-link/design-edit-buttons";
 import { ProfileHeader } from "@/components/cosme-link/profile-header";
 import { SectionProvider } from "@/lib/section-context";
-import { ProfileProvider } from "@/lib/profile-context";
 import { SectionRenderer } from "@/components/cosme-link/section-renderer";
 import { AddSectionInline } from "@/components/cosme-link/add-section-inline";
 import { useSections } from "@/lib/section-context";
@@ -69,7 +68,7 @@ function EditPageContent({ slug }: { slug: string }) {
   return (
     <>
     <main className="min-h-screen">
-      <SidebarNav open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <SideMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <DashboardHeader
         onMenuClick={() => setSidebarOpen(true)}
         rightContent={
@@ -181,9 +180,7 @@ export default function EditPage() {
 
   return (
     <SectionProvider slug={slug} defaultEditMode>
-      <ProfileProvider slug={slug}>
-        <EditPageContent slug={slug} />
-      </ProfileProvider>
+      <EditPageContent slug={slug} />
     </SectionProvider>
   );
 }

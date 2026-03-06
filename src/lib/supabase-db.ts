@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { createClient as createBrowserClient } from "@/lib/supabase/client";
 import type { ListedCosmeItem, InfluencerProfile, CosmeSet } from "@/types";
+import type { Section } from "@/lib/sections";
 
 const CURRENT_USERNAME = "demo";
 
@@ -154,9 +155,12 @@ export async function fetchProfile(
     username: data.username as string,
     displayName: (data.display_name as string) ?? "",
     avatarUrl: data.avatar_url as string | undefined,
+    backgroundImageUrl: data.background_image_url as string | undefined,
     bio: data.bio as string | undefined,
+    bioSub: data.bio_sub as string | undefined,
     skinType: data.skin_type as string | undefined,
     personalColor: data.personal_color as string | undefined,
+    snsLinks: data.sns_links as InfluencerProfile["snsLinks"],
     list,
     updatedAt: (data.updated_at as string) ?? new Date().toISOString(),
   };
@@ -177,8 +181,10 @@ export async function saveProfile(
     avatar_url: profile.avatarUrl ?? existing?.avatarUrl ?? null,
     background_image_url: profile.backgroundImageUrl ?? existing?.backgroundImageUrl ?? null,
     bio: profile.bio ?? existing?.bio ?? null,
+    bio_sub: profile.bioSub ?? existing?.bioSub ?? null,
     skin_type: profile.skinType ?? existing?.skinType ?? null,
     personal_color: profile.personalColor ?? existing?.personalColor ?? null,
+    sns_links: profile.snsLinks ?? existing?.snsLinks ?? null,
     updated_at: new Date().toISOString(),
   };
 
@@ -193,6 +199,39 @@ export async function saveProfile(
       { onConflict: "username" }
     );
   }
+}
+
+/** セクション一覧取得（username = slug 指定） */
+export async function fetchSections(username: string): Promise<Section[] | null> {
+  const client = getClient();
+  if (!client) return null;
+
+  const { data, error } = await client
+    .from("sections")
+    .select("sections_json")
+    .eq("username", username)
+    .single();
+
+  if (error || !data) return null;
+  const arr = data.sections_json as unknown;
+  if (!Array.isArray(arr)) return null;
+  return arr as Section[];
+}
+
+/** セクション一覧保存（username = slug 指定） */
+export async function saveSections(username: string, sections: Section[]): Promise<void> {
+  const client = getClient();
+  if (!client) return;
+
+  await ensureProfileExists(username);
+  await client.from("sections").upsert(
+    {
+      username,
+      sections_json: sections,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "username" }
+  );
 }
 
 /** コスメセット一覧取得（user_id 指定）。未登録時は slug=userId のデフォルトセットを1件返す */

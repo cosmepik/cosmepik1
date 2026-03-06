@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { SidebarNav } from "@/components/SidebarNav";
+import { SideMenu } from "@/components/cosme-link/side-menu";
 import { DashboardHeader } from "@/components/DashboardHeader";
 
 /** アカウント設定：UIBASE 完全準拠 */
@@ -39,7 +39,7 @@ export default function SettingsPage() {
 
   return (
     <main className="min-h-screen">
-      <SidebarNav open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <SideMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <DashboardHeader
         onMenuClick={() => setSidebarOpen(true)}
         rightContent={

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { SidebarNav } from "@/components/SidebarNav";
+import { SideMenu } from "@/components/cosme-link/side-menu";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { useUser } from "@/hooks/use-user";
 import { getCosmeSets, createCosmeSet, deleteCosmeSet } from "@/lib/store";
@@ -129,7 +129,7 @@ export default function DashboardHomePage() {
 
   return (
     <main className="min-h-screen">
-      <SidebarNav open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <SideMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <DashboardHeader onMenuClick={() => setSidebarOpen(true)} />
 
       <div className="mx-auto max-w-md px-4 py-8">

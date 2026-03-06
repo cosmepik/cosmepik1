@@ -14,9 +14,19 @@ CREATE TABLE IF NOT EXISTS profiles (
   username TEXT PRIMARY KEY,
   display_name TEXT NOT NULL DEFAULT '',
   avatar_url TEXT,
+  background_image_url TEXT,
   bio TEXT,
+  bio_sub TEXT,
   skin_type TEXT,
   personal_color TEXT,
+  sns_links JSONB,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- セクション（username = slug ごとに JSON で保存）
+CREATE TABLE IF NOT EXISTS sections (
+  username TEXT PRIMARY KEY REFERENCES profiles(username) ON DELETE CASCADE,
+  sections_json JSONB NOT NULL DEFAULT '[]'::jsonb,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -47,6 +57,7 @@ CREATE TABLE IF NOT EXISTS profile_views (
 ALTER TABLE cosme_sets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE list_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sections ENABLE ROW LEVEL SECURITY;
 
 -- cosme_sets（既存ポリシーは DROP してから作成＝再実行可能）
 DROP POLICY IF EXISTS "cosme_sets viewable by everyone" ON cosme_sets;
@@ -110,6 +121,23 @@ CREATE POLICY "list_items are deletable by anon"
   ON list_items FOR DELETE USING (true);
 CREATE POLICY "list_items are deletable by authenticated"
   ON list_items FOR DELETE TO authenticated USING (true);
+
+-- sections
+DROP POLICY IF EXISTS "sections viewable by everyone" ON sections;
+DROP POLICY IF EXISTS "sections insertable by anon" ON sections;
+DROP POLICY IF EXISTS "sections insertable by authenticated" ON sections;
+DROP POLICY IF EXISTS "sections updatable by anon" ON sections;
+DROP POLICY IF EXISTS "sections updatable by authenticated" ON sections;
+CREATE POLICY "sections viewable by everyone"
+  ON sections FOR SELECT USING (true);
+CREATE POLICY "sections insertable by anon"
+  ON sections FOR INSERT WITH CHECK (true);
+CREATE POLICY "sections insertable by authenticated"
+  ON sections FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "sections updatable by anon"
+  ON sections FOR UPDATE USING (true);
+CREATE POLICY "sections updatable by authenticated"
+  ON sections FOR UPDATE TO authenticated USING (true);
 
 -- profile_views
 ALTER TABLE profile_views ENABLE ROW LEVEL SECURITY;

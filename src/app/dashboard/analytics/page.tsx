@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { SidebarNav } from "@/components/SidebarNav";
+import { SideMenu } from "@/components/cosme-link/side-menu";
 import { DashboardHeader } from "@/components/DashboardHeader";
 
 /** アクセス解析：UIBASE 完全準拠 */
@@ -25,7 +25,7 @@ export default function AnalyticsPage() {
 
   return (
     <main className="min-h-screen">
-      <SidebarNav open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <SideMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <DashboardHeader
         onMenuClick={() => setSidebarOpen(true)}
         rightContent={

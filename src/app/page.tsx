@@ -1,33 +1,15 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { Leaf, ChevronRight } from "lucide-react";
 import { HeroSlideshow } from "@/components/landing/HeroSlideshow";
 import { HeroLinkInput } from "@/components/landing/HeroLinkInput";
+import { LandingHeaderActions } from "@/components/landing/LandingHeaderActions";
 
 /**
  * トップページ (LP) - cosmepik ランディングページ
- * 未ログイン: サービス概要・新規登録・ログイン誘導
- * ログイン済み: ダッシュボードへリダイレクト（?lp=1 のときはLPを表示）
+ * 未ログイン: サービス概要・サインイン・サインアップ誘導
+ * ログイン済み: LP表示、ヘッダーにマイページ・サインアウトを表示
  */
-export default async function LandingPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ lp?: string }>;
-}) {
-  const params = await searchParams;
-  const forceLp = params?.lp === "1";
-
-  if (!forceLp) {
-    const supabase = await createClient();
-    if (supabase) {
-      const { data } = await supabase.auth.getUser();
-      if (data.user) {
-        redirect("/dashboard");
-      }
-    }
-  }
-
+export default async function LandingPage() {
   const gradientBg = "linear-gradient(160deg, #9de0d8 0%, #b8eae4 30%, #cff2ee 60%, #e0f7f5 100%)";
 
   return (
@@ -129,22 +111,7 @@ export default async function LandingPage({
               START
             </Link>
           </nav>
-          <div className="flex items-center gap-2 md:gap-3">
-            <Link
-              href="/login"
-              className="text-xs md:text-sm tracking-[0.1em] px-3 py-1.5 md:px-4 md:py-2 hover:opacity-80 transition-opacity"
-              style={{ color: "#0d4f4a" }}
-            >
-              ログイン
-            </Link>
-            <Link
-              href="/register"
-              className="rounded-full px-4 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-medium transition-opacity hover:opacity-90"
-              style={{ background: "#ffffff", color: "#0d4f4a", boxShadow: "0 2px 12px rgba(13,79,74,0.2)" }}
-            >
-              登録
-            </Link>
-          </div>
+          <LandingHeaderActions />
         </div>
       </header>
 

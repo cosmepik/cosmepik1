@@ -1,7 +1,7 @@
 /**
  * データの読み書きはここを通す。
  * .env.local に Supabase の URL/Key があれば Supabase、なければ localStorage を使用。
- * Supabase Auth 利用時は userId を渡すとそのユーザーのデータを扱う（未指定時は "demo"）。
+ * Supabase 設定時はすべて DB に保存（プロフィール・セクション・コスメセット・リスト）。
  */
 import { isSupabaseConfigured } from "@/lib/supabase";
 import * as db from "@/lib/supabase-db";
@@ -18,41 +18,16 @@ function uid(userId?: string | null) {
   return userId ?? FALLBACK_USER_ID;
 }
 
-/** デモユーザーは常に localStorage を使用（Supabase 未設定時も、cosme_sets 未作成時も確実に動作） */
-function useLocalForCosmeSets(userId?: string | null) {
-  return uid(userId) === "demo";
-}
-
-/** デモモード（とりあえずつかってみる）: cookie で判定 */
-function isDemoMode(): boolean {
-  if (typeof window === "undefined") return false;
-  return document.cookie.includes("cosmepik_demo=1");
-}
-
-/** コスメセット一覧取得（Supabase 時は userId、localStorage 時は "demo"） */
+/** コスメセット一覧取得（Supabase 設定時は DB、未設定時は localStorage） */
 export async function getCosmeSets(userId?: string | null): Promise<CosmeSet[]> {
-  if (useLocalForCosmeSets(userId) || !useSupabase()) return Promise.resolve(local.getCosmeSets());
-  const dbSets = await db.fetchCosmeSets(uid(userId));
-  const localSets = local.getCosmeSets();
-  const dbSlugs = new Set(dbSets.map((s) => s.slug));
-  const localOnly = localSets.filter((s) => !dbSlugs.has(s.slug));
-  return [...dbSets, ...localOnly];
+  if (!useSupabase()) return Promise.resolve(local.getCosmeSets());
+  return db.fetchCosmeSets(uid(userId));
 }
 
 /** コスメセット削除 */
 export async function deleteCosmeSet(userId: string | null | undefined, slug: string): Promise<boolean> {
-  const u = uid(userId);
-  const useLocalOnly = useLocalForCosmeSets(userId) || !useSupabase();
-
-  // demo ユーザー or Supabase 未設定: 完全に localStorage のみ
-  if (useLocalOnly) {
-    return Promise.resolve(local.deleteCosmeSet(slug));
-  }
-
-  // Supabase + localStorage を両方削除（以前フォールバックで作成されたローカルセットが残らないようにする）
-  const dbOk = await db.deleteCosmeSet(u, slug);
-  const localOk = local.deleteCosmeSet(slug);
-  return dbOk || localOk;
+  if (!useSupabase()) return Promise.resolve(local.deleteCosmeSet(slug));
+  return db.deleteCosmeSet(uid(userId), slug);
 }
 
 /** コスメセット作成 */
@@ -61,38 +36,21 @@ export async function createCosmeSet(
   name: string,
   slug: string
 ): Promise<CosmeSet | null> {
-  const u = uid(userId);
-  if (useLocalForCosmeSets(userId) || !useSupabase()) return Promise.resolve(local.createCosmeSet(name, slug));
-  let dbError: Error | null = null;
-  try {
-    const result = await db.createCosmeSet(u, name, slug);
-    if (result) return result;
-  } catch (e) {
-    dbError = e instanceof Error ? e : new Error(String(e));
-    // db が例外を投げた場合もフォールバック
-  }
-  // Supabase 失敗時（RLS・ネットワーク等）: localStorage にフォールバックして作成を継続
-  try {
-    return local.createCosmeSet(name, slug);
-  } catch (e) {
-    const localMsg = e instanceof Error ? e.message : String(e);
-    throw new Error(dbError ? `${dbError.message} / localStorage: ${localMsg}` : localMsg);
-  }
+  if (!useSupabase()) return Promise.resolve(local.createCosmeSet(name, slug));
+  return db.createCosmeSet(uid(userId), name, slug);
 }
 
 /** 自分のリストを取得（slug = コスメセット識別子） */
 export async function getMyList(slug?: string | null): Promise<ListedCosmeItem[]> {
   const s = slug ?? FALLBACK_USER_ID;
-  if (isDemoMode() || !useSupabase() || local.hasSetInLocal(s)) {
-    return Promise.resolve(local.getMyList(s));
-  }
+  if (!useSupabase()) return Promise.resolve(local.getMyList(s));
   return db.fetchList(s);
 }
 
 /** 自分のリストを保存 */
 export async function setMyList(list: ListedCosmeItem[], slug?: string | null): Promise<void> {
   const s = slug ?? FALLBACK_USER_ID;
-  if (isDemoMode() || !useSupabase() || local.hasSetInLocal(s)) {
+  if (!useSupabase()) {
     local.setMyList(s, list);
     return;
   }
@@ -102,9 +60,7 @@ export async function setMyList(list: ListedCosmeItem[], slug?: string | null): 
 /** プロフィール取得（slug 指定） */
 export async function getProfile(slug?: string | null): Promise<InfluencerProfile | null> {
   const s = slug ?? FALLBACK_USER_ID;
-  if (isDemoMode() || !useSupabase() || local.hasSetInLocal(s)) {
-    return Promise.resolve(local.getProfile(s));
-  }
+  if (!useSupabase()) return Promise.resolve(local.getProfile(s));
   return db.fetchProfile(s);
 }
 
@@ -114,9 +70,7 @@ export async function renameCosmeSet(
   newSlug: string,
   userId?: string | null
 ): Promise<boolean> {
-  if (useLocalForCosmeSets(userId) || !useSupabase()) {
-    return Promise.resolve(local.renameCosmeSet(oldSlug, newSlug));
-  }
+  if (!useSupabase()) return Promise.resolve(local.renameCosmeSet(oldSlug, newSlug));
   // Supabase 時は未実装（複雑なため）
   return false;
 }
@@ -125,9 +79,8 @@ export async function renameCosmeSet(
 export async function setProfile(
   profile: Partial<InfluencerProfile> & { username: string }
 ): Promise<void> {
-  const slug = profile.username;
-  if (isDemoMode() || !useSupabase() || local.hasSetInLocal(slug)) {
-    local.setProfile(slug, profile);
+  if (!useSupabase()) {
+    local.setProfile(profile.username, profile);
     return;
   }
   await db.saveProfile(profile);
@@ -139,19 +92,14 @@ export async function addToList(
   slug?: string | null
 ): Promise<ListedCosmeItem[]> {
   const s = slug ?? FALLBACK_USER_ID;
-  // ローカルにセットがあればローカルへ追加（getCosmeSets とデータソースを一致させる）
-  if (isDemoMode() || !useSupabase() || local.hasSetInLocal(s)) {
-    return Promise.resolve(local.addToList(s, item));
-  }
+  if (!useSupabase()) return Promise.resolve(local.addToList(s, item));
   return db.addListItem(s, item);
 }
 
 /** リストから1件削除 */
 export async function removeFromList(id: string, slug?: string | null): Promise<ListedCosmeItem[]> {
   const s = slug ?? FALLBACK_USER_ID;
-  if (isDemoMode() || !useSupabase() || local.hasSetInLocal(s)) {
-    return Promise.resolve(local.removeFromList(s, id));
-  }
+  if (!useSupabase()) return Promise.resolve(local.removeFromList(s, id));
   return db.removeListItem(s, id);
 }
 
@@ -161,36 +109,27 @@ export async function reorderList(
   slug?: string | null
 ): Promise<ListedCosmeItem[]> {
   const s = slug ?? FALLBACK_USER_ID;
-  if (isDemoMode() || !useSupabase() || local.hasSetInLocal(s)) {
-    return Promise.resolve(local.reorderList(s, orderedIds));
-  }
+  if (!useSupabase()) return Promise.resolve(local.reorderList(s, orderedIds));
   return db.reorderListItems(s, orderedIds);
 }
 
 /** 公開ページ用：username でプロフィール取得 */
-export async function getProfileByUsername(
-  username: string
-): Promise<InfluencerProfile | null> {
-  if (isDemoMode() || !useSupabase() || local.hasSetInLocal(username)) {
-    return Promise.resolve(local.getProfile(username));
-  }
+export async function getProfileByUsername(username: string): Promise<InfluencerProfile | null> {
+  if (!useSupabase()) return Promise.resolve(local.getProfile(username));
   return db.fetchProfile(username);
 }
 
 /** 公開ページ用：username でリスト取得 */
-export async function getListByUsername(
-  username: string
-): Promise<ListedCosmeItem[]> {
-  if (isDemoMode() || !useSupabase() || local.hasSetInLocal(username)) {
-    return Promise.resolve(local.getMyList(username));
-  }
+export async function getListByUsername(username: string): Promise<ListedCosmeItem[]> {
+  if (!useSupabase()) return Promise.resolve(local.getMyList(username));
   return db.fetchList(username);
 }
 
-/** セクション一覧取得（slug ごと）。セクションは DB にテーブルがないため常に localStorage から取得 */
+/** セクション一覧取得（slug ごと） */
 export async function getSections(slug?: string | null): Promise<import("@/lib/sections").Section[] | null> {
   const s = slug ?? FALLBACK_USER_ID;
-  return Promise.resolve(local.getSections(s));
+  if (!useSupabase()) return Promise.resolve(local.getSections(s));
+  return db.fetchSections(s);
 }
 
 /** セクションにアイテムを追加（検索ページ用） */
@@ -219,11 +158,15 @@ export async function addItemToSection(
   return true;
 }
 
-/** セクション一覧保存（slug ごと）。セクションは DB にテーブルがないため常に localStorage に保存（編集→プレビューで反映） */
+/** セクション一覧保存（slug ごと） */
 export async function setSections(
   sections: import("@/lib/sections").Section[],
   slug?: string | null
 ): Promise<void> {
   const s = slug ?? FALLBACK_USER_ID;
-  local.setSections(s, sections);
+  if (!useSupabase()) {
+    local.setSections(s, sections);
+    return;
+  }
+  await db.saveSections(s, sections);
 }
