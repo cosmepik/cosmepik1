@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { CosmeItem } from "@/types";
+import { toKatakanaForApi, toHiraganaForApi } from "@/lib/search-normalize";
 
 /**
  * 楽天プロダクト製品検索API（商品価格ナビ）
@@ -119,8 +120,14 @@ export async function GET(request: NextRequest) {
   if (hasProductCode) {
     params.set("productCode", productCode!);
   } else {
-    params.set("keyword", keyword!);
-    params.set("genreId", "100939"); // 美容・コスメ・香水
+    // 広範囲でヒット：genreId は使わず、ひらがな・カタカナ両方を含めて OR 検索
+    const katakanaKw = toKatakanaForApi(keyword!);
+    const hiraganaKw = toHiraganaForApi(keyword!);
+    const keywords: string[] = [keyword!];
+    if (katakanaKw !== keyword) keywords.push(katakanaKw);
+    if (hiraganaKw !== keyword && hiraganaKw !== katakanaKw) keywords.push(hiraganaKw);
+    params.set("keyword", [...new Set(keywords)].join(" "));
+    params.set("orFlag", "1"); // 複数キーワードを OR で検索
   }
 
   const affiliateId = process.env.RAKUTEN_AFFILIATE_ID?.trim();
@@ -138,7 +145,6 @@ export async function GET(request: NextRequest) {
   try {
     const res = await fetch(`${PRODUCT_API_URL}?${params}`, { headers });
     const rawText = await res.text();
-
     let data: ProductResponse & { [key: string]: unknown };
     try {
       data = JSON.parse(rawText) as ProductResponse & { [key: string]: unknown };

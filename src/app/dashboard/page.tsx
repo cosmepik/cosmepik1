@@ -142,6 +142,11 @@ export default function DashboardHomePage() {
           <div className="mt-8 text-center text-sm text-muted-foreground">読み込み中...</div>
         ) : (
           <>
+            {sets.length === 0 && (
+              <p className="mt-4 text-sm text-muted-foreground">
+                まずはコスメセットを作成して、あなたのコスメリンクを共有しましょう
+              </p>
+            )}
             <ul className="mt-6 space-y-3">
               {sets.map((set) => (
                 <li key={set.id} className="flex items-stretch gap-2">

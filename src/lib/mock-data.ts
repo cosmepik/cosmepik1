@@ -1,4 +1,5 @@
 import type { CosmeItem } from "@/types";
+import { normalizeForSearch } from "@/lib/search-normalize";
 
 /** カテゴリ別のプレースホルダー画像（placehold.co） */
 const IMG = {
@@ -239,16 +240,17 @@ export const MOCK_COSME_ITEMS: CosmeItem[] = [
 
 /**
  * キーワードでダミー商品を検索する（商品名・ブランド・カテゴリの部分一致）
+ * ひらがな・カタカナ・大文字小文字を区別しない
  * 該当なしの場合は先頭12件を返す（必ず何か表示されるようにする）
  */
 export function searchMockCosme(keyword: string): CosmeItem[] {
   if (!keyword.trim()) return [];
-  const k = keyword.trim().toLowerCase();
-  const matched = MOCK_COSME_ITEMS.filter(
-    (item) =>
-      item.name.toLowerCase().includes(k) ||
-      item.brand.toLowerCase().includes(k) ||
-      item.category.toLowerCase().includes(k)
-  );
+  const k = normalizeForSearch(keyword);
+  const matched = MOCK_COSME_ITEMS.filter((item) => {
+    const nameNorm = normalizeForSearch(item.name);
+    const brandNorm = normalizeForSearch(item.brand);
+    const categoryNorm = normalizeForSearch(item.category);
+    return nameNorm.includes(k) || brandNorm.includes(k) || categoryNorm.includes(k);
+  });
   return matched.length > 0 ? matched : MOCK_COSME_ITEMS.slice(0, 12);
 }

@@ -234,7 +234,7 @@ export async function saveSections(username: string, sections: Section[]): Promi
   );
 }
 
-/** コスメセット一覧取得（user_id 指定）。未登録時は slug=userId のデフォルトセットを1件返す */
+/** コスメセット一覧取得（user_id 指定）。未登録時は空配列を返す */
 export async function fetchCosmeSets(userId: string): Promise<CosmeSet[]> {
   const client = getClient();
   if (!client) return [];
@@ -245,12 +245,7 @@ export async function fetchCosmeSets(userId: string): Promise<CosmeSet[]> {
     .eq("user_id", userId)
     .order("created_at", { ascending: true });
 
-  if (error) return [];
-  if (!data?.length) {
-    const profile = await fetchProfile(userId);
-    const list = await fetchList(userId);
-    return [{ id: userId, name: "マイコスメ", slug: userId, itemCount: list.length, avatarUrl: profile?.avatarUrl }];
-  }
+  if (error || !data?.length) return [];
 
   const sets: CosmeSet[] = await Promise.all(
     data.map(async (row: Record<string, unknown>) => {
