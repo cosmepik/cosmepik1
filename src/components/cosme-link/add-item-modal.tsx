@@ -32,7 +32,6 @@ export function AddItemModal({
   const { slug, addItemToSection } = useSections();
 
   const [product, setProduct] = useState("");
-  const [brand, setBrand] = useState("");
   const [link, setLink] = useState("");
   const [image, setImage] = useState("");
   const [price, setPrice] = useState("");
@@ -55,14 +54,12 @@ export function AddItemModal({
     if (sectionType === "routine") {
       if (!product.trim()) return;
       newItem.product = product.trim();
-      newItem.brand = brand.trim() || undefined;
       newItem.label = label.trim() || undefined;
       newItem.link = link.trim() || undefined;
       newItem.image = image.trim() || undefined;
     } else if (sectionType === "products") {
       if (!product.trim()) return;
       newItem.product = product.trim();
-      newItem.brand = brand.trim() || undefined;
       newItem.price = price.trim() || undefined;
       newItem.link = link.trim() || undefined;
       newItem.image = image.trim() || undefined;
@@ -81,7 +78,6 @@ export function AddItemModal({
 
   const handleClose = () => {
     setProduct("");
-    setBrand("");
     setLink("");
     setImage("");
     setPrice("");
@@ -151,7 +147,6 @@ export function AddItemModal({
     const newItem: SectionItem = {
       id: `item-${Date.now()}`,
       product: item.name,
-      brand: item.brand,
       image: item.imageUrl,
       link: item.rakutenUrl ?? item.amazonUrl,
       label: comment.trim() || undefined,
@@ -301,18 +296,6 @@ export function AddItemModal({
                       placeholder="グリーンティーシード ヒアルロン セラム"
                       className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                       required
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium text-card-foreground">
-                      ブランド
-                    </label>
-                    <input
-                      type="text"
-                      value={brand}
-                      onChange={(e) => setBrand(e.target.value)}
-                      placeholder="innisfree"
-                      className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                     />
                   </div>
                   {sectionType === "routine" && (

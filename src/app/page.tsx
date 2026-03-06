@@ -1,15 +1,24 @@
 import Link from "next/link";
-import { Leaf, ChevronRight } from "lucide-react";
+import { redirect } from "next/navigation";
+import { ChevronRight } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
 import { HeroSlideshow } from "@/components/landing/HeroSlideshow";
 import { HeroLinkInput } from "@/components/landing/HeroLinkInput";
 import { LandingHeaderActions } from "@/components/landing/LandingHeaderActions";
 
 /**
  * トップページ (LP) - cosmepik ランディングページ
+ * ログイン済み: ダッシュボードへリダイレクト
  * 未ログイン: サービス概要・サインイン・サインアップ誘導
- * ログイン済み: LP表示、ヘッダーにマイページ・サインアウトを表示
  */
 export default async function LandingPage() {
+  const supabase = await createClient();
+  if (supabase) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      redirect("/dashboard");
+    }
+  }
   const gradientBg = "linear-gradient(160deg, #9de0d8 0%, #b8eae4 30%, #cff2ee 60%, #e0f7f5 100%)";
 
   return (

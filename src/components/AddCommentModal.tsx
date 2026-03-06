@@ -44,7 +44,9 @@ export function AddCommentModal({
           <h2 id="modal-title" className="text-lg font-medium text-foreground">
             愛用コメントを入力
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">{item.brand} / {item.name}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {item.brand ? `${item.brand} / ${item.name}` : item.name}
+          </p>
         </div>
         <form onSubmit={handleSubmit} className="p-6">
           <label htmlFor="comment" className="mb-2 block text-sm font-medium text-card-foreground">

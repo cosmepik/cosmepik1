@@ -112,7 +112,6 @@ function SearchContent() {
       if (addableSections.length === 1) {
         addItemToSection(slug, addableSections[0].id, {
           product: item.name,
-          brand: item.brand,
           image: item.imageUrl,
           link: item.rakutenUrl ?? item.amazonUrl,
           label: comment.trim() || undefined,
@@ -141,7 +140,6 @@ function SearchContent() {
       setAddError(null);
       addItemToSection(slug, sectionId, {
         product: item.name,
-        brand: item.brand,
         image: item.imageUrl,
         link: item.rakutenUrl ?? item.amazonUrl,
         label: comment.trim() || undefined,

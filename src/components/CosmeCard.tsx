@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { CosmeImage } from "@/components/CosmeImage";
 import type { CosmeItem } from "@/types";
 
@@ -27,7 +28,9 @@ export function CosmeCard({ item, onAdd, isInList, compact }: CosmeCardProps) {
           />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[9px] font-medium text-green leading-tight">{item.brand}</p>
+          {item.brand && (
+            <p className="text-[9px] font-medium text-green leading-tight">{item.brand}</p>
+          )}
           <h3 className="truncate text-[11px] font-medium leading-tight text-card-foreground">
             {item.name}
           </h3>
@@ -60,10 +63,10 @@ export function CosmeCard({ item, onAdd, isInList, compact }: CosmeCardProps) {
         />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium tracking-wide text-green">
-          {item.brand}
-        </p>
-        <h3 className="mt-0.5 font-medium line-clamp-2 text-card-foreground">
+        {item.brand && (
+          <p className="text-xs font-medium tracking-wide text-green">{item.brand}</p>
+        )}
+        <h3 className={cn("font-medium line-clamp-2 text-card-foreground", item.brand && "mt-0.5")}>
           {item.name}
         </h3>
         <p className="mt-1 text-xs text-muted-foreground">{item.category}</p>

@@ -94,9 +94,11 @@ function SortableRoutineItem({
         )}
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
-        <span className="text-[10px] font-medium uppercase tracking-wider text-primary">
-          {item.brand}
-        </span>
+        {item.brand && (
+          <span className="text-[10px] font-medium uppercase tracking-wider text-primary">
+            {item.brand}
+          </span>
+        )}
         <span className="truncate text-sm font-medium text-card-foreground">
           {item.product}
         </span>
@@ -332,9 +334,11 @@ function ProductsSection({ section, onAddItem }: SectionContentProps) {
                 )}
               </div>
               <div className="flex flex-col gap-1 p-3">
-                <p className="text-[10px] font-medium uppercase tracking-wider text-primary">
-                  {item.brand}
-                </p>
+                {item.brand && (
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-primary">
+                    {item.brand}
+                  </p>
+                )}
                 <h3 className="line-clamp-2 text-sm font-semibold leading-tight text-card-foreground">
                   {item.product}
                 </h3>
