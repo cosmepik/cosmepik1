@@ -94,10 +94,18 @@ export async function GET(request: NextRequest) {
   const affiliateId = process.env.RAKUTEN_AFFILIATE_ID?.trim();
   if (affiliateId) params.set("affiliateId", affiliateId);
 
+  // 新楽天API（openapi）は Origin / Referer が必須。403 回避のため設定
+  const origin =
+    process.env.NEXT_PUBLIC_APP_URL?.trim() || "https://www.rakuten.co.jp";
+  const headers: HeadersInit = {
+    Accept: "application/json",
+    Origin: origin,
+    Referer: origin + "/",
+    "User-Agent": "Cosmetree/1.0",
+  };
+
   try {
-    const res = await fetch(`${RAKUTEN_API_URL}?${params}`, {
-      headers: { Accept: "application/json" },
-    });
+    const res = await fetch(`${RAKUTEN_API_URL}?${params}`, { headers });
 
     const data: RakutenResponse = await res.json().catch(() => ({}));
 
