@@ -116,8 +116,7 @@ export function AddItemModal({
 
     const timer = setTimeout(async () => {
       try {
-        const debugParam = isProduction ? "&debug=1" : "";
-        const res = await fetch(`/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=20${debugParam}`);
+        const res = await fetch(`/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=20`);
         const data = await res.json().catch(() => ({}));
         const items = Array.isArray(data?.items) ? data.items : [];
         const errMsg = data?.error ?? data?.error_description;
