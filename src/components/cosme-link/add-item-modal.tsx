@@ -116,7 +116,7 @@ export function AddItemModal({
 
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=20`);
+        const res = await fetch(`/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=20&debug=1`);
         const data = await res.json().catch(() => ({}));
         const items = Array.isArray(data?.items) ? data.items : [];
         const errMsg = data?.error ?? data?.error_description;
@@ -124,14 +124,17 @@ export function AddItemModal({
         if (res.ok && items.length > 0) {
           setSearchResults(items);
           setSearchApiError(null);
+          setSearchApiDebug(data?._strategy ? { _strategy: data._strategy } : null);
         } else if (!res.ok || errMsg) {
           const msg =
             errMsg ??
             (res.status === 403 ? "楽天APIのドメイン制限" : `APIエラー (${res.status})`);
           setSearchApiError(msg);
+          setSearchApiDebug(data?._debug ?? null);
           if (isProduction) setSearchResults([]);
         } else if (res.ok && items.length === 0) {
           setSearchApiError(isProduction ? "該当する商品がありません（楽天API）" : null);
+          setSearchApiDebug(null);
           if (isProduction) setSearchResults([]);
         }
       } catch (e) {
@@ -261,6 +264,11 @@ export function AddItemModal({
                     </pre>
                   )}
                 </div>
+              )}
+              {!searchApiError && searchApiDebug?._strategy && searchResults.length > 0 && (
+                <p className="mb-2 text-[10px] text-muted-foreground">
+                  ヒット戦略: <span className="font-medium text-foreground">{searchApiDebug._strategy}</span>
+                </p>
               )}
               {searchResults.length > 0 && (
                 <div className="max-h-96 overflow-y-auto space-y-0.5 rounded-xl border border-border p-1.5">

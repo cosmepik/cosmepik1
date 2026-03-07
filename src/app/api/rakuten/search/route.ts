@@ -70,6 +70,7 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const keyword = searchParams.get("keyword")?.trim();
+  const debug = searchParams.get("debug") === "1";
   const hits = Math.min(
     Math.max(parseInt(searchParams.get("hits") ?? "20", 10), 1),
     30
@@ -82,27 +83,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // ひらがな・カタカナ両方で検索してヒット率向上
-  const katakanaKw = toKatakanaForApi(keyword);
-  const hiraganaKw = toHiraganaForApi(keyword);
-  const keywords: string[] = [keyword];
-  if (katakanaKw !== keyword) keywords.push(katakanaKw);
-  if (hiraganaKw !== keyword && hiraganaKw !== katakanaKw) keywords.push(hiraganaKw);
-  const searchKeyword = [...new Set(keywords)].join(" ");
-
-  const params = new URLSearchParams({
-    applicationId: appId,
-    accessKey,
-    keyword: searchKeyword,
-    format: "json",
-    formatVersion: "2",
-    hits: String(hits),
-    orFlag: "1", // 複数キーワードをOR検索
-    field: "0", // 広い検索（より多くのヒットを優先）
-  });
-
   const affiliateId = process.env.RAKUTEN_AFFILIATE_ID?.trim();
-  if (affiliateId) params.set("affiliateId", affiliateId);
 
   // 新楽天API（openapi）は Origin / Referer が必須。403 回避のため設定
   const origin =
@@ -114,32 +95,70 @@ export async function GET(request: NextRequest) {
     "User-Agent": "Cosmetree/1.0",
   };
 
-  async function fetchApi(keywordParam: string): Promise<{ data: RakutenResponse; res: Response }> {
-    const p = new URLSearchParams(params);
-    p.set("keyword", keywordParam);
-    const res = await fetch(`${RAKUTEN_API_URL}?${p}`, { headers });
+  function parseItems(data: RakutenResponse): RakutenItem[] {
+    const raw: RakutenItem[] = [];
+    if (Array.isArray(data.Items)) {
+      raw.push(...data.Items.map((x) => x.Item).filter(Boolean));
+    } else if (Array.isArray(data.items)) {
+      for (const x of data.items) {
+        const item = (x as { item?: RakutenItem }).item ?? (x as RakutenItem);
+        if (item && (item.itemName || item.itemCode)) raw.push(item);
+      }
+    }
+    return raw;
+  }
+
+  async function fetchApi(params: URLSearchParams): Promise<{ data: RakutenResponse; res: Response }> {
+    const res = await fetch(`${RAKUTEN_API_URL}?${params}`, { headers });
     const data: RakutenResponse = await res.json().catch(() => ({}));
     return { data, res };
   }
 
-  try {
-    let { data, res } = await fetchApi(searchKeyword);
+  const katakanaKw = toKatakanaForApi(keyword);
+  const hiraganaKw = toHiraganaForApi(keyword);
+  const expandedKw = [keyword, katakanaKw, hiraganaKw]
+    .filter((k) => k && k.trim())
+    .filter((k, i, a) => a.indexOf(k) === i)
+    .join(" ");
 
-    // 0件なら元のキーワードのみで再検索（OR検索が厳しすぎる場合のフォールバック）
-    if (res.ok && !data.error) {
-      const rawItems: RakutenItem[] = [];
-      if (Array.isArray(data.Items)) {
-        rawItems.push(...data.Items.map((x) => x.Item).filter(Boolean));
-      } else if (Array.isArray(data.items)) {
-        for (const x of data.items) {
-          const item = (x as { item?: RakutenItem }).item ?? (x as RakutenItem);
-          if (item && (item.itemName || item.itemCode)) rawItems.push(item);
-        }
-      }
-      if (rawItems.length === 0 && keywords.length > 1) {
-        const fallback = await fetchApi(keyword);
-        data = fallback.data;
-        res = fallback.res;
+  // 複数戦略でフォールバック（0件なら次を試す）
+  const strategies: { keyword: string; genreId?: string; orFlag?: string; field?: string; label: string }[] = [
+    { keyword, genreId: "100939", label: "1. 美容・コスメ・香水ジャンル" },
+    { keyword, label: "2. ジャンル指定なし" },
+    ...(expandedKw !== keyword ? [{ keyword: expandedKw, orFlag: "1", field: "0", label: "3. ひらがなカタカナ展開" }] : []),
+    ...(katakanaKw !== keyword ? [{ keyword: katakanaKw, label: "4. カタカナのみ" }] : []),
+    ...(hiraganaKw !== keyword ? [{ keyword: hiraganaKw, label: "5. ひらがなのみ" }] : []),
+  ];
+
+  try {
+    let data: RakutenResponse = {};
+    let res: Response = new Response();
+    let items: RakutenItem[] = [];
+    let hitStrategy: string | null = null;
+
+    for (const s of strategies) {
+      const p = new URLSearchParams({
+        applicationId: appId,
+        accessKey,
+        keyword: s.keyword,
+        format: "json",
+        formatVersion: "2",
+        hits: String(hits),
+      });
+      if (s.genreId) p.set("genreId", s.genreId);
+      if (s.orFlag) p.set("orFlag", s.orFlag);
+      if (s.field) p.set("field", s.field);
+      if (affiliateId) p.set("affiliateId", affiliateId);
+
+      const result = await fetchApi(p);
+      data = result.data;
+      res = result.res;
+
+      if (!res.ok || data.error) break;
+      items = parseItems(data);
+      if (items.length > 0) {
+        hitStrategy = s.label;
+        break;
       }
     }
 
@@ -163,21 +182,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const rawItems: RakutenItem[] = [];
-    if (Array.isArray(data.Items)) {
-      rawItems.push(...data.Items.map((x) => x.Item).filter(Boolean));
-    } else if (Array.isArray(data.items)) {
-      for (const x of data.items) {
-        const item = (x as { item?: RakutenItem }).item ?? (x as RakutenItem);
-        if (item && (item.itemName || item.itemCode)) {
-          rawItems.push(item);
-        }
-      }
-    }
+    const cosmeItems = items.map(mapToCosmeItem);
 
-    const items = rawItems.map(mapToCosmeItem);
+    const body: { items: CosmeItem[]; _strategy?: string } = { items: cosmeItems };
+    if (debug && hitStrategy) body._strategy = hitStrategy;
 
-    return NextResponse.json({ items });
+    return NextResponse.json(body);
   } catch (e) {
     console.error("Rakuten API error:", e);
     return NextResponse.json(

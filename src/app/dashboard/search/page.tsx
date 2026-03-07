@@ -57,8 +57,7 @@ function SearchContent() {
       setSearchError(null);
       setSearchDebug(null);
       try {
-        const debugParam = isProduction ? "&debug=1" : "";
-        const res = await fetch(`/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=20${debugParam}`);
+        const res = await fetch(`/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=20&debug=1`);
         const data = await res.json().catch(() => ({}));
         const items = Array.isArray(data?.items) ? data.items : [];
         const errMsg = data?.error ?? data?.error_description;
@@ -66,7 +65,7 @@ function SearchContent() {
         if (res.ok && items.length > 0) {
           setSearchResults(items);
           setSearchError(null);
-          setSearchDebug(null);
+          setSearchDebug(data?._strategy ? { _strategy: data._strategy } : null);
         } else if (!res.ok || errMsg) {
           const msg =
             errMsg ??
@@ -199,6 +198,11 @@ function SearchContent() {
                 </pre>
               )}
             </div>
+          )}
+          {!searchError && searchDebug?._strategy && (
+            <p className="text-xs text-muted-foreground">
+              ヒット戦略: <span className="font-medium text-foreground">{searchDebug._strategy}</span>
+            </p>
           )}
           {!isSearching && searchResults.length === 0 && keyword.trim() && !searchError && <p className="text-sm text-muted-foreground">該当する商品がありません</p>}
           {!isSearching && searchResults.length === 0 && !keyword.trim() && <p className="text-sm text-muted-foreground">検索窓に文字を入れると候補が表示されます</p>}
