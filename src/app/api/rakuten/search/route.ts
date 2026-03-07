@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { CosmeItem } from "@/types";
-import { sanitizeItemName } from "@/lib/search-normalize";
+import { sanitizeItemName, toKatakanaForApi, toHiraganaForApi } from "@/lib/search-normalize";
 
 /**
  * 楽天市場商品検索API（Ichiba Item Search）- 商品価格ナビ変更前のシンプルな検索
@@ -82,13 +82,23 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // ひらがな・カタカナ両方で検索してヒット率向上
+  const katakanaKw = toKatakanaForApi(keyword);
+  const hiraganaKw = toHiraganaForApi(keyword);
+  const keywords: string[] = [keyword];
+  if (katakanaKw !== keyword) keywords.push(katakanaKw);
+  if (hiraganaKw !== keyword && hiraganaKw !== katakanaKw) keywords.push(hiraganaKw);
+  const searchKeyword = [...new Set(keywords)].join(" ");
+
   const params = new URLSearchParams({
     applicationId: appId,
     accessKey,
-    keyword,
+    keyword: searchKeyword,
     format: "json",
     formatVersion: "2",
     hits: String(hits),
+    orFlag: "1", // 複数キーワードをOR検索
+    field: "0", // 広い検索（より多くのヒットを優先）
   });
 
   const affiliateId = process.env.RAKUTEN_AFFILIATE_ID?.trim();
@@ -104,10 +114,34 @@ export async function GET(request: NextRequest) {
     "User-Agent": "Cosmetree/1.0",
   };
 
-  try {
-    const res = await fetch(`${RAKUTEN_API_URL}?${params}`, { headers });
-
+  async function fetchApi(keywordParam: string): Promise<{ data: RakutenResponse; res: Response }> {
+    const p = new URLSearchParams(params);
+    p.set("keyword", keywordParam);
+    const res = await fetch(`${RAKUTEN_API_URL}?${p}`, { headers });
     const data: RakutenResponse = await res.json().catch(() => ({}));
+    return { data, res };
+  }
+
+  try {
+    let { data, res } = await fetchApi(searchKeyword);
+
+    // 0件なら元のキーワードのみで再検索（OR検索が厳しすぎる場合のフォールバック）
+    if (res.ok && !data.error) {
+      const rawItems: RakutenItem[] = [];
+      if (Array.isArray(data.Items)) {
+        rawItems.push(...data.Items.map((x) => x.Item).filter(Boolean));
+      } else if (Array.isArray(data.items)) {
+        for (const x of data.items) {
+          const item = (x as { item?: RakutenItem }).item ?? (x as RakutenItem);
+          if (item && (item.itemName || item.itemCode)) rawItems.push(item);
+        }
+      }
+      if (rawItems.length === 0 && keywords.length > 1) {
+        const fallback = await fetchApi(keyword);
+        data = fallback.data;
+        res = fallback.res;
+      }
+    }
 
     if (!res.ok) {
       const msg =
