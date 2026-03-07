@@ -1,21 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { CosmeItem } from "@/types";
-import { sanitizeItemName, toKatakanaForApi, toHiraganaForApi } from "@/lib/search-normalize";
 
-/**
- * 楽天市場商品検索API（Ichiba Item Search）- 商品価格ナビ変更前のシンプルな検索
- * @see https://webservice.rakuten.co.jp/documentation/ichiba-item-search
- */
 const RAKUTEN_API_URL =
-  "https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20220601";
+  "https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20170706";
 
 interface RakutenItem {
   itemCode?: string;
   itemName?: string;
   itemUrl?: string;
   affiliateUrl?: string;
-  smallImageUrls?: string[];
-  mediumImageUrls?: string[];
+  smallImageUrls?: (string | { imageUrl?: string })[];
+  mediumImageUrls?: (string | { imageUrl?: string })[];
+  smallImageUrl?: string;
+  mediumImageUrl?: string;
   genreName?: string;
   shopName?: string;
 }
@@ -25,21 +22,61 @@ interface RakutenResponse {
   items?: RakutenItem[];
   error?: string;
   error_description?: string;
+  errors?: { errorCode?: number; errorMessage?: string };
+}
+
+function toImageUrl(val: unknown): string | undefined {
+  if (typeof val === "string" && val.startsWith("http")) return val;
+  if (val && typeof val === "object" && "imageUrl" in val && typeof (val as { imageUrl: string }).imageUrl === "string") {
+    return (val as { imageUrl: string }).imageUrl;
+  }
+  return undefined;
+}
+
+function extractBrand(itemName?: string, shopName?: string): string {
+  if (!itemName && shopName) return shopName;
+  if (!itemName) return "";
+
+  let name = itemName.trim();
+
+  while (true) {
+    const brackets =
+      (name.startsWith("【") && name.indexOf("】") > 0) ||
+      (name.startsWith("[") && name.indexOf("]") > 0);
+    if (!brackets) break;
+    const end =
+      name.startsWith("【") && name.indexOf("】") > 0
+        ? name.indexOf("】")
+        : name.indexOf("]");
+    name = name.slice(end + 1).trim();
+  }
+
+  const separators = ["　", " ", "｜", "|", "／", "/"];
+  let cut = name.length;
+  for (const sep of separators) {
+    const i = name.indexOf(sep);
+    if (i > 0 && i < cut) cut = i;
+  }
+
+  const brand = name.slice(0, cut).trim();
+  if (brand) return brand;
+  if (shopName) return shopName;
+  return "";
 }
 
 function mapToCosmeItem(item: RakutenItem, index: number): CosmeItem {
   const id = item.itemCode ?? `rakuten-${index}`;
   const imgUrls = item.mediumImageUrls ?? item.smallImageUrls ?? [];
+  const first = imgUrls[0];
+  const imgSingle = item.mediumImageUrl ?? item.smallImageUrl;
   const imageUrl =
-    (Array.isArray(imgUrls) ? imgUrls[0] : undefined) ??
-    "https://placehold.co/96x96/f2ebe3/c9a962?text=No+Image";
-  const rawName = item.itemName ?? "（商品名なし）";
+    toImageUrl(first) ?? (typeof imgSingle === "string" ? imgSingle : undefined) ?? "https://placehold.co/96x96/f2ebe3/c9a962?text=No+Image";
   return {
     id,
-    name: sanitizeItemName(typeof rawName === "string" ? rawName : ""),
-    brand: "", // ブランド名取得は難しいため非表示
+    name: item.itemName ?? "（商品名なし）",
+    brand: extractBrand(item.itemName, item.shopName),
     category: item.genreName ?? "",
-    imageUrl: typeof imageUrl === "string" ? imageUrl : "https://placehold.co/96x96/f2ebe3/c9a962?text=No+Image",
+    imageUrl,
     rakutenUrl: item.affiliateUrl ?? item.itemUrl ?? undefined,
   };
 }
@@ -70,7 +107,6 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const keyword = searchParams.get("keyword")?.trim();
-  const debug = searchParams.get("debug") === "1";
   const hits = Math.min(
     Math.max(parseInt(searchParams.get("hits") ?? "20", 10), 1),
     30
@@ -83,9 +119,18 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const affiliateId = process.env.RAKUTEN_AFFILIATE_ID?.trim();
+  const params = new URLSearchParams({
+    applicationId: appId,
+    accessKey,
+    keyword,
+    genreId: "100939", // 美容・コスメ・香水
+    format: "json",
+    hits: String(hits),
+  });
 
-  // 新楽天API（openapi）は Origin / Referer が必須。403 回避のため設定
+  const affiliateId = process.env.RAKUTEN_AFFILIATE_ID?.trim();
+  if (affiliateId) params.set("affiliateId", affiliateId);
+
   const origin =
     process.env.NEXT_PUBLIC_APP_URL?.trim() || "https://www.rakuten.co.jp";
   const headers: HeadersInit = {
@@ -95,76 +140,27 @@ export async function GET(request: NextRequest) {
     "User-Agent": "Cosmetree/1.0",
   };
 
-  function parseItems(data: RakutenResponse): RakutenItem[] {
-    const raw: RakutenItem[] = [];
-    if (Array.isArray(data.Items)) {
-      raw.push(...data.Items.map((x) => x.Item).filter(Boolean));
-    } else if (Array.isArray(data.items)) {
-      for (const x of data.items) {
-        const item = (x as { item?: RakutenItem }).item ?? (x as RakutenItem);
-        if (item && (item.itemName || item.itemCode)) raw.push(item);
-      }
-    }
-    return raw;
-  }
-
-  async function fetchApi(params: URLSearchParams): Promise<{ data: RakutenResponse; res: Response }> {
-    const res = await fetch(`${RAKUTEN_API_URL}?${params}`, { headers });
-    const data: RakutenResponse = await res.json().catch(() => ({}));
-    return { data, res };
-  }
-
-  const katakanaKw = toKatakanaForApi(keyword);
-  const hiraganaKw = toHiraganaForApi(keyword);
-  const expandedKw = [keyword, katakanaKw, hiraganaKw]
-    .filter((k) => k && k.trim())
-    .filter((k, i, a) => a.indexOf(k) === i)
-    .join(" ");
-
-  // 複数戦略でフォールバック（0件なら次を試す）
-  const strategies: { keyword: string; genreId?: string; orFlag?: string; field?: string; label: string }[] = [
-    { keyword, genreId: "100939", label: "1. 美容・コスメ・香水ジャンル" },
-    { keyword, label: "2. ジャンル指定なし" },
-    ...(expandedKw !== keyword ? [{ keyword: expandedKw, orFlag: "1", field: "0", label: "3. ひらがなカタカナ展開" }] : []),
-    ...(katakanaKw !== keyword ? [{ keyword: katakanaKw, label: "4. カタカナのみ" }] : []),
-    ...(hiraganaKw !== keyword ? [{ keyword: hiraganaKw, label: "5. ひらがなのみ" }] : []),
-  ];
-
   try {
-    let data: RakutenResponse = {};
-    let res: Response = new Response();
-    let items: RakutenItem[] = [];
-    let hitStrategy: string | null = null;
+    const res = await fetch(`${RAKUTEN_API_URL}?${params}`, { headers });
 
-    for (const s of strategies) {
-      const p = new URLSearchParams({
-        applicationId: appId,
-        accessKey,
-        keyword: s.keyword,
-        format: "json",
-        formatVersion: "2",
-        hits: String(hits),
-      });
-      if (s.genreId) p.set("genreId", s.genreId);
-      if (s.orFlag) p.set("orFlag", s.orFlag);
-      if (s.field) p.set("field", s.field);
-      if (affiliateId) p.set("affiliateId", affiliateId);
-
-      const result = await fetchApi(p);
-      data = result.data;
-      res = result.res;
-
-      if (!res.ok || data.error) break;
-      items = parseItems(data);
-      if (items.length > 0) {
-        hitStrategy = s.label;
-        break;
-      }
+    const rawText = await res.text();
+    let data: RakutenResponse & { [key: string]: unknown };
+    try {
+      data = JSON.parse(rawText) as RakutenResponse & { [key: string]: unknown };
+    } catch {
+      data = {};
+      console.error("[Rakuten API] レスポンスがJSONではありません", res.status, rawText.slice(0, 500));
     }
+
+    const errorsObj = data.errors as { errorCode?: number; errorMessage?: string } | undefined;
+    const errMsgFromErrors = errorsObj?.errorMessage;
 
     if (!res.ok) {
       const msg =
-        data.error_description ?? data.error ?? `楽天APIエラー (HTTP ${res.status})`;
+        data.error_description ??
+        data.error ??
+        errMsgFromErrors ??
+        `楽天APIエラー (HTTP ${res.status})`;
       console.error("[Rakuten API]", res.status, msg);
       return NextResponse.json(
         { items: [], error: String(msg) },
@@ -173,21 +169,27 @@ export async function GET(request: NextRequest) {
     }
 
     if (data.error) {
+      const errMsg = data.error_description ?? data.error ?? "";
       return NextResponse.json(
-        {
-          items: [],
-          error: data.error_description ?? data.error ?? "",
-        },
+        { items: [], error: String(errMsg) },
         { status: 400 }
       );
     }
 
-    const cosmeItems = items.map(mapToCosmeItem);
+    const rawItems: RakutenItem[] = [];
+    if (Array.isArray(data.Items)) {
+      rawItems.push(...data.Items.map((x) => x.Item).filter(Boolean));
+    } else if (Array.isArray(data.items)) {
+      rawItems.push(
+        ...data.items.map((x: { item?: RakutenItem; itemName?: string }) =>
+          (x as { item?: RakutenItem }).item ?? (x as RakutenItem)
+        )
+      );
+    }
 
-    const body: { items: CosmeItem[]; _strategy?: string } = { items: cosmeItems };
-    if (debug && hitStrategy) body._strategy = hitStrategy;
+    const items = rawItems.map(mapToCosmeItem);
 
-    return NextResponse.json(body);
+    return NextResponse.json({ items });
   } catch (e) {
     console.error("Rakuten API error:", e);
     return NextResponse.json(
