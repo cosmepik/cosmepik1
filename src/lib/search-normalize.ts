@@ -46,33 +46,80 @@ export function toHiraganaForApi(keyword: string): string {
   return katakanaToHiragana(keyword.trim());
 }
 
-/** 先頭から除去するプロモーション文言（括弧なし） */
-const LEADING_PROMO_PHRASES = [
-  /^クーポン配布中\s*/,
-  /^楽天ポイント[２2]倍\s*/,
-  /^楽天ポイント×[２2]\s*/,
-  /^楽天ポイント[２2]倍以上\s*/,
-  /^ポイント[２2]倍\s*/,
-  /^送料無料\s*/,
+/** 除去するプロモーション文言（単独・前後スペース含む） */
+const REMOVE_PHRASES = [
+  "送料無料",
+  "公式",
+  "正規品",
+  "ポイント倍",
+  "ポイント２倍",
+  "ポイント2倍",
+  "クーポン配布中",
+  "楽天ポイント２倍",
+  "楽天ポイント2倍",
+  "楽天ポイント×２",
+  "楽天ポイント×2",
+  "楽天ポイント倍",
+  "楽天ポイント倍以上",
+  "ポイント倍以上",
 ];
 
+/** 括弧付き【】[] のプロモーション文言を除去する正規表現 */
+const BRACKET_PATTERN = /[【\[]([^】\]]*)[】\]]/g;
+
 /**
- * 楽天APIの商品名からプロモーション文言を除去
- * 【クーポン配布中】【楽天ポイント２倍】などを先頭から削除
+ * 楽天APIの商品名をクレンジング
+ * - 括弧付き（【】[]）のプロモーション文言を除去
+ * - 送料無料・公式・正規品・ポイント倍・クーポン配布中などを除去
+ * - 余分なスペースを整理
  */
-export function sanitizeItemName(name: string): string {
+export function cleanseItemName(name: string): string {
   if (!name || typeof name !== "string") return "";
   let s = name.trim();
-  // 【...】または[...]で囲まれたプロモーション文言を先頭から繰り返し除去
-  const promoBracket =
-    /^[【\[]([^】\]]*?(?:クーポン|楽天ポイント|ポイント|送料|限定|配布|倍)[^】\]]*)[】\]]\s*/;
+
+  // 1. 【...】[...] の括弧ブロックを全て除去
+  s = s.replace(BRACKET_PATTERN, " ").trim();
+
+  // 2. 除去文言を繰り返し削除（大小・全角半角のバリエーション含む）
   let prev = "";
   while (prev !== s) {
     prev = s;
-    s = s.replace(promoBracket, "").trim();
-    for (const re of LEADING_PROMO_PHRASES) {
-      s = s.replace(re, "").trim();
+    for (const phrase of REMOVE_PHRASES) {
+      const re = new RegExp(phrase.replace(/[２2]/g, "[２2]"), "gi");
+      s = s.replace(re, " ").trim();
     }
   }
-  return s.trim() || name.trim();
+
+  // 3. 連続スペース・前後のスペースを整理
+  s = s.replace(/\s+/g, " ").trim();
+
+  return s || name.trim();
+}
+
+/**
+ * クレンジング後の文字列から「ブランド名 + 商品名」を抽出
+ * 区切り文字（　｜|／/）の前がブランド、後が商品名
+ */
+export function parseBrandAndProduct(cleansed: string): { brand: string; product: string } {
+  if (!cleansed || typeof cleansed !== "string") {
+    return { brand: "", product: "" };
+  }
+  const s = cleansed.trim();
+  const separators = ["　", " ", "｜", "|", "／", "/"];
+  let cut = s.length;
+  for (const sep of separators) {
+    const i = s.indexOf(sep);
+    if (i > 0 && i < cut) cut = i;
+  }
+  const brand = s.slice(0, cut).trim();
+  const product = s.slice(cut).replace(/^[\s　｜|／/]+/, "").trim();
+  return {
+    brand: brand || "",
+    product: product || s,
+  };
+}
+
+/** @deprecated sanitizeItemName の後方互換（cleanseItemName を使用） */
+export function sanitizeItemName(name: string): string {
+  return cleanseItemName(name);
 }

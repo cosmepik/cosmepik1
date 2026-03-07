@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { CosmeItem } from "@/types";
+import { cleanseItemName, parseBrandAndProduct } from "@/lib/search-normalize";
 
 const RAKUTEN_API_URL =
   "https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20170706";
@@ -33,37 +34,6 @@ function toImageUrl(val: unknown): string | undefined {
   return undefined;
 }
 
-function extractBrand(itemName?: string, shopName?: string): string {
-  if (!itemName && shopName) return shopName;
-  if (!itemName) return "";
-
-  let name = itemName.trim();
-
-  while (true) {
-    const brackets =
-      (name.startsWith("【") && name.indexOf("】") > 0) ||
-      (name.startsWith("[") && name.indexOf("]") > 0);
-    if (!brackets) break;
-    const end =
-      name.startsWith("【") && name.indexOf("】") > 0
-        ? name.indexOf("】")
-        : name.indexOf("]");
-    name = name.slice(end + 1).trim();
-  }
-
-  const separators = ["　", " ", "｜", "|", "／", "/"];
-  let cut = name.length;
-  for (const sep of separators) {
-    const i = name.indexOf(sep);
-    if (i > 0 && i < cut) cut = i;
-  }
-
-  const brand = name.slice(0, cut).trim();
-  if (brand) return brand;
-  if (shopName) return shopName;
-  return "";
-}
-
 function mapToCosmeItem(item: RakutenItem, index: number): CosmeItem {
   const id = item.itemCode ?? `rakuten-${index}`;
   const imgUrls = item.mediumImageUrls ?? item.smallImageUrls ?? [];
@@ -71,10 +41,18 @@ function mapToCosmeItem(item: RakutenItem, index: number): CosmeItem {
   const imgSingle = item.mediumImageUrl ?? item.smallImageUrl;
   const imageUrl =
     toImageUrl(first) ?? (typeof imgSingle === "string" ? imgSingle : undefined) ?? "https://placehold.co/96x96/f2ebe3/c9a962?text=No+Image";
+
+  const rawName = item.itemName ?? "";
+  const cleansed = cleanseItemName(rawName);
+  const { brand: parsedBrand, product } = parseBrandAndProduct(cleansed);
+
+  const brand = product ? (parsedBrand || item.shopName || "") : (item.shopName || "");
+  const name = product || cleansed || rawName || "（商品名なし）";
+
   return {
     id,
-    name: item.itemName ?? "（商品名なし）",
-    brand: extractBrand(item.itemName, item.shopName),
+    name,
+    brand,
     category: item.genreName ?? "",
     imageUrl,
     rakutenUrl: item.affiliateUrl ?? item.itemUrl ?? undefined,
