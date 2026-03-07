@@ -3,6 +3,7 @@
 import { Suspense, useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { searchMockCosme } from "@/lib/mock-data";
 import { getSections, addItemToSection } from "@/lib/store";
 import { CosmeCard } from "@/components/CosmeCard";
@@ -181,15 +182,20 @@ function SearchContent() {
             type="search"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
-            placeholder="商品名・ブランド・カテゴリで検索"
+            placeholder="商品名・カテゴリで検索"
             className="w-full rounded-xl border border-input bg-white px-4 py-3 text-card-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             autoFocus
           />
         </div>
 
         <div className="mt-6 space-y-4">
-          {isSearching && <p className="text-sm text-muted-foreground">検索中...</p>}
-          {searchError && (
+          {isSearching && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
+              <span>検索中</span>
+            </div>
+          )}
+          {!isSearching && searchError && (
             <div className="space-y-1">
               <p className="text-sm text-destructive">{searchError}</p>
               {searchDebug && (
@@ -201,7 +207,7 @@ function SearchContent() {
           )}
           {!isSearching && searchResults.length === 0 && keyword.trim() && !searchError && <p className="text-sm text-muted-foreground">該当する商品がありません</p>}
           {!isSearching && searchResults.length === 0 && !keyword.trim() && <p className="text-sm text-muted-foreground">検索窓に文字を入れると候補が表示されます</p>}
-          {searchResults.map((item) => (
+          {!isSearching && searchResults.map((item) => (
             <CosmeCard key={item.id} item={item} onAdd={openModal} isInList={false} />
           ))}
         </div>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { CosmeItem } from "@/types";
-import { cleanseItemName, parseBrandAndProduct } from "@/lib/search-normalize";
+import { cleanseItemName } from "@/lib/search-normalize";
 
 const RAKUTEN_API_URL =
   "https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20170706";
@@ -43,16 +43,12 @@ function mapToCosmeItem(item: RakutenItem, index: number): CosmeItem {
     toImageUrl(first) ?? (typeof imgSingle === "string" ? imgSingle : undefined) ?? "https://placehold.co/96x96/f2ebe3/c9a962?text=No+Image";
 
   const rawName = item.itemName ?? "";
-  const cleansed = cleanseItemName(rawName);
-  const { brand: parsedBrand, product } = parseBrandAndProduct(cleansed);
-
-  const brand = product ? (parsedBrand || item.shopName || "") : (item.shopName || "");
-  const name = product || cleansed || rawName || "（商品名なし）";
+  const name = cleanseItemName(rawName) || rawName || "（商品名なし）";
 
   return {
     id,
     name,
-    brand,
+    brand: "",
     category: item.genreName ?? "",
     imageUrl,
     rakutenUrl: item.affiliateUrl ?? item.itemUrl ?? undefined,

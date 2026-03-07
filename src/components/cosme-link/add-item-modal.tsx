@@ -8,6 +8,7 @@ import {
   Link as LinkIcon,
   Image as ImageIcon,
   Search,
+  Loader2,
 } from "lucide-react";
 import { useSections } from "@/lib/section-context";
 import { type SectionItem, type SectionType } from "@/lib/sections";
@@ -40,6 +41,7 @@ export function AddItemModal({
   const [linkLabel, setLinkLabel] = useState("");
   const [searchKeyword, setSearchKeyword] = useState("");
   const [searchResults, setSearchResults] = useState<CosmeItem[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [searchApiError, setSearchApiError] = useState<string | null>(null);
   const [searchApiDebug, setSearchApiDebug] = useState<object | null>(null);
   const [commentModalItem, setCommentModalItem] = useState<CosmeItem | null>(null);
@@ -86,6 +88,7 @@ export function AddItemModal({
     setLinkLabel("");
     setSearchKeyword("");
     setSearchResults([]);
+    setIsSearching(false);
     setSearchApiError(null);
     setSearchApiDebug(null);
     setCommentModalItem(null);
@@ -97,6 +100,7 @@ export function AddItemModal({
     const k = searchKeyword.trim();
     if (!k) {
       setSearchResults([]);
+      setIsSearching(false);
       setSearchApiError(null);
       setSearchApiDebug(null);
       return;
@@ -115,6 +119,8 @@ export function AddItemModal({
     setSearchApiDebug(null);
 
     const timer = setTimeout(async () => {
+      setIsSearching(true);
+      setSearchApiError(null);
       try {
         const res = await fetch(`/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=20`);
         const data = await res.json().catch(() => ({}));
@@ -251,7 +257,13 @@ export function AddItemModal({
                   className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                 />
               </div>
-              {searchApiError && (
+              {isSearching && (
+                <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
+                  <span>検索中</span>
+                </div>
+              )}
+              {!isSearching && searchApiError && (
                 <div className="mb-2 space-y-1">
                   <p className="text-xs text-amber-600" title="原因追求用">
                     {searchApiError}
@@ -263,7 +275,7 @@ export function AddItemModal({
                   )}
                 </div>
               )}
-              {searchResults.length > 0 && (
+              {!isSearching && searchResults.length > 0 && (
                 <div className="max-h-96 overflow-y-auto space-y-0.5 rounded-xl border border-border p-1.5">
                   {searchResults.slice(0, 12).map((item) => (
                     <CosmeCard

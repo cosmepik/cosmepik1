@@ -62,15 +62,51 @@ const REMOVE_PHRASES = [
   "楽天ポイント倍",
   "楽天ポイント倍以上",
   "ポイント倍以上",
+  "数量限定",
+  "期間限定",
+  "韓国コスメ",
 ];
 
 /** 括弧付き【】[] のプロモーション文言を除去する正規表現 */
 const BRACKET_PATTERN = /[【\[]([^】\]]*)[】\]]/g;
 
+/** ★に続く文言を除去（★送料無料、★5つ星 など。スペースまたは末尾で区切られた場合のみ） */
+const STAR_PATTERN = /★\s*[^\s★]+(?=\s|$)/g;
+
+/** %OFF、MAX 円 などの割引・価格表記を除去 */
+const DISCOUNT_PATTERNS = [
+  /\d+%OFF/gi,
+  /\d+％OFF/gi,
+  /MAX\s*[\d,，]+円?/gi,
+  /MAX\s*[\d,，]+/gi,
+];
+
+/** ポイント　倍　など（スペース入り）を除去 */
+const POINT_BAI_PATTERNS = [
+  /楽天?ポイント[\s　]*[×xX]?[\s　]*[２2]?[\s　]*倍/gi,
+  /ポイント[\s　]+倍/gi,
+];
+
+/** 日付表記を除去（2024/1/15、1/31、1月15日、〜1/15まで など）※1.5ml等は除外 */
+const DATE_PATTERNS = [
+  /\d{4}[\-\/\.]\d{1,2}[\-\/\.]\d{1,2}/g,
+  /\d{1,2}[\-\/]\d{1,2}(?:[\-\/]\d{1,2})?/g,
+  /\d{1,2}月\d{1,2}日?/g,
+  /(?:〜|～)?\d{1,2}[\-\/]\d{1,2}(?:まで)?/g,
+  /(?:〜|～)\d{1,2}月\d{1,2}日?(?:まで)?/g,
+];
+
+/** 時間表記を除去（12:00、23:59、午前中、日中 など） */
+const TIME_PATTERNS = [
+  /\d{1,2}:\d{2}(?::\d{2})?/g,
+  /午前中|午後|日中|夜間/gi,
+  /\d{1,2}時(?:頃|〜|～)?/g,
+];
+
 /**
  * 楽天APIの商品名をクレンジング
  * - 括弧付き（【】[]）のプロモーション文言を除去
- * - 送料無料・公式・正規品・ポイント倍・クーポン配布中などを除去
+ * - ★に続く文言、%OFF、MAX円、数量限定などを除去
  * - 余分なスペースを整理
  */
 export function cleanseItemName(name: string): string {
@@ -80,7 +116,28 @@ export function cleanseItemName(name: string): string {
   // 1. 【...】[...] の括弧ブロックを全て除去
   s = s.replace(BRACKET_PATTERN, " ").trim();
 
-  // 2. 除去文言を繰り返し削除（大小・全角半角のバリエーション含む）
+  // 2. ★に続く文言を除去
+  s = s.replace(STAR_PATTERN, " ").trim();
+
+  // 3. %OFF、MAX 円 などを除去
+  for (const re of DISCOUNT_PATTERNS) {
+    s = s.replace(re, " ").trim();
+  }
+
+  // 4. ポイント　倍　（スペース入り）を除去
+  for (const re of POINT_BAI_PATTERNS) {
+    s = s.replace(re, " ").trim();
+  }
+
+  // 5. 日付・時間表記を除去
+  for (const re of DATE_PATTERNS) {
+    s = s.replace(re, " ").trim();
+  }
+  for (const re of TIME_PATTERNS) {
+    s = s.replace(re, " ").trim();
+  }
+
+  // 6. 除去文言を繰り返し削除
   let prev = "";
   while (prev !== s) {
     prev = s;
@@ -90,7 +147,10 @@ export function cleanseItemName(name: string): string {
     }
   }
 
-  // 3. 連続スペース・前後のスペースを整理
+  // 7. 残った★を除去（★送料無料資生堂 → 送料無料資生堂、REMOVE_PHRASESで送料無料が消える）
+  s = s.replace(/★/g, " ").trim();
+
+  // 8. 連続スペース・前後のスペースを整理
   s = s.replace(/\s+/g, " ").trim();
 
   return s || name.trim();

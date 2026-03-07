@@ -82,14 +82,14 @@ function SortableRoutineItem({
   };
   const cardContent = (
     <>
-      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-secondary">
+      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-secondary">
         {item.image && (
           <CosmeImage
             src={item.image}
             alt={item.product || ""}
             fill
             className="object-cover"
-            sizes="48px"
+            sizes="64px"
           />
         )}
       </div>

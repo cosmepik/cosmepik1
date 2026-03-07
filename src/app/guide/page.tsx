@@ -21,7 +21,7 @@ export default function GuidePage() {
           </section>
           <section>
             <h2 className="mb-2 text-lg font-semibold text-foreground">3. コスメを追加</h2>
-            <p>「編集画面」から「コスメを追加」をクリック。検索窓で商品名・ブランド名を検索し、リストに追加します。コメントも自由に付けられます。</p>
+            <p>「編集画面」から「コスメを追加」をクリック。検索窓で商品名を検索し、リストに追加します。コメントも自由に付けられます。</p>
           </section>
           <section>
             <h2 className="mb-2 text-lg font-semibold text-foreground">4. 公開リンクをシェア</h2>
