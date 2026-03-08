@@ -64,9 +64,12 @@ export interface Profile {
   snsLinks: SnsLink[];
   skinType: SkinType;
   personalColor: PersonalColor;
+  /** 楽天アフィリエイトID（確率分散型レベニューシェア用） */
+  rakutenAffiliateId?: string;
 }
 
-function toProfile(p: InfluencerProfile | null, slug: string): Profile {
+/** store の InfluencerProfile を Profile に変換（編集ページの初期化用にエクスポート） */
+export function toProfile(p: InfluencerProfile | null, slug: string): Profile {
   if (!p) {
     return {
       name: "",
@@ -94,10 +97,12 @@ function toProfile(p: InfluencerProfile | null, slug: string): Profile {
     snsLinks: p.snsLinks ?? [],
     skinType,
     personalColor,
+    rakutenAffiliateId: p.rakutenAffiliateId?.trim() || "",
   };
 }
 
-function toInfluencerProfile(profile: Profile): Partial<InfluencerProfile> & {
+/** Profile を InfluencerProfile 形式に変換（プレビュー表示用） */
+export function toInfluencerProfile(profile: Profile): Partial<InfluencerProfile> & {
   username: string;
 } {
   const skinType =
@@ -118,17 +123,20 @@ function toInfluencerProfile(profile: Profile): Partial<InfluencerProfile> & {
     skinType,
     personalColor,
     snsLinks: profile.snsLinks,
+    rakutenAffiliateId: profile.rakutenAffiliateId || undefined,
     updatedAt: new Date().toISOString(),
   };
 }
 
 interface ProfileContextType {
   profile: Profile;
+  slug: string | null;
   setProfile: (profile: Profile) => void;
   updateProfile: (updates: Partial<Profile>) => void;
   addSnsLink: (link: SnsLink) => void;
   updateSnsLink: (id: string, updates: Partial<SnsLink>) => void;
   deleteSnsLink: (id: string) => void;
+  refreshProfile: (slug: string) => void;
 }
 
 const ProfileContext = createContext<ProfileContextType | null>(null);
@@ -143,43 +151,69 @@ export function useProfile(): ProfileContextType {
 
 interface ProfileProviderProps {
   children: ReactNode;
-  slug: string;
+  slug: string | null;
+  /** 編集ページ用：storeから取得した初期プロフィール（確実に表示するため） */
+  initialProfile?: Profile | null;
 }
 
-export function ProfileProvider({ children, slug }: ProfileProviderProps) {
-  const [profile, setProfileState] = useState<Profile>({
-    name: "",
-    username: slug,
-    bio: "",
-    bioSub: "",
-    avatarUrl: "",
-    snsLinks: [],
-    skinType: "",
-    personalColor: "",
-  });
+export function ProfileProvider({ children, slug, initialProfile }: ProfileProviderProps) {
+  const [profile, setProfileState] = useState<Profile>(
+    initialProfile ?? {
+      name: "",
+      username: slug ?? "",
+      bio: "",
+      bioSub: "",
+      avatarUrl: "",
+      snsLinks: [],
+      skinType: "",
+      personalColor: "",
+    }
+  );
+
+  const loadProfile = useCallback((targetSlug: string) => {
+    getProfile(targetSlug).then((p) => {
+      setProfileState(toProfile(p, targetSlug));
+    });
+  }, []);
 
   useEffect(() => {
-    getProfile(slug).then((p) => {
-      setProfileState(toProfile(p, slug));
-    });
-  }, [slug]);
+    if (initialProfile) {
+      setProfileState(initialProfile);
+    }
+  }, [initialProfile]);
+
+  useEffect(() => {
+    if (!slug || initialProfile) return;
+    loadProfile(slug);
+  }, [slug, loadProfile, initialProfile]);
+
+  const refreshProfile = useCallback(
+    (targetSlug: string) => {
+      loadProfile(targetSlug);
+    },
+    [loadProfile]
+  );
 
   const persistProfile = useCallback(
-    (next: Profile) => {
-      setProfile(toInfluencerProfile(next));
+    (next: Profile, targetSlug?: string): Promise<void> => {
+      const slugToUse = targetSlug ?? slug ?? next.username;
+      if (!slugToUse) return Promise.resolve();
+      const data = toInfluencerProfile(next);
+      return setProfile({ ...data, username: slugToUse });
     },
-    []
+    [slug]
   );
 
   const updateProfile = useCallback(
-    (updates: Partial<Profile>) => {
-      setProfileState((prev) => {
-        const next = { ...prev, ...updates };
-        persistProfile(next);
-        return next;
-      });
+    async (updates: Partial<Profile>) => {
+      const next = { ...profile, ...updates };
+      setProfileState(next);
+      const slugToUse = slug ?? profile.username;
+      if (slugToUse) {
+        await persistProfile(next, slugToUse);
+      }
     },
-    [persistProfile]
+    [persistProfile, profile, slug]
   );
 
   const addSnsLink = useCallback(
@@ -189,11 +223,11 @@ export function ProfileProvider({ children, slug }: ProfileProviderProps) {
           ...prev,
           snsLinks: [...prev.snsLinks, link],
         };
-        persistProfile(next);
+        persistProfile(next, slug ?? next.username).catch(console.error);
         return next;
       });
     },
-    [persistProfile]
+    [persistProfile, slug]
   );
 
   const updateSnsLink = useCallback(
@@ -205,11 +239,11 @@ export function ProfileProvider({ children, slug }: ProfileProviderProps) {
             l.id === id ? { ...l, ...updates } : l
           ),
         };
-        persistProfile(next);
+        persistProfile(next, slug ?? next.username).catch(console.error);
         return next;
       });
     },
-    [persistProfile]
+    [persistProfile, slug]
   );
 
   const deleteSnsLink = useCallback(
@@ -219,31 +253,32 @@ export function ProfileProvider({ children, slug }: ProfileProviderProps) {
           ...prev,
           snsLinks: prev.snsLinks.filter((l) => l.id !== id),
         };
-        persistProfile(next);
+        persistProfile(next, slug ?? next.username).catch(console.error);
         return next;
       });
     },
-    [persistProfile]
+    [persistProfile, slug]
   );
-
 
   const setProfileHandler = useCallback(
     (next: Profile) => {
       setProfileState(next);
-      persistProfile(next);
+      persistProfile(next, slug ?? next.username).catch(console.error);
     },
-    [persistProfile]
+    [persistProfile, slug]
   );
 
   return (
     <ProfileContext.Provider
       value={{
         profile,
+        slug,
         setProfile: setProfileHandler,
         updateProfile,
         addSnsLink,
         updateSnsLink,
         deleteSnsLink,
+        refreshProfile,
       }}
     >
       {children}

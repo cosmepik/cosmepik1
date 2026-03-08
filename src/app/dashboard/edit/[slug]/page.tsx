@@ -13,6 +13,7 @@ import { SectionRenderer } from "@/components/cosme-link/section-renderer";
 import { AddSectionInline } from "@/components/cosme-link/add-section-inline";
 import { useSections } from "@/lib/section-context";
 import { getProfile, renameCosmeSet } from "@/lib/store";
+import { ProfileProvider, toProfile, useProfile } from "@/lib/profile-context";
 import { ShareModal } from "@/components/ShareModal";
 
 function EditPageContent({ slug }: { slug: string }) {
@@ -173,14 +174,30 @@ function EditPageContent({ slug }: { slug: string }) {
   );
 }
 
-/** 編集画面：UIBASE 完全準拠 */
+function EditPageWithSections({ slug }: { slug: string }) {
+  const { profile } = useProfile();
+  return (
+    <SectionProvider slug={slug} userAffiliateId={profile.rakutenAffiliateId || undefined} defaultEditMode>
+      <EditPageContent slug={slug} />
+    </SectionProvider>
+  );
+}
+
+/** 編集画面：storeからプロフィールを事前取得してProfileProviderに渡し、戻ってきた際も正しく表示 */
 export default function EditPage() {
   const params = useParams();
   const slug = (params?.slug as string) ?? "demo";
+  const [initialProfile, setInitialProfile] = useState<ReturnType<typeof toProfile> | null>(null);
+
+  useEffect(() => {
+    getProfile(slug).then((p) => {
+      setInitialProfile(toProfile(p, slug));
+    });
+  }, [slug]);
 
   return (
-    <SectionProvider slug={slug} defaultEditMode>
-      <EditPageContent slug={slug} />
-    </SectionProvider>
+    <ProfileProvider key={slug} slug={slug} initialProfile={initialProfile}>
+      <EditPageWithSections slug={slug} />
+    </ProfileProvider>
   );
 }

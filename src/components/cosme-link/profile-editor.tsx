@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import {
   X,
   Plus,
@@ -12,12 +13,14 @@ import {
 import { cn } from "@/lib/utils";
 import {
   useProfile,
+  toInfluencerProfile,
   type SkinType,
   type PersonalColor,
   skinTypeLabels,
   personalColorLabels,
 } from "@/lib/profile-context";
 import type { SnsLink } from "@/types";
+import { setProfile as saveProfileToStore } from "@/lib/store";
 import { XIcon } from "@/components/icons/x-icon";
 
 const snsTypeOptions = [
@@ -78,43 +81,67 @@ interface ProfileEditorProps {
 }
 
 export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
+  const params = useParams();
+  const slugFromParams = params?.slug as string | undefined;
   const {
     profile,
+    slug: slugFromContext,
     updateProfile,
     addSnsLink,
     updateSnsLink,
     deleteSnsLink,
   } = useProfile();
+  const slug = slugFromContext ?? slugFromParams ?? profile.username;
   const [name, setName] = useState(profile.name);
   const [bio, setBio] = useState(profile.bio);
-  const [bioSub, setBioSub] = useState(profile.bioSub);
   const [skinType, setSkinType] = useState<SkinType>(profile.skinType);
   const [personalColor, setPersonalColor] =
     useState<PersonalColor>(profile.personalColor);
+  const [rakutenAffiliateId, setRakutenAffiliateId] = useState(
+    profile.rakutenAffiliateId ?? ""
+  );
   const [showAddSns, setShowAddSns] = useState(false);
   const [newSnsType, setNewSnsType] = useState<SnsLink["type"]>("instagram");
   const [newSnsUrl, setNewSnsUrl] = useState("");
   const [newSnsLabel, setNewSnsLabel] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setName(profile.name);
       setBio(profile.bio);
-      setBioSub(profile.bioSub);
       setSkinType(profile.skinType);
       setPersonalColor(profile.personalColor);
+      setRakutenAffiliateId(profile.rakutenAffiliateId ?? "");
     }
-  }, [isOpen, profile.name, profile.bio, profile.bioSub, profile.skinType, profile.personalColor]);
+  }, [isOpen, profile.name, profile.bio, profile.skinType, profile.personalColor, profile.rakutenAffiliateId]);
 
-  const handleSave = () => {
-    updateProfile({
-      name: name.trim(),
-      bio: bio.trim(),
-      bioSub: bioSub.trim(),
-      skinType,
-      personalColor,
-    });
-    onClose();
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const next = {
+        ...profile,
+        name: name.trim(),
+        bio: bio.trim(),
+        skinType,
+        personalColor,
+        rakutenAffiliateId: rakutenAffiliateId.trim() || undefined,
+      };
+      const slugToSave = slug || profile.username || slugFromParams;
+      if (!slugToSave) {
+        setSaving(false);
+        return;
+      }
+      updateProfile({ name: next.name, bio: next.bio, skinType, personalColor, rakutenAffiliateId: next.rakutenAffiliateId });
+      const data = toInfluencerProfile(next);
+      await saveProfileToStore({ ...data, username: slugToSave, displayName: next.name });
+      onClose();
+    } catch (err) {
+      console.error("[ProfileEditor] 保存失敗:", err);
+      alert(err instanceof Error ? err.message : "プロフィールの保存に失敗しました。");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleAddSns = () => {
@@ -148,9 +175,10 @@ export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
           <div className="flex items-center gap-2">
             <button
               onClick={handleSave}
-              className="rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              disabled={saving}
+              className="rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
             >
-              保存
+              {saving ? "保存中..." : "保存"}
             </button>
             <button
               onClick={onClose}
@@ -244,18 +272,6 @@ export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
               />
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
-                サブテキスト
-              </label>
-              <input
-                type="text"
-                value={bioSub}
-                onChange={(e) => setBioSub(e.target.value)}
-                placeholder="ひとこと（任意）"
-                className="rounded-xl border-2 border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-              />
-            </div>
           </div>
 
           {/* Divider */}
@@ -321,6 +337,22 @@ export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground">
+                楽天アフィリエイトID
+              </label>
+              <input
+                type="text"
+                value={rakutenAffiliateId}
+                onChange={(e) => setRakutenAffiliateId(e.target.value)}
+                placeholder="0ea12345.ab.cd（任意）"
+                className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                楽天アフィリエイトに登録済みの場合、IDを入力すると収益の一部が還元されます
+              </p>
             </div>
           </div>
 

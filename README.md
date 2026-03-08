@@ -1,7 +1,8 @@
 # Cosmetree（コスメ版リンクツリー）MVP
 
 インフルエンサーが愛用コスメを検索・選択し、ファン向けの公開ページを作成できるプロトタイプです。  
-現在は **ダミーデータ** と **localStorage** で動作し、楽天API・Supabase連携は未実装です。
+- **localStorage**: デフォルトで使用（単一端末のみ）
+- **Supabase**: `.env.local` に `NEXT_PUBLIC_SUPABASE_URL` と `NEXT_PUBLIC_SUPABASE_ANON_KEY` を設定すると DB に保存され、**他端末で同期**されます（[SUPABASE_SETUP.md](./SUPABASE_SETUP.md) 参照）
 
 ## フォルダ構成
 

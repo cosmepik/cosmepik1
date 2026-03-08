@@ -5,11 +5,12 @@ import type { Section } from "@/lib/sections";
 
 const CURRENT_USERNAME = "demo";
 
-/** ブラウザではセッション付きクライアントを返す（RLS・認証が必要な操作のため） */
+/** ブラウザではセッション付きクライアントを返す。null の場合は supabase-js をフォールバック */
 function getClient() {
   if (typeof window !== "undefined") {
     const browser = createBrowserClient();
     if (browser) return browser;
+    if (supabase) return supabase;
   }
   return supabase;
 }
@@ -161,6 +162,7 @@ export async function fetchProfile(
     skinType: data.skin_type as string | undefined,
     personalColor: data.personal_color as string | undefined,
     snsLinks: data.sns_links as InfluencerProfile["snsLinks"],
+    rakutenAffiliateId: data.rakuten_affiliate_id as string | undefined,
     list,
     updatedAt: (data.updated_at as string) ?? new Date().toISOString(),
   };
@@ -171,12 +173,14 @@ export async function saveProfile(
   profile: Partial<InfluencerProfile> & { username: string }
 ): Promise<void> {
   const client = getClient();
-  if (!client) return;
+  if (!client) {
+    console.warn("[saveProfile] Supabase client is null. Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local");
+    return;
+  }
 
-  await ensureProfileExists(profile.username);
   const existing = await fetchProfile(profile.username);
-
   const row = {
+    username: profile.username,
     display_name: profile.displayName ?? existing?.displayName ?? "",
     avatar_url: profile.avatarUrl ?? existing?.avatarUrl ?? null,
     background_image_url: profile.backgroundImageUrl ?? existing?.backgroundImageUrl ?? null,
@@ -185,19 +189,17 @@ export async function saveProfile(
     skin_type: profile.skinType ?? existing?.skinType ?? null,
     personal_color: profile.personalColor ?? existing?.personalColor ?? null,
     sns_links: profile.snsLinks ?? existing?.snsLinks ?? null,
+    rakuten_affiliate_id: profile.rakutenAffiliateId ?? existing?.rakutenAffiliateId ?? null,
     updated_at: new Date().toISOString(),
   };
 
   const { error } = await client
     .from("profiles")
-    .update(row)
-    .eq("username", profile.username);
+    .upsert(row, { onConflict: "username" });
 
   if (error) {
-    await client.from("profiles").upsert(
-      { username: profile.username, ...row },
-      { onConflict: "username" }
-    );
+    console.error("[saveProfile] Supabase error:", error.message, error.code);
+    throw new Error(`プロフィール保存に失敗しました: ${error.message}`);
   }
 }
 

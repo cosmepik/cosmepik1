@@ -46,7 +46,7 @@ export function ProfileHeader() {
         {isEditMode && (
           <button
             onClick={() => setShowEditor(true)}
-            className="absolute -top-1 right-0 z-10 flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-md transition-all hover:bg-primary/90 active:scale-95"
+            className="absolute right-0 z-10 flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-md transition-all hover:bg-primary/90 active:scale-95"
           >
             <Pencil className="h-3 w-3" />
             プロフィール編集

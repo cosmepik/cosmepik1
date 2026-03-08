@@ -172,8 +172,13 @@ export function getProfile(slug: string): InfluencerProfile | null {
  * プロフィールを保存
  */
 export function setProfile(slug: string, profile: Partial<InfluencerProfile> & { username: string }): void {
-  const sets = getStoredSets();
-  const idx = sets.findIndex((s) => s.slug === slug);
+  let sets = getStoredSets();
+  let idx = sets.findIndex((s) => s.slug === slug);
+  if (idx < 0) {
+    createCosmeSet("マイコスメ", slug);
+    sets = getStoredSets();
+    idx = sets.findIndex((s) => s.slug === slug);
+  }
   if (idx < 0) return;
   const existing = sets[idx].profile;
   const merged: InfluencerProfile = {
@@ -186,6 +191,7 @@ export function setProfile(slug: string, profile: Partial<InfluencerProfile> & {
     skinType: profile.skinType ?? existing?.skinType,
     personalColor: profile.personalColor ?? existing?.personalColor,
     snsLinks: profile.snsLinks !== undefined ? profile.snsLinks : existing?.snsLinks,
+    rakutenAffiliateId: profile.rakutenAffiliateId ?? existing?.rakutenAffiliateId,
     list: existing?.list ?? [],
     updatedAt: new Date().toISOString(),
   };

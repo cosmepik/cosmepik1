@@ -1,13 +1,25 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { Suspense } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { ProfileProvider } from "@/lib/profile-context";
 
-/** パスから slug を取得（/dashboard/edit/xxx → xxx、それ以外 → demo） */
-function getSlugFromPath(pathname: string | null): string {
-  if (!pathname) return "demo";
+/** パスまたはクエリから slug を取得。ダッシュボード本体では null（プロフィール読み込み不要） */
+function getSlug(pathname: string | null, slugFromQuery: string | null): string | null {
+  if (!pathname) return slugFromQuery ?? null;
   const match = pathname.match(/^\/dashboard\/edit\/([^/]+)/);
-  return match ? match[1] : "demo";
+  if (match) return match[1];
+  if (pathname === "/dashboard/preview") return slugFromQuery ?? null;
+  return null;
+}
+
+function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const slugFromQuery = searchParams.get("slug");
+  const slug = getSlug(pathname, slugFromQuery);
+
+  return <ProfileProvider slug={slug}>{children}</ProfileProvider>;
 }
 
 export default function DashboardLayout({
@@ -15,8 +27,9 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-  const slug = getSlugFromPath(pathname);
-
-  return <ProfileProvider slug={slug}>{children}</ProfileProvider>;
+  return (
+    <Suspense fallback={<div className="min-h-screen" />}>
+      <DashboardLayoutInner>{children}</DashboardLayoutInner>
+    </Suspense>
+  );
 }

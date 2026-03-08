@@ -29,7 +29,7 @@ export default function PublicPageByUsername() {
   }, [username]);
 
   return (
-    <SectionProvider slug={username}>
+    <SectionProvider slug={username} userAffiliateId={profile?.rakutenAffiliateId}>
       <PublicProfileContent username={username} profile={profile} />
     </SectionProvider>
   );

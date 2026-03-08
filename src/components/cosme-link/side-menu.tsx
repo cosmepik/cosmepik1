@@ -6,6 +6,7 @@ import { X, Globe, Home, BarChart2, Settings, LogOut, ChevronRight } from "lucid
 import { cn } from "@/lib/utils";
 import { useProfile } from "@/lib/profile-context";
 import { useUser } from "@/hooks/use-user";
+import { getStorageType } from "@/lib/store";
 import { createClient } from "@/lib/supabase/client";
 import { supabase as supabaseFallback } from "@/lib/supabase";
 
@@ -172,7 +173,8 @@ export function SideMenu({ isOpen, onClose }: SideMenuProps) {
         <div className="border-t border-border/60 px-5 py-4">
           <div className="flex items-center gap-2">
             <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
-            <span className="text-[11px] text-muted-foreground">cosmepik v1.0</span>
+            <span className="text-[11px] text-muted-foreground">cosmepik v1.1</span>
+            <span className="text-[10px] text-muted-foreground/70">({getStorageType()})</span>
           </div>
           <p className="mt-1 text-[10px] text-muted-foreground/60">
             &copy; 2026 cosmepik. All rights reserved.

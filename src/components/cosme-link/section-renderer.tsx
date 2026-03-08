@@ -32,6 +32,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 import { type Section, type SectionItem } from "@/lib/sections";
 import { useSections } from "@/lib/section-context";
+import { useAffiliateClick } from "@/hooks/use-affiliate-click";
 import { useState } from "react";
 import { CosmeImage } from "@/components/CosmeImage";
 import { AddItemModal } from "./add-item-modal";
@@ -68,10 +69,12 @@ function SortableRoutineItem({
   item,
   isEditMode,
   onDelete,
+  onAffiliateClick,
 }: {
   item: SectionItem;
   isEditMode: boolean;
   onDelete: () => void;
+  onAffiliateClick: (link: string | undefined, itemId?: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
@@ -124,7 +127,7 @@ function SortableRoutineItem({
           onClick={(e) => {
             if (!isDragging && item.link) {
               e.preventDefault();
-              window.open(item.link, "_blank");
+              onAffiliateClick(item.link, item.id);
             }
           }}
         >
@@ -136,6 +139,12 @@ function SortableRoutineItem({
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-3 rounded-xl bg-card p-3 shadow-sm transition-all hover:shadow-md"
+          onClick={(e) => {
+            if (item.link) {
+              e.preventDefault();
+              onAffiliateClick(item.link, item.id);
+            }
+          }}
         >
           {cardContent}
         </a>
@@ -163,6 +172,7 @@ function SortableRoutineItem({
 
 function RoutineSection({ section, onAddItem }: SectionContentProps) {
   const { isEditMode, deleteItemFromSection, reorderItemsInSection } = useSections();
+  const onAffiliateClick = useAffiliateClick();
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { delay: 150, tolerance: 5 },
@@ -213,6 +223,7 @@ function RoutineSection({ section, onAddItem }: SectionContentProps) {
                   item={item}
                   isEditMode={isEditMode}
                   onDelete={() => deleteItemFromSection(section.id, item.id)}
+                  onAffiliateClick={onAffiliateClick}
                 />
               ))}
             </SortableContext>
@@ -224,6 +235,7 @@ function RoutineSection({ section, onAddItem }: SectionContentProps) {
               item={item}
               isEditMode={false}
               onDelete={() => {}}
+              onAffiliateClick={onAffiliateClick}
             />
           ))
         )}
@@ -243,20 +255,7 @@ function RoutineSection({ section, onAddItem }: SectionContentProps) {
 }
 
 function ProductsSection({ section, onAddItem }: SectionContentProps) {
-  const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
-  const { isEditMode, deleteItemFromSection } = useSections();
-
-  const toggleLike = (id: string) => {
-    setLikedIds((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
-  };
+  const { isEditMode } = useSections();
 
   return (
     <div className="flex flex-col gap-4">
@@ -290,13 +289,60 @@ function ProductsSection({ section, onAddItem }: SectionContentProps) {
         )}
       >
         {section.items.map((item) => (
-          <div key={item.id} className="group relative">
-            <a
-              href={item.link || "#"}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="relative block overflow-hidden rounded-xl bg-card shadow-sm transition-all hover:shadow-md"
-            >
+          <ProductCard key={item.id} item={item} isEditMode={isEditMode} section={section} onAddItem={onAddItem} />
+        ))}
+      </div>
+
+      {isEditMode && section.items.length > 0 && onAddItem && (
+        <button
+          type="button"
+          onClick={onAddItem}
+          className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/40 py-3 text-sm font-medium text-primary transition-colors hover:border-primary hover:bg-primary/5"
+        >
+          <Plus className="h-4 w-4" />
+          コスメを追加
+        </button>
+      )}
+    </div>
+  );
+}
+
+function ProductCard({
+  item,
+  isEditMode,
+  section,
+  onAddItem,
+}: {
+  item: SectionItem;
+  isEditMode: boolean;
+  section: Section;
+  onAddItem?: () => void;
+}) {
+  const { deleteItemFromSection } = useSections();
+  const onAffiliateClick = useAffiliateClick();
+  const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
+  const toggleLike = (id: string) =>
+    setLikedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  return (
+    <div className="group relative">
+      <a
+        href={item.link || "#"}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="relative block overflow-hidden rounded-xl bg-card shadow-sm transition-all hover:shadow-md"
+        onClick={(e) => {
+          if (item.link) {
+            e.preventDefault();
+            onAffiliateClick(item.link, item.id);
+          }
+        }}
+      >
               <div className="relative aspect-square overflow-hidden bg-secondary">
                 {item.image && (
                   <CosmeImage
@@ -352,30 +398,16 @@ function ProductsSection({ section, onAddItem }: SectionContentProps) {
                 </div>
               </div>
             </a>
-            {isEditMode && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  deleteItemFromSection(section.id, item.id);
-                }}
-                className="absolute -top-2 -right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm opacity-0 transition-opacity group-hover:opacity-100"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {isEditMode && section.items.length > 0 && onAddItem && (
+      {isEditMode && (
         <button
           type="button"
-          onClick={onAddItem}
-          className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/40 py-3 text-sm font-medium text-primary transition-colors hover:border-primary hover:bg-primary/5"
+          onClick={(e) => {
+            e.preventDefault();
+            deleteItemFromSection(section.id, item.id);
+          }}
+          className="absolute -top-2 -right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm opacity-0 transition-opacity group-hover:opacity-100"
         >
-          <Plus className="h-4 w-4" />
-          コスメを追加
+          <X className="h-3 w-3" />
         </button>
       )}
     </div>
@@ -405,6 +437,7 @@ function TextSection({ section }: { section: Section }) {
 
 function LinkSection({ section, onAddItem }: SectionContentProps) {
   const { isEditMode, deleteItemFromSection } = useSections();
+  const onAffiliateClick = useAffiliateClick();
 
   return (
     <div className="flex flex-col gap-2">
@@ -429,6 +462,12 @@ function LinkSection({ section, onAddItem }: SectionContentProps) {
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-between rounded-xl bg-card p-4 shadow-sm transition-all hover:shadow-md"
+            onClick={(e) => {
+              if (item.link) {
+                e.preventDefault();
+                onAffiliateClick(item.link, item.id);
+              }
+            }}
           >
             <span className="font-medium text-card-foreground">
               {item.label || item.product}

@@ -14,6 +14,11 @@ function useSupabase() {
   return typeof window !== "undefined" && isSupabaseConfigured;
 }
 
+/** デバッグ用：現在のストレージ種別（開発時のみコンソールに出力） */
+export function getStorageType(): "supabase" | "localStorage" {
+  return useSupabase() ? "supabase" : "localStorage";
+}
+
 function uid(userId?: string | null) {
   return userId ?? FALLBACK_USER_ID;
 }
@@ -83,7 +88,12 @@ export async function setProfile(
     local.setProfile(profile.username, profile);
     return;
   }
-  await db.saveProfile(profile);
+  try {
+    await db.saveProfile(profile);
+  } catch (err) {
+    console.error("[setProfile] DB保存失敗:", err);
+    throw err;
+  }
 }
 
 /** リストに1件追加 */

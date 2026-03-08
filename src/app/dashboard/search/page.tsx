@@ -77,7 +77,7 @@ function SearchContent() {
           setSearchDebug(data?._debug ?? null);
           if (isProduction) setSearchResults([]);
         } else if (res.ok && items.length === 0) {
-          setSearchError(isProduction ? "該当する商品がありません（楽天API）" : null);
+          setSearchError(isProduction ? "商品が見つかりませんでした。" : null);
           setSearchDebug(isProduction ? (data?._debug ?? null) : null);
           if (isProduction) setSearchResults([]);
         }
@@ -205,7 +205,7 @@ function SearchContent() {
               )}
             </div>
           )}
-          {!isSearching && searchResults.length === 0 && keyword.trim() && !searchError && <p className="text-sm text-muted-foreground">該当する商品がありません</p>}
+          {!isSearching && searchResults.length === 0 && keyword.trim() && !searchError && <p className="text-sm text-muted-foreground">商品が見つかりませんでした。</p>}
           {!isSearching && searchResults.length === 0 && !keyword.trim() && <p className="text-sm text-muted-foreground">検索窓に文字を入れると候補が表示されます</p>}
           {!isSearching && searchResults.map((item) => (
             <CosmeCard key={item.id} item={item} onAdd={openModal} isInList={false} />

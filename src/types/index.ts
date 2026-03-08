@@ -47,6 +47,8 @@ export interface InfluencerProfile {
   personalColor?: string;
   /** SNSリンク一覧 */
   snsLinks?: SnsLink[];
+  /** 楽天アフィリエイトID（確率分散型レベニューシェア用） */
+  rakutenAffiliateId?: string;
   list?: ListedCosmeItem[];
   updatedAt: string;
 }

@@ -13,6 +13,8 @@ import * as store from "./store";
 
 interface SectionContextType {
   slug: string;
+  /** 楽天アフィリエイトID（確率分散型レベニューシェア用） */
+  userAffiliateId?: string | null;
   sections: Section[];
   setSections: (sections: Section[]) => void;
   addSection: (section: Section) => void;
@@ -38,6 +40,7 @@ export function useSections(): SectionContextType {
   if (!ctx) {
     return {
       slug: "demo",
+      userAffiliateId: null,
       sections: [] as Section[],
       setSections: () => {},
       addSection: () => {},
@@ -62,11 +65,13 @@ export function useSections(): SectionContextType {
 interface SectionProviderProps {
   children: ReactNode;
   slug: string;
+  /** 楽天アフィリエイトID（確率分散型レベニューシェア用） */
+  userAffiliateId?: string | null;
   /** 編集画面では true にし、編集モードをデフォルトで ON にする */
   defaultEditMode?: boolean;
 }
 
-export function SectionProvider({ children, slug, defaultEditMode = false }: SectionProviderProps) {
+export function SectionProvider({ children, slug, userAffiliateId, defaultEditMode = false }: SectionProviderProps) {
   const [sections, setSectionsState] = useState<Section[]>([]);
   const [isEditMode, setIsEditMode] = useState(defaultEditMode);
   const [showAddSectionModal, setShowAddSectionModal] = useState(false);
@@ -265,6 +270,7 @@ export function SectionProvider({ children, slug, defaultEditMode = false }: Sec
     <SectionContext.Provider
       value={{
         slug,
+        userAffiliateId: userAffiliateId ?? null,
         sections,
         setSections: setSectionsHandler,
         addSection,

@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
 import { Upload } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { getProfileByUsername } from "@/lib/store";
+import { getProfile } from "@/lib/store";
 import { PublicProfileContent } from "@/components/PublicProfileContent";
 import { SectionProvider } from "@/lib/section-context";
 import { ShareModal } from "@/components/ShareModal";
@@ -13,12 +13,11 @@ import type { InfluencerProfile } from "@/types";
 function PreviewContent() {
   const searchParams = useSearchParams();
   const username = searchParams.get("slug") ?? "demo";
-
   const [profile, setProfile] = useState<InfluencerProfile | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
-    getProfileByUsername(username).then(setProfile);
+    getProfile(username).then(setProfile);
   }, [username]);
 
   const profileLink =
@@ -50,7 +49,7 @@ function PreviewContent() {
         url={profileLink}
         title="共有"
       />
-      <SectionProvider slug={username}>
+      <SectionProvider slug={username} userAffiliateId={profile?.rakutenAffiliateId}>
         <PublicProfileContent username={username} profile={profile} />
       </SectionProvider>
     </>
