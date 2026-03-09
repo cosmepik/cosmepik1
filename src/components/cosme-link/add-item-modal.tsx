@@ -8,6 +8,7 @@ import {
   Link as LinkIcon,
   Image as ImageIcon,
   Search,
+  Loader2,
 } from "lucide-react";
 import { useSections } from "@/lib/section-context";
 import { type SectionItem, type SectionType } from "@/lib/sections";
@@ -40,6 +41,7 @@ export function AddItemModal({
   const [linkLabel, setLinkLabel] = useState("");
   const [searchKeyword, setSearchKeyword] = useState("");
   const [searchResults, setSearchResults] = useState<CosmeItem[]>([]);
+  const [isSearchPending, setIsSearchPending] = useState(false);
   const [searchApiError, setSearchApiError] = useState<string | null>(null);
   const [searchApiDebug, setSearchApiDebug] = useState<object | null>(null);
   const [commentModalItem, setCommentModalItem] = useState<CosmeItem | null>(null);
@@ -86,6 +88,7 @@ export function AddItemModal({
     setLinkLabel("");
     setSearchKeyword("");
     setSearchResults([]);
+    setIsSearchPending(false);
     setSearchApiError(null);
     setSearchApiDebug(null);
     setCommentModalItem(null);
@@ -99,9 +102,11 @@ export function AddItemModal({
       setSearchResults([]);
       setSearchApiError(null);
       setSearchApiDebug(null);
+      setIsSearchPending(false);
       return;
     }
 
+    setIsSearchPending(true);
     const isProduction =
       typeof window !== "undefined" &&
       !["localhost", "127.0.0.1"].includes(window.location.hostname);
@@ -110,6 +115,7 @@ export function AddItemModal({
       setSearchResults(searchMockCosme(k));
       setSearchApiError(null);
       setSearchApiDebug(null);
+      setIsSearchPending(false);
       return;
     }
 
@@ -147,6 +153,8 @@ export function AddItemModal({
         setSearchApiError(msg);
         setSearchApiDebug(null);
         setSearchResults([]);
+      } finally {
+        setIsSearchPending(false);
       }
     }, 300);
     return () => clearTimeout(timer);
@@ -260,6 +268,12 @@ export function AddItemModal({
                   className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                 />
               </div>
+              {isSearchPending && (
+                <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
+                  <span>検索中</span>
+                </div>
+              )}
               {searchApiError && (
                 <div className="mb-2 space-y-1">
                   <p className="text-xs text-amber-600" title="原因追求用">

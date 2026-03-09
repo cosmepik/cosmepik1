@@ -3,6 +3,7 @@
 import { Suspense, useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { searchMockCosme } from "@/lib/mock-data";
 import { getSections, addItemToSection } from "@/lib/store";
 import { CosmeCard } from "@/components/CosmeCard";
@@ -21,6 +22,7 @@ function SearchContent() {
   const [sections, setSections] = useState<Awaited<ReturnType<typeof getSections>>>(null);
   const [searchResults, setSearchResults] = useState<CosmeItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isPending, setIsPending] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searchDebug, setSearchDebug] = useState<object | null>(null);
   const [modalItem, setModalItem] = useState<CosmeItem | null>(null);
@@ -38,9 +40,11 @@ function SearchContent() {
       setSearchError(null);
       setSearchDebug(null);
       setIsSearching(false);
+      setIsPending(false);
       return;
     }
 
+    setIsPending(true);
     const isProduction =
       typeof window !== "undefined" &&
       !["localhost", "127.0.0.1"].includes(window.location.hostname);
@@ -50,6 +54,7 @@ function SearchContent() {
       setSearchError(null);
       setSearchDebug(null);
       setIsSearching(false);
+      setIsPending(false);
       return;
     }
 
@@ -95,6 +100,7 @@ function SearchContent() {
         setSearchResults([]);
       } finally {
         setIsSearching(false);
+        setIsPending(false);
       }
     }, 300);
     return () => clearTimeout(timer);
@@ -197,7 +203,12 @@ function SearchContent() {
         </div>
 
         <div className="mt-6 space-y-4">
-          {isSearching && <p className="text-sm text-muted-foreground">検索中...</p>}
+          {(isSearching || isPending) && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
+              <span>検索中</span>
+            </div>
+          )}
           {searchError && (
             <div className="space-y-1">
               <p className="text-sm text-destructive">{searchError}</p>

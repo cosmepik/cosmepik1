@@ -65,10 +65,21 @@ const REMOVE_PHRASES = [
   "数量限定",
   "期間限定",
   "韓国コスメ",
+  "特価！",
+  "特価!",
+  "特価",
+  "スーパーSALE",
+  "セット販売",
 ];
 
 /** 括弧付き【】[] のプロモーション文言を除去する正規表現 */
 const BRACKET_PATTERN = /[【\[]([^】\]]*)[】\]]/g;
+
+/** 《》の括弧付き文言を除去 */
+const ANGLE_BRACKET_PATTERN = /《[^》]*》/g;
+
+/** %クーポン（10%クーポン、%クーポン など）を除去 */
+const COUPON_PATTERN = /\d*%クーポン/gi;
 
 /** ★に続く文言を除去（★送料無料、★5つ星 など。スペースまたは末尾で区切られた場合のみ） */
 const STAR_PATTERN = /★\s*[^\s★]+(?=\s|$)/g;
@@ -113,16 +124,18 @@ export function cleanseItemName(name: string): string {
   if (!name || typeof name !== "string") return "";
   let s = name.trim();
 
-  // 1. 【...】[...] の括弧ブロックを全て除去
+  // 1. 【...】[...]《》の括弧ブロックを全て除去
   s = s.replace(BRACKET_PATTERN, " ").trim();
+  s = s.replace(ANGLE_BRACKET_PATTERN, " ").trim();
 
   // 2. ★に続く文言を除去
   s = s.replace(STAR_PATTERN, " ").trim();
 
-  // 3. %OFF、MAX 円 などを除去
+  // 3. %OFF、MAX 円、%クーポン などを除去
   for (const re of DISCOUNT_PATTERNS) {
     s = s.replace(re, " ").trim();
   }
+  s = s.replace(COUPON_PATTERN, " ").trim();
 
   // 4. ポイント　倍　（スペース入り）を除去
   for (const re of POINT_BAI_PATTERNS) {
