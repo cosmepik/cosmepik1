@@ -3,7 +3,6 @@
 import { Suspense, useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
 import { searchMockCosme } from "@/lib/mock-data";
 import { getSections, addItemToSection } from "@/lib/store";
 import { CosmeCard } from "@/components/CosmeCard";
@@ -38,6 +37,7 @@ function SearchContent() {
       setSearchResults([]);
       setSearchError(null);
       setSearchDebug(null);
+      setIsSearching(false);
       return;
     }
 
@@ -47,18 +47,23 @@ function SearchContent() {
 
     if (!isProduction) {
       setSearchResults(searchMockCosme(k));
-    } else {
-      setSearchResults([]);
+      setSearchError(null);
+      setSearchDebug(null);
+      setIsSearching(false);
+      return;
     }
-    setSearchError(null);
-    setSearchDebug(null);
 
     const timer = setTimeout(async () => {
       setIsSearching(true);
       setSearchError(null);
       setSearchDebug(null);
       try {
-        const res = await fetch(`/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=20`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        const res = await fetch(`/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=20`, {
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
         const data = await res.json().catch(() => ({}));
         const items = Array.isArray(data?.items) ? data.items : [];
         const errMsg = data?.error ?? data?.error_description;
@@ -75,16 +80,19 @@ function SearchContent() {
               : `APIエラー (${res.status})`);
           setSearchError(msg);
           setSearchDebug(data?._debug ?? null);
-          if (isProduction) setSearchResults([]);
+          setSearchResults([]);
         } else if (res.ok && items.length === 0) {
-          setSearchError(isProduction ? "該当する商品がありません（楽天API）" : null);
-          setSearchDebug(isProduction ? (data?._debug ?? null) : null);
-          if (isProduction) setSearchResults([]);
+          setSearchError("該当する商品がありません（楽天API）");
+          setSearchDebug(data?._debug ?? null);
+          setSearchResults([]);
         }
       } catch (e) {
-        setSearchError(e instanceof Error ? e.message : "楽天APIへの接続に失敗しました");
+        const msg = e instanceof Error && e.name === "AbortError"
+          ? "検索がタイムアウトしました。もう一度お試しください。"
+          : (e instanceof Error ? e.message : "楽天APIへの接続に失敗しました");
+        setSearchError(msg);
         setSearchDebug(null);
-        if (isProduction) setSearchResults([]);
+        setSearchResults([]);
       } finally {
         setIsSearching(false);
       }
@@ -189,13 +197,8 @@ function SearchContent() {
         </div>
 
         <div className="mt-6 space-y-4">
-          {isSearching && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
-              <span>検索中</span>
-            </div>
-          )}
-          {!isSearching && searchError && (
+          {isSearching && <p className="text-sm text-muted-foreground">検索中...</p>}
+          {searchError && (
             <div className="space-y-1">
               <p className="text-sm text-destructive">{searchError}</p>
               {searchDebug && (
@@ -207,7 +210,7 @@ function SearchContent() {
           )}
           {!isSearching && searchResults.length === 0 && keyword.trim() && !searchError && <p className="text-sm text-muted-foreground">該当する商品がありません</p>}
           {!isSearching && searchResults.length === 0 && !keyword.trim() && <p className="text-sm text-muted-foreground">検索窓に文字を入れると候補が表示されます</p>}
-          {!isSearching && searchResults.map((item) => (
+          {searchResults.map((item) => (
             <CosmeCard key={item.id} item={item} onAdd={openModal} isInList={false} />
           ))}
         </div>

@@ -8,7 +8,6 @@ import {
   Link as LinkIcon,
   Image as ImageIcon,
   Search,
-  Loader2,
 } from "lucide-react";
 import { useSections } from "@/lib/section-context";
 import { type SectionItem, type SectionType } from "@/lib/sections";
@@ -41,7 +40,6 @@ export function AddItemModal({
   const [linkLabel, setLinkLabel] = useState("");
   const [searchKeyword, setSearchKeyword] = useState("");
   const [searchResults, setSearchResults] = useState<CosmeItem[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
   const [searchApiError, setSearchApiError] = useState<string | null>(null);
   const [searchApiDebug, setSearchApiDebug] = useState<object | null>(null);
   const [commentModalItem, setCommentModalItem] = useState<CosmeItem | null>(null);
@@ -88,19 +86,17 @@ export function AddItemModal({
     setLinkLabel("");
     setSearchKeyword("");
     setSearchResults([]);
-    setIsSearching(false);
     setSearchApiError(null);
     setSearchApiDebug(null);
     setCommentModalItem(null);
     onClose();
   };
 
-  // モーダル内検索：本番ではダミー表示せずAPI結果のみ。開発ではモック→API置き換え
+  // モーダル内検索：localhostはモックのみ。本番はAPI呼び出し（15秒タイムアウト）
   useEffect(() => {
     const k = searchKeyword.trim();
     if (!k) {
       setSearchResults([]);
-      setIsSearching(false);
       setSearchApiError(null);
       setSearchApiDebug(null);
       return;
@@ -112,17 +108,20 @@ export function AddItemModal({
 
     if (!isProduction) {
       setSearchResults(searchMockCosme(k));
-    } else {
-      setSearchResults([]);
+      setSearchApiError(null);
+      setSearchApiDebug(null);
+      return;
     }
-    setSearchApiError(null);
-    setSearchApiDebug(null);
 
     const timer = setTimeout(async () => {
-      setIsSearching(true);
       setSearchApiError(null);
       try {
-        const res = await fetch(`/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=20`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        const res = await fetch(`/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=20`, {
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
         const data = await res.json().catch(() => ({}));
         const items = Array.isArray(data?.items) ? data.items : [];
         const errMsg = data?.error ?? data?.error_description;
@@ -136,14 +135,18 @@ export function AddItemModal({
             (res.status === 403 ? "楽天APIのドメイン制限" : `APIエラー (${res.status})`);
           setSearchApiError(msg);
           setSearchApiDebug(data?._debug ?? null);
-          if (isProduction) setSearchResults([]);
+          setSearchResults([]);
         } else if (res.ok && items.length === 0) {
-          setSearchApiError(isProduction ? "該当する商品がありません（楽天API）" : null);
-          if (isProduction) setSearchResults([]);
+          setSearchApiError("該当する商品がありません（楽天API）");
+          setSearchResults([]);
         }
       } catch (e) {
-        setSearchApiError(e instanceof Error ? e.message : "楽天APIへの接続に失敗");
-        if (isProduction) setSearchResults([]);
+        const msg = e instanceof Error && e.name === "AbortError"
+          ? "検索がタイムアウトしました"
+          : (e instanceof Error ? e.message : "楽天APIへの接続に失敗");
+        setSearchApiError(msg);
+        setSearchApiDebug(null);
+        setSearchResults([]);
       }
     }, 300);
     return () => clearTimeout(timer);
@@ -257,13 +260,7 @@ export function AddItemModal({
                   className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                 />
               </div>
-              {isSearching && (
-                <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
-                  <span>検索中</span>
-                </div>
-              )}
-              {!isSearching && searchApiError && (
+              {searchApiError && (
                 <div className="mb-2 space-y-1">
                   <p className="text-xs text-amber-600" title="原因追求用">
                     {searchApiError}
@@ -275,7 +272,7 @@ export function AddItemModal({
                   )}
                 </div>
               )}
-              {!isSearching && searchResults.length > 0 && (
+              {searchResults.length > 0 && (
                 <div className="max-h-96 overflow-y-auto space-y-0.5 rounded-xl border border-border p-1.5">
                   {searchResults.slice(0, 12).map((item) => (
                     <CosmeCard
