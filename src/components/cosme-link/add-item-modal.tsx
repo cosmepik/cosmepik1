@@ -138,7 +138,7 @@ export function AddItemModal({
           setSearchApiDebug(data?._debug ?? null);
           if (isProduction) setSearchResults([]);
         } else if (res.ok && items.length === 0) {
-          setSearchApiError(isProduction ? "商品が見つかりませんでした。" : null);
+          setSearchApiError(isProduction ? "該当する商品がありません（楽天API）" : null);
           if (isProduction) setSearchResults([]);
         }
       } catch (e) {
@@ -274,9 +274,6 @@ export function AddItemModal({
                     </pre>
                   )}
                 </div>
-              )}
-              {!isSearching && searchKeyword.trim() && searchResults.length === 0 && !searchApiError && (
-                <p className="mb-2 text-sm text-muted-foreground">商品が見つかりませんでした。</p>
               )}
               {!isSearching && searchResults.length > 0 && (
                 <div className="max-h-96 overflow-y-auto space-y-0.5 rounded-xl border border-border p-1.5">
