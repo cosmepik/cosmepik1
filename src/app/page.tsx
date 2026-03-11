@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ChevronRight } from "lucide-react";
+import { CosmepikLogo } from "@/components/cosmepik-logo";
 import { createClient } from "@/lib/supabase/server";
 import { HeroSlideshow } from "@/components/landing/HeroSlideshow";
 import { HeroLinkInput } from "@/components/landing/HeroLinkInput";
@@ -105,16 +106,17 @@ export default async function LandingPage() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#9de0d8]/80 backdrop-blur-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 md:px-6 md:py-4">
           <Link href="/" className="flex items-center gap-1.5">
-            <span className="font-serif text-lg md:text-xl tracking-wide" style={{ color: "#0d4f4a" }}>
-              cosmepik
-            </span>
+            <CosmepikLogo className="h-6 md:h-7" height={30} color="#0d4f4a" />
           </Link>
-          <nav className="hidden md:flex items-center gap-8 text-xs tracking-[0.15em]" style={{ color: "#1a6b66" }}>
+          <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-xs tracking-[0.15em]" style={{ color: "#1a6b66" }}>
             <Link href="#concept" className="hover:opacity-80 transition-opacity" style={{ color: "#0d4f4a" }}>
               CONCEPT
             </Link>
             <Link href="#features" className="hover:opacity-80 transition-opacity" style={{ color: "#0d4f4a" }}>
               FEATURES
+            </Link>
+            <Link href="/guide/rakuten-affiliate" className="hover:opacity-80 transition-opacity" style={{ color: "#0d4f4a" }}>
+              収益化ガイド
             </Link>
             <Link href="#start" className="hover:opacity-80 transition-opacity" style={{ color: "#0d4f4a" }}>
               START
@@ -369,9 +371,7 @@ export default async function LandingPage() {
         <div className="mx-auto max-w-6xl px-4 md:px-6 py-8 md:py-12">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 md:gap-8">
             <div className="flex items-center gap-2">
-              <span className="font-serif text-lg tracking-wide" style={{ color: "#0d4f4a" }}>
-                cosmepik
-              </span>
+              <CosmepikLogo className="h-6" height={26} color="#0d4f4a" />
             </div>
             <nav className="flex flex-wrap gap-4 md:gap-6 text-[10px] tracking-[0.15em]">
               <Link href="/guide" className="hover:opacity-80 transition-opacity" style={{ color: "#1a6b66" }}>

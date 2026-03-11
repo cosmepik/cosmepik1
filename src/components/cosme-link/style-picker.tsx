@@ -6,6 +6,8 @@ import {
   useState,
   useEffect,
   useRef,
+  useId,
+  useCallback,
   type ReactNode,
 } from "react";
 import { usePathname, useParams, useSearchParams } from "next/navigation";
@@ -231,12 +233,14 @@ function useCurrentSlug(): string {
 function BackgroundUploadSection({
   slug,
   hasBackground,
+  backgroundImageUrl,
   onUpload,
   onRemove,
 }: {
   slug: string;
   hasBackground: boolean;
-  onUpload: () => void;
+  backgroundImageUrl: string | null;
+  onUpload: (url: string) => void;
   onRemove: () => void;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -247,22 +251,36 @@ function BackgroundUploadSection({
     if (!file || !file.type.startsWith("image/")) return;
     try {
       const dataUrl = await compressImage(file);
-      setProfile({
+      await setProfile({
         username: slug,
         backgroundImageUrl: dataUrl,
         updatedAt: new Date().toISOString(),
       });
       window.dispatchEvent(new CustomEvent("cosmepik-background-change"));
-      onUpload();
+      onUpload(dataUrl);
     } catch {
       alert("画像の読み込みに失敗しました。別の画像をお試しください。");
+    }
+  };
+
+  const handleRemove = async () => {
+    try {
+      await setProfile({
+        username: slug,
+        backgroundImageUrl: "",
+        updatedAt: new Date().toISOString(),
+      });
+      window.dispatchEvent(new CustomEvent("cosmepik-background-change"));
+      onRemove();
+    } catch {
+      alert("削除に失敗しました。");
     }
   };
 
   return (
     <div className="flex flex-col gap-2.5">
       <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">画像をアップロード</h4>
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2">
         <input
           ref={fileInputRef}
           type="file"
@@ -279,22 +297,22 @@ function BackgroundUploadSection({
           <Upload className="h-4 w-4" />
           画像を選択
         </button>
-        {hasBackground && (
-          <button
-            type="button"
-            onClick={() => {
-              setProfile({
-                username: slug,
-                backgroundImageUrl: "",
-                updatedAt: new Date().toISOString(),
-              });
-              window.dispatchEvent(new CustomEvent("cosmepik-background-change"));
-              onRemove();
-            }}
-            className="rounded-xl border-2 border-destructive/30 px-4 py-3 text-sm text-destructive transition-colors hover:bg-destructive/10"
-          >
-            削除
-          </button>
+        {hasBackground && backgroundImageUrl && (
+          <div className="relative aspect-[3/4] w-full max-w-[160px] overflow-hidden rounded-xl border-2 border-border bg-secondary">
+            <img
+              src={backgroundImageUrl}
+              alt="背景プレビュー"
+              className="h-full w-full object-cover"
+            />
+            <button
+              type="button"
+              onClick={handleRemove}
+              aria-label="背景画像を削除"
+              className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-white transition-colors hover:bg-black/70"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         )}
       </div>
     </div>
@@ -310,11 +328,7 @@ function CustomColorButton({
   onSelect: (id: string) => void;
   onClose: () => void;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const handleClick = () => {
-    inputRef.current?.click();
-  };
+  const id = useId();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const hex = e.target.value;
@@ -325,40 +339,37 @@ function CustomColorButton({
   const isCustomSelected = selected;
 
   return (
-    <>
+    <label
+      htmlFor={id}
+      className={cn(
+        "relative flex cursor-pointer aspect-square overflow-hidden rounded-xl border-2 transition-all",
+        isCustomSelected ? "border-primary ring-2 ring-primary/30" : "border-dashed border-border hover:border-primary/40"
+      )}
+      title="好きな色を選ぶ"
+    >
       <input
-        ref={inputRef}
+        id={id}
         type="color"
-        className="sr-only"
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
         onChange={handleChange}
         aria-label="好きな色を選択"
       />
-      <button
-        type="button"
-        onClick={handleClick}
-        className={cn(
-          "relative aspect-square overflow-hidden rounded-xl border-2 transition-all",
-          isCustomSelected ? "border-primary ring-2 ring-primary/30" : "border-dashed border-border hover:border-primary/40"
-        )}
-        title="好きな色を選ぶ"
-      >
-        <div
-          className="absolute inset-0"
-          style={{
-            background: "linear-gradient(135deg, #ff0000, #ff8000, #ffff00, #00ff00, #00ffff, #0080ff, #8000ff, #ff0080)",
-          }}
-        />
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-0.5">
-          <Plus className="h-6 w-6 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]" strokeWidth={2.5} />
-          <span className="text-[9px] font-medium text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">カスタム</span>
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: "linear-gradient(135deg, #ff0000, #ff8000, #ffff00, #00ff00, #00ffff, #0080ff, #8000ff, #ff0080)",
+        }}
+      />
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+        <Plus className="h-6 w-6 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]" strokeWidth={2.5} />
+        <span className="text-[9px] font-medium text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">カスタム</span>
+      </div>
+      {isCustomSelected && (
+        <div className="pointer-events-none absolute right-1 top-1 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+          <Check className="h-2.5 w-2.5" />
         </div>
-        {isCustomSelected && (
-          <div className="absolute right-1 top-1 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
-            <Check className="h-2.5 w-2.5" />
-          </div>
-        )}
-      </button>
-    </>
+      )}
+    </label>
   );
 }
 
@@ -373,6 +384,7 @@ function CustomGradientButton({
   onSelect: (id: string) => void;
   onClose: () => void;
 }) {
+  const id = useId();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [color1, setColor1] = useState("#ff9a9e");
   const [color2, setColor2] = useState("#fecfef");
@@ -382,13 +394,17 @@ function CustomGradientButton({
 
   useEffect(() => {
     if (!pickerOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
       if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
         setPickerOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
   }, [pickerOpen]);
 
   useEffect(() => {
@@ -443,7 +459,14 @@ function CustomGradientButton({
         <div className="absolute left-0 top-full z-20 mt-2 w-64 rounded-xl border border-border bg-card p-3 shadow-xl">
           <p className="mb-2 text-xs font-medium text-muted-foreground">色を選んでグラデーションを作る</p>
           <div className="flex gap-2">
+            <label
+              htmlFor={`${id}-color1`}
+              className="h-10 w-10 shrink-0 cursor-pointer rounded-lg border-2 border-border shadow-sm"
+              style={{ backgroundColor: color1 }}
+              aria-label="色1を変更"
+            />
             <input
+              id={`${id}-color1`}
               ref={input1Ref}
               type="color"
               value={color1}
@@ -451,27 +474,20 @@ function CustomGradientButton({
               className="sr-only"
               aria-label="色1"
             />
+            <label
+              htmlFor={`${id}-color2`}
+              className="h-10 w-10 shrink-0 cursor-pointer rounded-lg border-2 border-border shadow-sm"
+              style={{ backgroundColor: color2 }}
+              aria-label="色2を変更"
+            />
             <input
+              id={`${id}-color2`}
               ref={input2Ref}
               type="color"
               value={color2}
               onChange={(e) => setColor2(e.target.value)}
               className="sr-only"
               aria-label="色2"
-            />
-            <button
-              type="button"
-              onClick={() => input1Ref.current?.click()}
-              className="h-10 w-10 shrink-0 rounded-lg border-2 border-border shadow-sm"
-              style={{ backgroundColor: color1 }}
-              aria-label="色1を変更"
-            />
-            <button
-              type="button"
-              onClick={() => input2Ref.current?.click()}
-              className="h-10 w-10 shrink-0 rounded-lg border-2 border-border shadow-sm"
-              style={{ backgroundColor: color2 }}
-              aria-label="色2を変更"
             />
             <div
               className="h-10 flex-1 rounded-lg border border-border"
@@ -512,24 +528,39 @@ function BackgroundGrid({
   slug: string;
 }) {
   const [hasCustomBackground, setHasCustomBackground] = useState(false);
+  const [backgroundImageUrl, setBackgroundImageUrl] = useState<string | null>(null);
 
-  useEffect(() => {
-    getProfile(slug).then((p) => setHasCustomBackground(!!p?.backgroundImageUrl));
+  const refreshBackground = useCallback(() => {
+    getProfile(slug).then((p) => {
+      const url = p?.backgroundImageUrl ?? null;
+      setHasCustomBackground(!!url);
+      setBackgroundImageUrl(url ?? null);
+    });
   }, [slug]);
 
   useEffect(() => {
-    const handler = () => getProfile(slug).then((p) => setHasCustomBackground(!!p?.backgroundImageUrl));
-    window.addEventListener("cosmepik-background-change", handler);
-    return () => window.removeEventListener("cosmepik-background-change", handler);
-  }, [slug]);
+    refreshBackground();
+  }, [refreshBackground]);
+
+  useEffect(() => {
+    window.addEventListener("cosmepik-background-change", refreshBackground);
+    return () => window.removeEventListener("cosmepik-background-change", refreshBackground);
+  }, [refreshBackground]);
 
   return (
     <div className="flex flex-col gap-5">
       <BackgroundUploadSection
         slug={slug}
         hasBackground={hasCustomBackground}
-        onUpload={() => setHasCustomBackground(true)}
-        onRemove={() => setHasCustomBackground(false)}
+        backgroundImageUrl={backgroundImageUrl}
+        onUpload={(url) => {
+          setHasCustomBackground(true);
+          setBackgroundImageUrl(url);
+        }}
+        onRemove={() => {
+          setHasCustomBackground(false);
+          setBackgroundImageUrl(null);
+        }}
       />
       {safeBackgroundGroups.map((group) => (
         <div key={group.type} className="flex flex-col gap-2.5">

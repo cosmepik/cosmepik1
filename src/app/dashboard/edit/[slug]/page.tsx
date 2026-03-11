@@ -68,7 +68,18 @@ function EditPageContent({ slug }: { slug: string }) {
 
   return (
     <>
-    <main className="min-h-screen">
+    <main className="relative min-h-screen">
+      {backgroundImageUrl && (
+        <div
+          className="fixed inset-0 -z-10"
+          style={{
+            backgroundImage: `url(${backgroundImageUrl})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+          }}
+        />
+      )}
       <SideMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <DashboardHeader
         onMenuClick={() => setSidebarOpen(true)}

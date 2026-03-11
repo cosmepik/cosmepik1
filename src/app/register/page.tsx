@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { CosmepikLogo } from "@/components/cosmepik-logo";
 import { createClient } from "@/lib/supabase/client";
 import { supabase as supabaseFallback } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
@@ -91,8 +92,8 @@ export default function RegisterPage() {
     <main className="flex min-h-screen flex-col items-center justify-center px-4">
       <div className="w-full max-w-md rounded-xl border border-border bg-white p-6 shadow-sm">
         <div className="mb-6 flex justify-center">
-          <Link href="/" className="text-xl font-bold tracking-tight text-foreground hover:opacity-80">
-            cosmepik
+          <Link href="/" className="flex justify-center hover:opacity-80">
+            <CosmepikLogo className="h-7" height={30} />
           </Link>
         </div>
         <h1 className="mb-6 text-center text-lg font-semibold text-foreground">新規登録</h1>

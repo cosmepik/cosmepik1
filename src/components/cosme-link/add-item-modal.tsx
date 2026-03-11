@@ -200,7 +200,7 @@ export function AddItemModal({
         onClick={handleClose}
         aria-hidden="true"
       />
-      <div className="relative z-10 flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-card shadow-xl animate-in slide-in-from-bottom duration-300">
+      <div className="relative z-10 flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-card shadow-xl animate-in slide-in-from-bottom duration-300">
         <div className="flex shrink-0 items-center justify-between border-b border-border px-5 pb-3 pt-5">
           <h3 className="text-base font-bold text-card-foreground">
             {getTitle()}

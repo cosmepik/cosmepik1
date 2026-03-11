@@ -43,13 +43,13 @@ export async function fetchList(username: string): Promise<ListedCosmeItem[]> {
   }));
 }
 
-/** プロフィールが無ければ作成（list の FK 用） */
+/** プロフィールが無ければ作成（list の FK 用）。既存プロフィールは上書きしない */
 async function ensureProfileExists(username: string): Promise<void> {
   const client = getClient();
   if (!client) return;
   await client.from("profiles").upsert(
     { username, display_name: "", updated_at: new Date().toISOString() },
-    { onConflict: "username" }
+    { onConflict: "username", ignoreDuplicates: true }
   );
 }
 
@@ -253,12 +253,15 @@ export async function fetchCosmeSets(userId: string): Promise<CosmeSet[]> {
     data.map(async (row: Record<string, unknown>) => {
       const slug = row.slug as string;
       const profile = await fetchProfile(slug);
-      const list = await fetchList(slug);
+      const sections = await fetchSections(slug);
+      const itemCount = sections
+        ? sections.reduce((sum, sec) => sum + sec.items.length, 0)
+        : 0;
       return {
         id: row.id as string,
         name: (row.name as string) ?? "マイコスメ",
         slug,
-        itemCount: list.length,
+        itemCount,
         avatarUrl: profile?.avatarUrl,
       };
     })
@@ -295,6 +298,24 @@ export async function createCosmeSet(
     slug: data.slug as string,
     itemCount: 0,
   };
+}
+
+/** コスメセットの名前を更新 */
+export async function updateCosmeSetName(
+  userId: string,
+  slug: string,
+  name: string
+): Promise<boolean> {
+  const client = getClient();
+  if (!client) return false;
+
+  const { error } = await client
+    .from("cosme_sets")
+    .update({ name: name.trim() || "マイコスメ" })
+    .eq("user_id", userId)
+    .eq("slug", slug);
+
+  return !error;
 }
 
 /** コスメセット削除（cosme_sets, list_items, profiles を削除） */

@@ -102,7 +102,7 @@ function SortableRoutineItem({
             {item.brand}
           </span>
         )}
-        <span className="truncate text-sm font-medium text-card-foreground">
+        <span className="line-clamp-2 text-sm font-medium leading-snug text-card-foreground">
           {item.product}
         </span>
         {item.label && (
@@ -259,14 +259,6 @@ function ProductsSection({ section, onAddItem }: SectionContentProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      {section.items.length > 0 && (
-        <div className="flex items-center justify-end">
-          <span className="text-xs text-muted-foreground">
-            {section.items.length}個のアイテム
-          </span>
-        </div>
-      )}
-
       {section.items.length === 0 && isEditMode && onAddItem && (
         <div className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border py-8 text-center">
           <Grid2X2 className="h-8 w-8 text-muted-foreground/50" />

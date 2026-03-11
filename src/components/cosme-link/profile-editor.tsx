@@ -97,9 +97,6 @@ export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
   const [skinType, setSkinType] = useState<SkinType>(profile.skinType);
   const [personalColor, setPersonalColor] =
     useState<PersonalColor>(profile.personalColor);
-  const [rakutenAffiliateId, setRakutenAffiliateId] = useState(
-    profile.rakutenAffiliateId ?? ""
-  );
   const [showAddSns, setShowAddSns] = useState(false);
   const [newSnsType, setNewSnsType] = useState<SnsLink["type"]>("instagram");
   const [newSnsUrl, setNewSnsUrl] = useState("");
@@ -112,9 +109,8 @@ export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
       setBio(profile.bio);
       setSkinType(profile.skinType);
       setPersonalColor(profile.personalColor);
-      setRakutenAffiliateId(profile.rakutenAffiliateId ?? "");
     }
-  }, [isOpen, profile.name, profile.bio, profile.skinType, profile.personalColor, profile.rakutenAffiliateId]);
+  }, [isOpen, profile.name, profile.bio, profile.skinType, profile.personalColor]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -125,14 +121,13 @@ export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
         bio: bio.trim(),
         skinType,
         personalColor,
-        rakutenAffiliateId: rakutenAffiliateId.trim() || undefined,
       };
       const slugToSave = slug || profile.username || slugFromParams;
       if (!slugToSave) {
         setSaving(false);
         return;
       }
-      updateProfile({ name: next.name, bio: next.bio, skinType, personalColor, rakutenAffiliateId: next.rakutenAffiliateId });
+      updateProfile({ name: next.name, bio: next.bio, skinType, personalColor });
       const data = toInfluencerProfile(next);
       await saveProfileToStore({ ...data, username: slugToSave, displayName: next.name });
       onClose();
@@ -339,21 +334,6 @@ export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
               </div>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
-                楽天アフィリエイトID
-              </label>
-              <input
-                type="text"
-                value={rakutenAffiliateId}
-                onChange={(e) => setRakutenAffiliateId(e.target.value)}
-                placeholder="0ea12345.ab.cd（任意）"
-                className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-              />
-              <p className="text-[11px] text-muted-foreground">
-                楽天アフィリエイトに登録済みの場合、IDを入力すると収益の一部が還元されます
-              </p>
-            </div>
           </div>
 
           {/* Divider */}

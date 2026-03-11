@@ -20,6 +20,12 @@ function PreviewContent() {
     getProfile(username).then(setProfile);
   }, [username]);
 
+  useEffect(() => {
+    const handler = () => getProfile(username).then(setProfile);
+    window.addEventListener("cosmepik-background-change", handler);
+    return () => window.removeEventListener("cosmepik-background-change", handler);
+  }, [username]);
+
   const profileLink =
     typeof window !== "undefined" ? `${window.location.origin}/p/${username}` : "";
 

@@ -45,6 +45,13 @@ const config: Config = {
         serif: ["var(--font-serif)", "Cormorant Garamond", "serif"],
         rounded: ["var(--font-rounded)", "M PLUS Rounded 1c", "sans-serif"],
         mincho: ["var(--font-mincho)", "Shippori Mincho", "serif"],
+        "noto-sans": ["var(--font-noto-sans)", "Noto Sans JP", "sans-serif"],
+        shippori: ["var(--font-mincho)", "Shippori Mincho", "serif"],
+        zen: ["var(--font-zen)", "Zen Kaku Gothic New", "sans-serif"],
+        "zen-maru": ["var(--font-zen-maru)", "Zen Maru Gothic", "sans-serif"],
+        "mplus-rounded": ["var(--font-rounded)", "M PLUS Rounded 1c", "sans-serif"],
+        kosugi: ["var(--font-kosugi)", "Kosugi Maru", "sans-serif"],
+        "noto-serif": ["var(--font-noto-serif)", "Noto Serif JP", "serif"],
       },
       borderRadius: {
         lg: "0.625rem",

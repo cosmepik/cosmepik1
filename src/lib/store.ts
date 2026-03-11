@@ -35,6 +35,16 @@ export async function deleteCosmeSet(userId: string | null | undefined, slug: st
   return db.deleteCosmeSet(uid(userId), slug);
 }
 
+/** コスメセットの名前を更新 */
+export async function updateCosmeSetName(
+  userId: string | null | undefined,
+  slug: string,
+  name: string
+): Promise<boolean> {
+  if (!useSupabase()) return Promise.resolve(local.updateCosmeSetName(slug, name));
+  return db.updateCosmeSetName(uid(userId), slug, name);
+}
+
 /** コスメセット作成 */
 export async function createCosmeSet(
   userId: string | null | undefined,

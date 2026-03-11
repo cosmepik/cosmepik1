@@ -10,7 +10,7 @@ import {
 } from "react";
 import { themes, themeVariables, type ThemeId } from "@/lib/themes";
 import { backgrounds } from "@/lib/backgrounds";
-import { getFontFamily, type FontId } from "@/lib/fonts";
+import { getFontFamily, isValidFontId, type FontId } from "@/lib/fonts";
 
 const THEME_STORAGE_KEY = "cosmepik-theme";
 const BACKGROUND_STORAGE_KEY = "cosmepik-background";
@@ -133,7 +133,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       }
 
       const storedFont = localStorage.getItem(FONT_STORAGE_KEY) as FontId | null;
-      if (storedFont && ["sans", "rounded", "mincho", "serif"].includes(storedFont)) {
+      if (storedFont && isValidFontId(storedFont)) {
         setFontIdState(storedFont);
         applyFont(storedFont);
       } else {

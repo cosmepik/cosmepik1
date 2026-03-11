@@ -56,6 +56,7 @@ export type FontId =
   | "noto-sans"
   | "shippori"
   | "zen"
+  | "zen-maru"
   | "mplus-rounded"
   | "kosugi"
   | "noto-serif";
@@ -73,6 +74,7 @@ export const FONT_OPTIONS: FontOption[] = [
   { id: "noto-sans", name: "Noto Sans JP", fontClassName: "font-noto-sans" },
   { id: "shippori", name: "しっぽり明朝", fontClassName: "font-shippori" },
   { id: "zen", name: "Zen角ゴ", fontClassName: "font-zen" },
+  { id: "zen-maru", name: "Zen丸ゴ", fontClassName: "font-zen-maru" },
   { id: "mplus-rounded", name: "M PLUS Rounded", fontClassName: "font-mplus-rounded" },
   { id: "kosugi", name: "小杉丸ゴ", fontClassName: "font-kosugi" },
   { id: "noto-serif", name: "Noto Serif JP", fontClassName: "font-noto-serif" },

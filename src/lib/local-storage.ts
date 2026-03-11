@@ -220,6 +220,18 @@ export function deleteCosmeSet(slug: string): boolean {
 }
 
 /**
+ * コスメセットの名前を変更
+ */
+export function updateCosmeSetName(slug: string, name: string): boolean {
+  const sets = getStoredSets();
+  const idx = sets.findIndex((s) => s.slug === slug);
+  if (idx < 0) return false;
+  sets[idx] = { ...sets[idx], name: name.trim() || "マイコスメ" };
+  saveStoredSets(sets);
+  return true;
+}
+
+/**
  * セットの slug（公開URL）を変更
  */
 export function renameCosmeSet(oldSlug: string, newSlug: string): boolean {
