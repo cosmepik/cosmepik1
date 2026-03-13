@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
-/** プロフィール保存後に公開ページのキャッシュを即時無効化する */
+/** プロフィール/セクション保存後に公開ページのキャッシュを即時無効化する */
 export async function POST(request: NextRequest) {
   try {
     const { username } = (await request.json()) as { username?: string };

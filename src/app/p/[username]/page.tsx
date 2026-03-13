@@ -1,29 +1,19 @@
-import { isSupabaseConfigured } from "@/lib/supabase";
-import { fetchProfileLight, fetchSections } from "@/lib/supabase-db";
+import { fetchPublicPageData } from "@/lib/supabase-fetch";
 import { PublicPageClient } from "./PublicPageClient";
 
-export const revalidate = 30;
+export const revalidate = 86400;
 
 type Props = { params: Promise<{ username: string }> };
 
 export default async function PublicPageByUsername({ params }: Props) {
   const { username } = await params;
-
-  let profile = null;
-  let sections: Awaited<ReturnType<typeof fetchSections>> = [];
-
-  if (isSupabaseConfigured) {
-    [profile, sections] = await Promise.all([
-      fetchProfileLight(username),
-      fetchSections(username),
-    ]);
-  }
+  const { profile, sections } = await fetchPublicPageData(username);
 
   return (
     <PublicPageClient
       username={username}
       profile={profile}
-      sections={sections ?? []}
+      sections={sections}
     />
   );
 }

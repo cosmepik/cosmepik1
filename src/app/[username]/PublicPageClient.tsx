@@ -1,13 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 import Link from "next/link";
-import { Upload } from "lucide-react";
-import { PublicProfileContent } from "@/components/PublicProfileContent";
+import { CosmepikLogo } from "@/components/cosmepik-logo";
+import { ProfileHeaderView } from "@/components/ProfileHeader";
 import { ProfileThemeApplier } from "@/components/ProfileThemeApplier";
-import { SectionProvider } from "@/lib/section-context";
-import { ShareModal } from "@/components/ShareModal";
+import { PublicSectionRenderer } from "@/components/public/PublicSectionRenderer";
 import type { InfluencerProfile } from "@/types";
 import type { Section } from "@/lib/sections";
 
@@ -18,49 +16,59 @@ interface Props {
 }
 
 export function PublicPageClient({ username, profile, sections }: Props) {
-  const pathname = usePathname();
-  const isPreview = pathname === "/demo";
-  const [shareOpen, setShareOpen] = useState(false);
+  useEffect(() => {
+    fetch(`/api/analytics/view?username=${encodeURIComponent(username)}`, {
+      method: "POST",
+    }).catch(() => {});
+  }, [username]);
 
-  const profileLink =
-    typeof window !== "undefined" ? `${window.location.origin}/p/${username}` : "";
+  const hasCustomBg = !!profile?.backgroundImageUrl;
+  const usePreset = !!profile?.usePreset;
 
   return (
     <>
-      {isPreview && (
-        <div className="mx-auto max-w-md px-4 pb-4 pt-10">
-          <div className="mb-4 flex items-center justify-between">
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center text-sm font-medium text-green hover:underline"
-            >
-              ← ダッシュボードに戻る
-            </Link>
-            <button
-              type="button"
-              onClick={() => setShareOpen(true)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-white text-foreground shadow-sm transition-colors hover:bg-muted/50"
-              aria-label="リンクを共有"
-            >
-              <Upload className="h-5 w-5" strokeWidth={1.5} />
-            </button>
-          </div>
-          <ShareModal
-            open={shareOpen}
-            onClose={() => setShareOpen(false)}
-            url={profileLink}
-            title="共有"
-          />
-        </div>
-      )}
       <ProfileThemeApplier profile={profile} />
-      <SectionProvider
-        slug={username}
-        userAffiliateId={profile?.rakutenAffiliateId}
-        initialSections={sections}
-      >
-        <PublicProfileContent username={username} profile={profile} />
-      </SectionProvider>
+      <div className="relative min-h-screen w-full">
+        {hasCustomBg && !usePreset && (
+          <div
+            className="fixed inset-0 z-0"
+            style={{
+              backgroundImage: `url(${profile!.backgroundImageUrl})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+            }}
+          />
+        )}
+        <main className="page-transition-enter relative z-10 mx-auto flex max-w-md flex-col gap-6 px-4 py-8">
+          <div className="flex justify-center">
+            <CosmepikLogo className="h-6" height={26} />
+          </div>
+
+          <ProfileHeaderView username={username} profile={profile} />
+
+          {sections.map((section) => (
+            <PublicSectionRenderer
+              key={section.id}
+              section={section}
+              slug={username}
+              userAffiliateId={profile?.rakutenAffiliateId}
+            />
+          ))}
+
+          <footer className="flex flex-col items-center gap-2 pb-8 pt-4">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <span className="text-xs font-medium">
+                Powered by{" "}
+                <CosmepikLogo className="h-4 inline-block align-middle" height={18} color="var(--green)" />
+              </span>
+            </div>
+            <Link href="/" className="text-xs font-medium text-green hover:underline">
+              cosmepikを使ってみる
+            </Link>
+          </footer>
+        </main>
+      </div>
     </>
   );
 }
