@@ -35,8 +35,9 @@ html {
 
 body {
   @apply antialiased;
-  background-color: var(--background);
-  color: var(--foreground);
+  background-color: #ffffff;
+  background-color: var(--background, #ffffff);
+  color: var(--foreground, #1a1a2e);
   font-family: var(--font-body, var(--font-noto-sans)), "Noto Sans JP", sans-serif;
 }
 

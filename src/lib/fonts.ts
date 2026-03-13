@@ -25,36 +25,27 @@ export const fonts: { id: FontId; name: string; nameJa: string }[] = [
   { id: "mincho", name: "Shippori Mincho", nameJa: "明朝体" },
 ];
 
-const FONT_VAR_MAP: Record<FontId, string> = {
-  sans: "var(--font-noto-sans)",
-  rounded: "var(--font-rounded)",
-  mincho: "var(--font-mincho)",
-  serif: "var(--font-serif)",
-  "noto-sans": "var(--font-noto-sans)",
-  shippori: "var(--font-mincho)",
-  zen: "var(--font-zen)",
-  "zen-maru": "var(--font-zen-maru)",
-  "mplus-rounded": "var(--font-rounded)",
-  kosugi: "var(--font-kosugi)",
-  "noto-serif": "var(--font-noto-serif)",
+const FONT_FAMILY_MAP: Record<FontId, string> = {
+  sans: "var(--font-noto-sans), 'Noto Sans JP', sans-serif",
+  rounded: "'M PLUS Rounded 1c', var(--font-noto-sans), sans-serif",
+  mincho: "'Shippori Mincho', serif",
+  serif: "'Cormorant Garamond', serif",
+  "noto-sans": "var(--font-noto-sans), 'Noto Sans JP', sans-serif",
+  shippori: "'Shippori Mincho', serif",
+  zen: "'Zen Kaku Gothic New', var(--font-noto-sans), sans-serif",
+  "zen-maru": "'Zen Maru Gothic', var(--font-noto-sans), sans-serif",
+  "mplus-rounded": "'M PLUS Rounded 1c', var(--font-noto-sans), sans-serif",
+  kosugi: "'Kosugi Maru', var(--font-noto-sans), sans-serif",
+  "noto-serif": "'Noto Serif JP', serif",
 };
 
 const VALID_FONT_IDS: FontId[] = [
-  "sans",
-  "rounded",
-  "mincho",
-  "serif",
-  "noto-sans",
-  "shippori",
-  "zen",
-  "zen-maru",
-  "mplus-rounded",
-  "kosugi",
-  "noto-serif",
+  "sans", "rounded", "mincho", "serif", "noto-sans",
+  "shippori", "zen", "zen-maru", "mplus-rounded", "kosugi", "noto-serif",
 ];
 
 export function getFontFamily(fontId: FontId): string {
-  return FONT_VAR_MAP[fontId] ?? FONT_VAR_MAP.sans;
+  return FONT_FAMILY_MAP[fontId] ?? FONT_FAMILY_MAP.sans;
 }
 
 export function isValidFontId(id: string): id is FontId {

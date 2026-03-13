@@ -24,7 +24,7 @@ export function LayoutBackground({ children }: { children: React.ReactNode }) {
 
   return (
     <div
-      className="min-h-screen transition-all duration-300"
+      className="min-h-screen"
       style={
         showWallpaper
           ? {
