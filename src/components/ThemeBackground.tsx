@@ -4,7 +4,7 @@
 export function ThemeBackground({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <div className="h-1.5 bg-green" />
+      <div className="relative z-20 h-1.5 bg-green" />
       {children}
     </>
   );

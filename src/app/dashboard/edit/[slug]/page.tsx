@@ -14,6 +14,7 @@ import { AddSectionInline } from "@/components/cosme-link/add-section-inline";
 import { useSections } from "@/lib/section-context";
 import { getProfile, renameCosmeSet } from "@/lib/store";
 import { ProfileProvider, toProfile, useProfile } from "@/lib/profile-context";
+import { ProfileThemeLoader } from "@/components/ProfileThemeLoader";
 import { ShareModal } from "@/components/ShareModal";
 
 function EditPageContent({ slug }: { slug: string }) {
@@ -21,10 +22,13 @@ function EditPageContent({ slug }: { slug: string }) {
   const { sections, isEditMode } = useSections();
 
   const [backgroundImageUrl, setBackgroundImageUrl] = useState("");
+  const [usePreset, setUsePreset] = useState(false);
+
   const loadProfile = useCallback(
     () =>
       getProfile(slug).then((p) => {
         setBackgroundImageUrl(p?.backgroundImageUrl ?? "");
+        setUsePreset(!!p?.usePreset);
       }),
     [slug]
   );
@@ -32,6 +36,12 @@ function EditPageContent({ slug }: { slug: string }) {
   useEffect(() => {
     loadProfile();
   }, [slug, loadProfile]);
+
+  useEffect(() => {
+    const handler = () => loadProfile();
+    window.addEventListener("cosmepik-background-change", handler);
+    return () => window.removeEventListener("cosmepik-background-change", handler);
+  }, [loadProfile]);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -69,9 +79,9 @@ function EditPageContent({ slug }: { slug: string }) {
   return (
     <>
     <main className="relative min-h-screen">
-      {backgroundImageUrl && (
+      {backgroundImageUrl && !usePreset && (
         <div
-          className="fixed inset-0 -z-10"
+          className="fixed inset-0 z-0"
           style={{
             backgroundImage: `url(${backgroundImageUrl})`,
             backgroundSize: "cover",
@@ -80,6 +90,7 @@ function EditPageContent({ slug }: { slug: string }) {
           }}
         />
       )}
+      <div className="relative z-10">
       <SideMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <DashboardHeader
         onMenuClick={() => setSidebarOpen(true)}
@@ -105,12 +116,17 @@ function EditPageContent({ slug }: { slug: string }) {
 
       <div className="mx-auto max-w-md px-4 py-5">
         {/* デザイン編集ボタン群（背景・テーマ） */}
-        <DesignEditButtons slug={slug} hasBackground={!!backgroundImageUrl} onBackgroundChange={loadProfile} />
+        <DesignEditButtons
+          slug={slug}
+          hasBackground={!!backgroundImageUrl}
+          onBackgroundChange={loadProfile}
+          onBackgroundUrl={(url) => setBackgroundImageUrl(url)}
+        />
 
         {/* 公開リンク（編集ボタン群） */}
-        <div className="mb-5 flex items-center gap-2">
+        <div className="mb-5 flex justify-center items-center gap-2">
           {editingUrl ? (
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+            <div className="flex min-w-0 max-w-md flex-wrap items-center justify-center gap-2">
               <span className="shrink-0 text-sm text-muted-foreground">
                 {typeof window !== "undefined" ? `${window.location.origin}/p/` : ""}
               </span>
@@ -139,10 +155,10 @@ function EditPageContent({ slug }: { slug: string }) {
                 href={profileUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-border bg-white px-4 py-3 text-sm text-foreground no-underline shadow-sm transition-colors hover:bg-muted/50"
+                className="flex max-w-sm items-center gap-2 rounded-full border border-border bg-white px-3 py-2 text-sm text-foreground no-underline shadow-sm transition-colors hover:bg-muted/50"
               >
                 <span className="min-w-0 truncate">{profileUrl}</span>
-                <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
               </a>
               <button
                 type="button"
@@ -173,6 +189,7 @@ function EditPageContent({ slug }: { slug: string }) {
             </div>
           ))}
         </div>
+      </div>
       </div>
     </main>
     <ShareModal
@@ -208,6 +225,7 @@ export default function EditPage() {
 
   return (
     <ProfileProvider key={slug} slug={slug} initialProfile={initialProfile}>
+      <ProfileThemeLoader slug={slug} />
       <EditPageWithSections slug={slug} />
     </ProfileProvider>
   );

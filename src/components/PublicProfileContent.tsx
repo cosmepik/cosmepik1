@@ -22,12 +22,13 @@ export function PublicProfileContent({
   const { sections } = useSections();
 
   const hasCustomBg = !!profile?.backgroundImageUrl;
+  const usePreset = !!profile?.usePreset;
 
   return (
     <div className="relative min-h-screen w-full">
-      {hasCustomBg && (
+      {hasCustomBg && !usePreset && (
         <div
-          className="fixed inset-0 -z-10"
+          className="fixed inset-0 z-0"
           style={{
             backgroundImage: `url(${profile!.backgroundImageUrl})`,
             backgroundSize: "cover",
@@ -36,7 +37,7 @@ export function PublicProfileContent({
           }}
         />
       )}
-      <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-8">
+      <main className="page-transition-enter relative z-10 mx-auto flex max-w-md flex-col gap-6 px-4 py-8">
         {/* Logo */}
         <div className="flex justify-center">
           <CosmepikLogo className="h-6" height={26} />

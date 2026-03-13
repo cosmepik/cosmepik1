@@ -6,6 +6,7 @@ import { Upload } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { getProfile } from "@/lib/store";
 import { PublicProfileContent } from "@/components/PublicProfileContent";
+import { ProfileThemeApplier } from "@/components/ProfileThemeApplier";
 import { SectionProvider } from "@/lib/section-context";
 import { ShareModal } from "@/components/ShareModal";
 import type { InfluencerProfile } from "@/types";
@@ -31,7 +32,7 @@ function PreviewContent() {
 
   return (
     <>
-      <div className="mx-auto max-w-md px-4 pb-4 pt-6">
+      <div className="relative z-10 mx-auto max-w-md px-4 pb-4 pt-6">
         <div className="mb-4 flex items-center justify-between gap-4">
           <Link
             href={`/dashboard/edit/${username}`}
@@ -55,6 +56,7 @@ function PreviewContent() {
         url={profileLink}
         title="共有"
       />
+      <ProfileThemeApplier profile={profile} />
       <SectionProvider slug={username} userAffiliateId={profile?.rakutenAffiliateId}>
         <PublicProfileContent username={username} profile={profile} />
       </SectionProvider>

@@ -27,7 +27,8 @@ type ThemeContextValue = {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-function applyTheme(themeId: ThemeId) {
+/** 公開ページでプロフィールのテーマを適用するためにエクスポート */
+export function applyTheme(themeId: ThemeId) {
   const vars = themeVariables[themeId];
   if (!vars) return;
   const root = document.documentElement;
@@ -40,7 +41,8 @@ function applyTheme(themeId: ThemeId) {
 const CUSTOM_COLOR_PREFIX = "custom-";
 const CUSTOM_GRADIENT_PREFIX = "custom-gradient-";
 
-function applyBackground(backgroundId: string) {
+/** 公開ページでプロフィールの壁紙を適用するためにエクスポート */
+export function applyBackground(backgroundId: string) {
   const root = document.documentElement;
 
   root.style.removeProperty("--page-bg");
@@ -99,7 +101,8 @@ const DEFAULT_THEME_ID: ThemeId = "mint-sparkle";
 const DEFAULT_BACKGROUND_ID = "gradient-mermaid";
 const DEFAULT_FONT_ID: FontId = "sans";
 
-function applyFont(fontId: FontId) {
+/** 公開ページでプロフィールのフォントを適用するためにエクスポート */
+export function applyFont(fontId: FontId) {
   const root = document.documentElement;
   root.style.setProperty("--font-body", getFontFamily(fontId));
 }

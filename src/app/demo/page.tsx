@@ -1,9 +1,25 @@
-import PublicProfilePage from "../[username]/page";
+import { isSupabaseConfigured } from "@/lib/supabase";
+import { fetchProfile, fetchSections } from "@/lib/supabase-db";
+import { PublicPageClient } from "../[username]/PublicPageClient";
 
-/**
- * プレビュー用：編集中の公開ページを表示（username=demo またはユーザーID）
- * ダッシュボードのプレビューボタンから開く
- */
-export default function DemoPage() {
-  return <PublicProfilePage username="demo" />;
+export default async function DemoPage() {
+  const username = "demo";
+
+  let profile = null;
+  let sections: Awaited<ReturnType<typeof fetchSections>> = [];
+
+  if (isSupabaseConfigured) {
+    [profile, sections] = await Promise.all([
+      fetchProfile(username),
+      fetchSections(username),
+    ]);
+  }
+
+  return (
+    <PublicPageClient
+      username={username}
+      profile={profile}
+      sections={sections ?? []}
+    />
+  );
 }

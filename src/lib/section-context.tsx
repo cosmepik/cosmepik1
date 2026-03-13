@@ -69,14 +69,28 @@ interface SectionProviderProps {
   userAffiliateId?: string | null;
   /** 編集画面では true にし、編集モードをデフォルトで ON にする */
   defaultEditMode?: boolean;
+  /** 事前取得したセクション。undefined=通常fetch, null=API取得中でスキップ, Section[]=使用 */
+  initialSections?: Section[] | null;
 }
 
-export function SectionProvider({ children, slug, userAffiliateId, defaultEditMode = false }: SectionProviderProps) {
+export function SectionProvider({
+  children,
+  slug,
+  userAffiliateId,
+  defaultEditMode = false,
+  initialSections,
+}: SectionProviderProps) {
   const [sections, setSectionsState] = useState<Section[]>([]);
   const [isEditMode, setIsEditMode] = useState(defaultEditMode);
   const [showAddSectionModal, setShowAddSectionModal] = useState(false);
 
   useEffect(() => {
+    if (initialSections === null) return;
+    if (Array.isArray(initialSections)) {
+      setSectionsState(initialSections.length > 0 ? initialSections : [createDefaultRoutineSection()]);
+      return;
+    }
+
     store.getSections(slug).then((saved) => {
       if (saved && saved.length > 0) {
         setSectionsState(saved);
@@ -86,7 +100,7 @@ export function SectionProvider({ children, slug, userAffiliateId, defaultEditMo
         store.setSections([defaultSection], slug);
       }
     });
-  }, [slug]);
+  }, [slug, initialSections]);
 
   const persistSections = useCallback(
     (next: Section[]) => {

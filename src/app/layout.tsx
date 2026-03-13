@@ -10,6 +10,7 @@ import {
   Noto_Serif_JP,
 } from "next/font/google";
 import { ThemeWrapper } from "@/components/ThemeWrapper";
+import { LayoutBackground } from "@/components/LayoutBackground";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -62,7 +63,7 @@ const notoSerifJP = Noto_Serif_JP({
 });
 
 export const metadata: Metadata = {
-  title: "cosmepik - あなたの愛用コスメをシェア",
+  title: "#cosmepik(コスメピック)",
   description: "インフルエンサーの愛用コスメをまとめたリンクツリー",
 };
 
@@ -81,19 +82,10 @@ export default function RootLayout({
   return (
     <html lang="ja" className={`${notoSans.variable} ${cormorant.variable} ${mPlusRounded.variable} ${shipporiMincho.variable} ${zenKakuGothic.variable} ${zenMaruGothic.variable} ${kosugiMaru.variable} ${notoSerifJP.variable}`}>
       <body className="min-h-screen antialiased">
-        <div
-          className="min-h-screen transition-all duration-300"
-          style={{
-            backgroundColor: "var(--page-bg, var(--background))",
-            backgroundImage: "var(--page-bg-image, none)",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundAttachment: "fixed",
-          }}
-        >
+        <LayoutBackground>
           <ThemeWrapper>{children}</ThemeWrapper>
-        <Toaster richColors position="top-center" />
-        </div>
+          <Toaster richColors position="top-center" />
+        </LayoutBackground>
       </body>
     </html>
   );

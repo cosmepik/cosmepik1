@@ -2,11 +2,16 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Crown, Sparkles, Image, Palette, X } from "lucide-react";
+import { Crown, Sparkles, Image, Palette, X, LayoutGrid } from "lucide-react";
 import { SideMenu } from "@/components/cosme-link/side-menu";
 import { DashboardHeader } from "@/components/DashboardHeader";
 
 const benefits = [
+  {
+    icon: LayoutGrid,
+    title: "複数コスメセット作成",
+    description: "コスメセットを複数作成可能に。ルーティン別・季節別など、テーマごとにコスメをまとめられます。",
+  },
   {
     icon: X,
     title: "バナー広告消去",

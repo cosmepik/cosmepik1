@@ -234,47 +234,55 @@ function BackgroundUploadSection({
   slug,
   hasBackground,
   backgroundImageUrl,
+  isSelected,
   onUpload,
   onRemove,
+  onClearPreset,
 }: {
   slug: string;
   hasBackground: boolean;
   backgroundImageUrl: string | null;
+  isSelected?: boolean;
   onUpload: (url: string) => void;
   onRemove: () => void;
+  onClearPreset?: () => void;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file || !file.type.startsWith("image/")) return;
+    setIsUploading(true);
     try {
       const dataUrl = await compressImage(file);
+      onClearPreset?.();
       await setProfile({
         username: slug,
         backgroundImageUrl: dataUrl,
+        usePreset: false,
         updatedAt: new Date().toISOString(),
       });
-      window.dispatchEvent(new CustomEvent("cosmepik-background-change"));
+      window.dispatchEvent(new CustomEvent("cosmepik-background-change", { detail: { backgroundImageUrl: dataUrl } }));
       onUpload(dataUrl);
     } catch {
       alert("画像の読み込みに失敗しました。別の画像をお試しください。");
+    } finally {
+      setIsUploading(false);
     }
   };
 
-  const handleRemove = async () => {
-    try {
-      await setProfile({
-        username: slug,
-        backgroundImageUrl: "",
-        updatedAt: new Date().toISOString(),
-      });
-      window.dispatchEvent(new CustomEvent("cosmepik-background-change"));
-      onRemove();
-    } catch {
-      alert("削除に失敗しました。");
-    }
+  const handleRemove = () => {
+    onRemove();
+    window.dispatchEvent(new CustomEvent("cosmepik-background-change", { detail: { backgroundImageUrl: "" } }));
+    setProfile({
+      username: slug,
+      backgroundImageUrl: "",
+      updatedAt: new Date().toISOString(),
+    }).catch(() => {
+      alert("削除の保存に失敗しました。");
+    });
   };
 
   return (
@@ -292,23 +300,63 @@ function BackgroundUploadSection({
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-secondary/50 px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-accent"
+          disabled={isUploading}
+          className="flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-secondary/50 px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-accent disabled:opacity-60 disabled:pointer-events-none"
         >
           <Upload className="h-4 w-4" />
           画像を選択
         </button>
+        {isUploading && (
+          <div className="flex flex-col gap-1.5">
+            <p className="text-xs font-medium text-muted-foreground">アップロード中</p>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+              <div className="progress-indeterminate h-full w-1/3 rounded-full bg-primary" />
+            </div>
+          </div>
+        )}
         {hasBackground && backgroundImageUrl && (
-          <div className="relative aspect-[3/4] w-full max-w-[160px] overflow-hidden rounded-xl border-2 border-border bg-secondary">
+          <div
+            className={cn(
+              "group relative aspect-[3/4] w-full max-w-[160px] overflow-hidden rounded-xl border-2 bg-secondary transition-all",
+              isSelected ? "border-primary ring-2 ring-primary/30" : "border-border"
+            )}
+          >
             <img
               src={backgroundImageUrl}
               alt="背景プレビュー"
               className="h-full w-full object-cover"
             />
+            {isSelected && (
+              <div className="absolute left-1 top-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+                <Check className="h-3 w-3" strokeWidth={2.5} />
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await setProfile({
+                    username: slug,
+                    usePreset: false,
+                    updatedAt: new Date().toISOString(),
+                  });
+                  window.dispatchEvent(new CustomEvent("cosmepik-background-change"));
+                } catch {
+                  /* ignore */
+                }
+              }}
+              className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors hover:bg-black/30"
+              aria-label="この画像を背景に選択"
+            >
+              <span className="rounded-full bg-black/50 px-3 py-1.5 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
+                選択
+              </span>
+            </button>
             <button
               type="button"
               onClick={handleRemove}
               aria-label="背景画像を削除"
-              className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-white transition-colors hover:bg-black/70"
+              className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-white transition-colors hover:bg-black/70"
             >
               <X className="h-4 w-4" />
             </button>
@@ -521,20 +569,24 @@ function BackgroundGrid({
   onSelect,
   onClose,
   slug,
+  onClearPreset,
 }: {
   currentBackgroundId: string;
   onSelect: (id: string) => void;
   onClose: () => void;
   slug: string;
+  onClearPreset?: () => void;
 }) {
   const [hasCustomBackground, setHasCustomBackground] = useState(false);
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string | null>(null);
+  const [usePreset, setUsePreset] = useState(true);
 
   const refreshBackground = useCallback(() => {
     getProfile(slug).then((p) => {
       const url = p?.backgroundImageUrl ?? null;
       setHasCustomBackground(!!url);
       setBackgroundImageUrl(url ?? null);
+      setUsePreset(!!p?.usePreset);
     });
   }, [slug]);
 
@@ -547,12 +599,32 @@ function BackgroundGrid({
     return () => window.removeEventListener("cosmepik-background-change", refreshBackground);
   }, [refreshBackground]);
 
+  const handleSelectPreset = useCallback(
+    (id: string) => {
+      onSelect(id);
+      setProfile({
+        username: slug,
+        backgroundId: id,
+        ...(hasCustomBackground && { usePreset: true }),
+        updatedAt: new Date().toISOString(),
+      })
+        .then(() => {
+          if (hasCustomBackground) {
+            window.dispatchEvent(new CustomEvent("cosmepik-background-change"));
+          }
+        })
+        .catch(() => {});
+    },
+    [slug, hasCustomBackground, onSelect]
+  );
+
   return (
     <div className="flex flex-col gap-5">
       <BackgroundUploadSection
         slug={slug}
         hasBackground={hasCustomBackground}
         backgroundImageUrl={backgroundImageUrl}
+        isSelected={hasCustomBackground && !usePreset}
         onUpload={(url) => {
           setHasCustomBackground(true);
           setBackgroundImageUrl(url);
@@ -561,6 +633,7 @@ function BackgroundGrid({
           setHasCustomBackground(false);
           setBackgroundImageUrl(null);
         }}
+        onClearPreset={onClearPreset}
       />
       {safeBackgroundGroups.map((group) => (
         <div key={group.type} className="flex flex-col gap-2.5">
@@ -574,7 +647,7 @@ function BackgroundGrid({
             {group.type === "solid" && (
               <CustomColorButton
                 selected={currentBackgroundId.startsWith("custom-") && !currentBackgroundId.startsWith("custom-gradient-")}
-                onSelect={onSelect}
+                onSelect={handleSelectPreset}
                 onClose={onClose}
               />
             )}
@@ -582,7 +655,7 @@ function BackgroundGrid({
               <CustomGradientButton
                 selected={currentBackgroundId.startsWith("custom-gradient-")}
                 currentId={currentBackgroundId}
-                onSelect={onSelect}
+                onSelect={handleSelectPreset}
                 onClose={onClose}
               />
             )}
@@ -591,10 +664,7 @@ function BackgroundGrid({
                 key={bg.id}
                 bg={bg}
                 selected={currentBackgroundId === bg.id}
-                onSelect={() => {
-                  onSelect(bg.id);
-                  onClose();
-                }}
+                onSelect={() => handleSelectPreset(bg.id)}
               />
             ))}
           </div>
@@ -669,15 +739,6 @@ export function StylePicker() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105 active:scale-95"
-        aria-label="スタイルを変更"
-      >
-        <Palette className="h-6 w-6" />
-      </button>
-
       {open && (
         <div className="fixed inset-0 z-50 flex items-end justify-center">
           <div
@@ -747,15 +808,38 @@ export function StylePicker() {
 
             <div className="flex-1 overflow-y-auto px-5 py-4">
               {activeTab === "color" ? (
-                <ThemeGrid currentThemeId={themeId} onSelect={(id) => setThemeId(id as ThemeId)} onClose={() => setOpen(false)} />
+                <ThemeGrid
+                  currentThemeId={themeId}
+                  onSelect={(id) => {
+                    setThemeId(id as ThemeId);
+                    setProfile({
+                      username: slug,
+                      themeId: id,
+                      updatedAt: new Date().toISOString(),
+                    }).catch(() => {});
+                  }}
+                  onClose={() => setOpen(false)}
+                />
               ) : activeTab === "font" ? (
-                <FontGrid currentFontId={fontId} onSelect={setFontId} onClose={() => setOpen(false)} />
+                <FontGrid
+                  currentFontId={fontId}
+                  onSelect={(id) => {
+                    setFontId(id);
+                    setProfile({
+                      username: slug,
+                      fontId: id,
+                      updatedAt: new Date().toISOString(),
+                    }).catch(() => {});
+                  }}
+                  onClose={() => setOpen(false)}
+                />
               ) : (
                 <BackgroundGrid
                   currentBackgroundId={backgroundId}
                   onSelect={setBackgroundId}
                   onClose={() => setOpen(false)}
                   slug={slug}
+                  onClearPreset={() => setBackgroundId("custom-#ffffff")}
                 />
               )}
             </div>

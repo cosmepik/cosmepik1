@@ -38,6 +38,14 @@ export interface InfluencerProfile {
   avatarUrl?: string;
   /** 背景画像（data URL または外部URL。スマホフォルダからアップロード可） */
   backgroundImageUrl?: string;
+  /** テーマ壁紙を使用中（true のとき背景オーバーレイを非表示、アップロード写真は保持） */
+  usePreset?: boolean;
+  /** テーマID（色味） */
+  themeId?: string;
+  /** 背景ID（壁紙・グラデーション等） */
+  backgroundId?: string;
+  /** フォントID */
+  fontId?: string;
   bio?: string;
   /** サブテキスト（ひとこと） */
   bioSub?: string;

@@ -102,6 +102,7 @@ export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
   const [newSnsUrl, setNewSnsUrl] = useState("");
   const [newSnsLabel, setNewSnsLabel] = useState("");
   const [saving, setSaving] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -227,16 +228,20 @@ export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
                     onChange={(e) => {
                       const f = e.target.files?.[0];
                       if (f) {
+                        setAvatarUploading(true);
                         const r = new FileReader();
-                        r.onloadend = () =>
+                        r.onloadend = () => {
                           updateProfile({ avatarUrl: r.result as string });
+                          setAvatarUploading(false);
+                        };
+                        r.onerror = () => setAvatarUploading(false);
                         r.readAsDataURL(f);
                       }
                     }}
                   />
                 </label>
                 <span className="text-xs text-muted-foreground">
-                  タップして画像を変更
+                  {avatarUploading ? "写真をアップロード中😎" : "タップして画像を変更"}
                 </span>
               </div>
             </div>

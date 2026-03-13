@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { CosmepikLogo } from "@/components/cosmepik-logo";
@@ -15,8 +16,8 @@ import { LandingHeaderActions } from "@/components/landing/LandingHeaderActions"
 export default async function LandingPage() {
   const supabase = await createClient();
   if (supabase) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
       redirect("/dashboard");
     }
   }
@@ -215,10 +216,13 @@ export default async function LandingPage() {
               </div>
               <div className="md:col-span-6 md:col-start-7 order-1 md:order-2">
                 <div className="relative w-full aspect-[4/3] rounded-2xl md:rounded-3xl overflow-hidden bg-muted">
-                  <img
+                  <Image
                     src="/images/cosmetics-hero.jpg"
                     alt="韓国コスメとスキンケア商品"
-                    className="block w-full h-full object-cover object-center"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    className="object-cover object-center"
+                    priority={false}
                   />
                 </div>
               </div>
@@ -382,6 +386,9 @@ export default async function LandingPage() {
               </Link>
               <Link href="/privacy" className="hover:opacity-80 transition-opacity" style={{ color: "#1a6b66" }}>
                 PRIVACY
+              </Link>
+              <Link href="/tokushoho" className="hover:opacity-80 transition-opacity" style={{ color: "#1a6b66" }}>
+                特定商取引法
               </Link>
               <Link href="/contact" className="hover:opacity-80 transition-opacity" style={{ color: "#1a6b66" }}>
                 CONTACT
