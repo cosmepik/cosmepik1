@@ -136,7 +136,42 @@ export async function reorderListItems(
   return next;
 }
 
-/** プロフィール取得 */
+/** プロフィール取得（軽量版: list_items をスキップ。公開ページ用） */
+export async function fetchProfileLight(
+  username: string
+): Promise<InfluencerProfile | null> {
+  const client = getClient();
+  if (!client) return null;
+
+  const { data, error } = await client
+    .from("profiles")
+    .select("*")
+    .eq("username", username)
+    .single();
+
+  if (error || !data) return null;
+
+  return {
+    username: data.username as string,
+    displayName: (data.display_name as string) ?? "",
+    avatarUrl: data.avatar_url as string | undefined,
+    backgroundImageUrl: data.background_image_url as string | undefined,
+    usePreset: data.use_preset as boolean | undefined,
+    themeId: data.theme_id as string | undefined,
+    backgroundId: data.background_id as string | undefined,
+    fontId: data.font_id as string | undefined,
+    bio: data.bio as string | undefined,
+    bioSub: data.bio_sub as string | undefined,
+    skinType: data.skin_type as string | undefined,
+    personalColor: data.personal_color as string | undefined,
+    snsLinks: data.sns_links as InfluencerProfile["snsLinks"],
+    rakutenAffiliateId: data.rakuten_affiliate_id as string | undefined,
+    list: [],
+    updatedAt: (data.updated_at as string) ?? new Date().toISOString(),
+  };
+}
+
+/** プロフィール取得（list_items 含む完全版） */
 export async function fetchProfile(
   username: string
 ): Promise<InfluencerProfile | null> {
@@ -312,24 +347,39 @@ export async function fetchCosmeSets(userId: string): Promise<CosmeSet[]> {
 
   if (error || !data?.length) return [];
 
-  const sets: CosmeSet[] = await Promise.all(
-    data.map(async (row: Record<string, unknown>) => {
-      const slug = row.slug as string;
-      const profile = await fetchProfile(slug);
-      const sections = await fetchSections(slug);
-      const itemCount = sections
-        ? sections.reduce((sum, sec) => sum + sec.items.length, 0)
-        : 0;
-      return {
-        id: row.id as string,
-        name: (row.name as string) ?? "マイコスメ",
-        slug,
-        itemCount,
-        avatarUrl: profile?.avatarUrl,
-      };
-    })
-  );
-  return sets;
+  const slugs = data.map((row: Record<string, unknown>) => row.slug as string);
+
+  const [profilesResult, sectionsResult] = await Promise.all([
+    client.from("profiles").select("username, avatar_url").in("username", slugs),
+    client.from("sections").select("username, sections_json").in("username", slugs),
+  ]);
+
+  const avatarMap = new Map<string, string>();
+  for (const row of profilesResult.data ?? []) {
+    if (row.avatar_url) avatarMap.set(row.username as string, row.avatar_url as string);
+  }
+
+  const itemCountMap = new Map<string, number>();
+  for (const row of sectionsResult.data ?? []) {
+    const arr = row.sections_json as unknown;
+    if (Array.isArray(arr)) {
+      const count = (arr as { items?: unknown[] }[]).reduce(
+        (sum, sec) => sum + (sec.items?.length ?? 0), 0,
+      );
+      itemCountMap.set(row.username as string, count);
+    }
+  }
+
+  return data.map((row: Record<string, unknown>) => {
+    const slug = row.slug as string;
+    return {
+      id: row.id as string,
+      name: (row.name as string) ?? "マイコスメ",
+      slug,
+      itemCount: itemCountMap.get(slug) ?? 0,
+      avatarUrl: avatarMap.get(slug),
+    };
+  });
 }
 
 /** コスメセット作成 */

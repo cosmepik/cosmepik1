@@ -14,6 +14,9 @@ function useSupabase() {
   return typeof window !== "undefined" && isSupabaseConfigured;
 }
 
+const profileCache = new Map<string, { data: InfluencerProfile | null; ts: number }>();
+const PROFILE_CACHE_TTL = 30_000;
+
 /** デバッグ用：現在のストレージ種別（開発時のみコンソールに出力） */
 export function getStorageType(): "supabase" | "localStorage" {
   return useSupabase() ? "supabase" : "localStorage";
@@ -72,11 +75,18 @@ export async function setMyList(list: ListedCosmeItem[], slug?: string | null): 
   await db.saveList(s, list);
 }
 
-/** プロフィール取得（slug 指定） */
+/** プロフィール取得（slug 指定） — インメモリキャッシュ付き */
 export async function getProfile(slug?: string | null): Promise<InfluencerProfile | null> {
   const s = slug ?? FALLBACK_USER_ID;
-  if (!useSupabase()) return Promise.resolve(local.getProfile(s));
-  return db.fetchProfile(s);
+
+  const cached = profileCache.get(s);
+  if (cached && Date.now() - cached.ts < PROFILE_CACHE_TTL) {
+    return cached.data;
+  }
+
+  const data = !useSupabase() ? local.getProfile(s) : await db.fetchProfile(s);
+  profileCache.set(s, { data, ts: Date.now() });
+  return data;
 }
 
 /** セットの slug（公開URL）を変更 */
@@ -94,12 +104,19 @@ export async function renameCosmeSet(
 export async function setProfile(
   profile: Partial<InfluencerProfile> & { username: string }
 ): Promise<void> {
+  profileCache.delete(profile.username);
+
   if (!useSupabase()) {
     local.setProfile(profile.username, profile);
     return;
   }
   try {
     await db.saveProfile(profile);
+    fetch("/api/revalidate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: profile.username }),
+    }).catch(() => {});
   } catch (err) {
     console.error("[setProfile] DB保存失敗:", err);
     throw err;
