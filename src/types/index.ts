@@ -46,6 +46,8 @@ export interface InfluencerProfile {
   backgroundId?: string;
   /** フォントID */
   fontId?: string;
+  /** コスメカードデザインID */
+  cardDesignId?: string;
   bio?: string;
   /** サブテキスト（ひとこと） */
   bioSub?: string;

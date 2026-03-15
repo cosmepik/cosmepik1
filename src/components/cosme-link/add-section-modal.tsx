@@ -65,12 +65,12 @@ export function AddSectionModal({ isOpen, onClose }: AddSectionModalProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedType || !title.trim()) return;
+    if (!selectedType) return;
 
     const newSection: Section = {
       id: `section-${Date.now()}`,
       type: selectedType,
-      title: title.trim(),
+      title: title.trim() || "",
       subtitle: subtitle.trim() || undefined,
       icon: icon.trim() || undefined,
       items: [],
@@ -158,7 +158,7 @@ export function AddSectionModal({ isOpen, onClose }: AddSectionModalProps) {
 
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium text-card-foreground">
-                  タイトル <span className="text-destructive">*</span>
+                  タイトル（任意）
                 </label>
                 <input
                   type="text"
@@ -170,7 +170,6 @@ export function AddSectionModal({ isOpen, onClose }: AddSectionModalProps) {
                       : "セクション名"
                   }
                   className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-                  required
                 />
               </div>
 
@@ -207,8 +206,7 @@ export function AddSectionModal({ isOpen, onClose }: AddSectionModalProps) {
 
               <button
                 type="submit"
-                disabled={!title.trim()}
-                className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-primary py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+                className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-primary py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
               >
                 <Plus className="h-4 w-4" />
                 セクションを追加

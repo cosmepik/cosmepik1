@@ -48,12 +48,21 @@ function EditPageContent({ slug }: { slug: string }) {
   const [profileUrl, setProfileUrl] = useState("");
   const [editingUrl, setEditingUrl] = useState(false);
   const [tempSlug, setTempSlug] = useState(slug);
+  const [slugInputWarning, setSlugInputWarning] = useState<string | null>(null);
   useEffect(() => {
     setProfileUrl(typeof window !== "undefined" ? `${window.location.origin}/p/${slug}` : "");
   }, [slug]);
   useEffect(() => {
     setTempSlug(slug);
   }, [slug]);
+
+  const hasJapaneseChars = (s: string) => /[\u3040-\u309F\u30A0-\u30FF\uFF00-\uFFEF]/.test(s);
+
+  useEffect(() => {
+    if (editingUrl) {
+      setSlugInputWarning(hasJapaneseChars(tempSlug) ? "半角英数で入力してください" : null);
+    }
+  }, [editingUrl, tempSlug]);
 
   const handleSaveUrl = useCallback(async () => {
     const newSlug = tempSlug.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-_]/g, "");
@@ -74,7 +83,13 @@ function EditPageContent({ slug }: { slug: string }) {
   const handleCancelUrl = useCallback(() => {
     setTempSlug(slug);
     setEditingUrl(false);
+    setSlugInputWarning(null);
   }, [slug]);
+
+  const handleSlugChange = useCallback((value: string) => {
+    setTempSlug(value);
+    setSlugInputWarning(hasJapaneseChars(value) ? "半角英数で入力してください" : null);
+  }, []);
 
   return (
     <>
@@ -124,33 +139,40 @@ function EditPageContent({ slug }: { slug: string }) {
         />
 
         {/* 公開リンク（編集ボタン群） */}
-        <div className="mb-5 flex justify-center items-center gap-2">
+        <div className="mx-auto mb-5 flex w-full max-w-[400px] justify-center items-center gap-2">
           {editingUrl ? (
-            <div className="flex min-w-0 max-w-md flex-wrap items-center justify-center gap-2">
-              <span className="shrink-0 text-sm text-muted-foreground">
-                {typeof window !== "undefined" ? `${window.location.origin}/p/` : ""}
-              </span>
-              <input
-                type="text"
-                value={tempSlug}
-                onChange={(e) => setTempSlug(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSaveUrl();
-                  else if (e.key === "Escape") handleCancelUrl();
-                }}
-                placeholder="url"
-                className="min-w-0 flex-1 rounded-lg border border-input bg-white px-2.5 py-1.5 text-sm text-card-foreground"
-                autoFocus
-              />
-              <button type="button" onClick={handleSaveUrl} className="shrink-0 rounded-lg bg-green px-2 py-1.5 text-xs text-white">
-                OK
-              </button>
-              <button type="button" onClick={handleCancelUrl} className="shrink-0 rounded-lg border border-input bg-secondary px-2 py-1.5 text-xs text-muted-foreground">
-                キャンセル
-              </button>
+            <div className="flex w-full max-w-md flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center">
+              <div className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-border bg-white px-3 py-2 shadow-sm">
+                <span className="shrink-0 text-sm text-muted-foreground">
+                  {typeof window !== "undefined" ? `${window.location.origin}/p/` : ""}
+                </span>
+                <input
+                  type="text"
+                  value={tempSlug}
+                  onChange={(e) => handleSlugChange(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSaveUrl();
+                    else if (e.key === "Escape") handleCancelUrl();
+                  }}
+                  placeholder="url"
+                  className="min-w-[80px] flex-1 border-0 bg-transparent px-0 py-0 text-base text-foreground outline-none placeholder:text-muted-foreground"
+                  autoFocus
+                />
+              </div>
+              <div className="flex shrink-0 justify-center gap-2">
+                <button type="button" onClick={handleSaveUrl} className="rounded-lg bg-green px-3 py-1.5 text-sm text-white">
+                  OK
+                </button>
+                <button type="button" onClick={handleCancelUrl} className="rounded-lg border border-input bg-secondary px-3 py-1.5 text-sm text-muted-foreground">
+                  キャンセル
+                </button>
+              </div>
+              {slugInputWarning && (
+                <p className="w-full text-center text-sm text-amber-600">{slugInputWarning}</p>
+              )}
             </div>
           ) : (
-            <>
+            <div className="relative flex justify-center">
               <a
                 href={profileUrl}
                 target="_blank"
@@ -163,25 +185,25 @@ function EditPageContent({ slug }: { slug: string }) {
               <button
                 type="button"
                 onClick={() => setEditingUrl(true)}
-                className="shrink-0 rounded p-2 text-muted-foreground hover:bg-accent hover:text-foreground"
+                className="absolute left-full top-1/2 ml-2 -translate-y-1/2 rounded p-2 text-muted-foreground hover:bg-accent hover:text-foreground"
                 aria-label="URLを編集"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" />
                 </svg>
               </button>
-            </>
+            </div>
           )}
         </div>
 
         <ProfileHeader />
 
-        <div className="mt-6 flex flex-col gap-6">
+        <div className="mx-auto mt-6 flex max-w-[400px] flex-col gap-2">
           {isEditMode && sections.length === 0 && (
             <AddSectionInline insertIndex={0} />
           )}
           {sections.map((section, index) => (
-            <div key={section.id} className="flex flex-col gap-4">
+            <div key={section.id} className="flex flex-col gap-2">
               <SectionRenderer section={section} />
               {isEditMode && (
                 <AddSectionInline insertIndex={index + 1} />

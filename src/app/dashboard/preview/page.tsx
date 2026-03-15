@@ -48,7 +48,7 @@ function PreviewContent() {
 
   return (
     <>
-      <div className="relative z-10 mx-auto max-w-md px-4 pb-4 pt-6">
+      <div className="relative z-10 mx-auto max-w-[400px] px-4 pb-4 pt-6">
         <div className="mb-4 flex items-center justify-between gap-4">
           <Link
             href={`/dashboard/edit/${username}`}

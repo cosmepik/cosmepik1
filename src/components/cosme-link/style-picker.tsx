@@ -17,8 +17,10 @@ import type { ThemeId } from "@/lib/themes";
 import { backgroundGroups, backgrounds } from "@/lib/backgrounds";
 import type { Background } from "@/lib/backgrounds";
 import { setProfile, getProfile } from "@/lib/store";
+import { designPresets } from "@/lib/design-presets";
+import { cardDesigns, type CardDesignId } from "@/lib/card-designs";
 import { fonts, getFontFamily, type FontId } from "@/lib/fonts";
-import { Palette, X, Check, Paintbrush, Upload, Plus, Type } from "lucide-react";
+import { Palette, X, Check, Paintbrush, Upload, Plus, Type, LayoutTemplate, LayoutGrid } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Deduplicate backgrounds by id to prevent React key conflicts
@@ -79,7 +81,7 @@ function compressImage(file: File, maxWidth = 1200): Promise<string> {
   });
 }
 
-type TabType = "color" | "background" | "font";
+type TabType = "theme" | "color" | "background" | "card" | "font";
 
 type StylePickerContextValue = {
   open: boolean;
@@ -93,7 +95,7 @@ const StylePickerContext = createContext<StylePickerContextValue | null>(null);
 
 export function StylePickerProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
-  const [openTab, setOpenTab] = useState<TabType>("color");
+  const [openTab, setOpenTab] = useState<TabType>("theme");
   const openWithTab = (tab: TabType) => {
     setOpenTab(tab);
     setOpen(true);
@@ -165,6 +167,70 @@ function FontGrid({
   );
 }
 
+function PresetGrid({
+  currentThemeId,
+  currentBackgroundId,
+  currentFontId,
+  currentCardDesignId,
+  onSelect,
+  onClose,
+}: {
+  currentThemeId: string;
+  currentBackgroundId: string;
+  currentFontId: FontId;
+  currentCardDesignId: string;
+  onSelect: (preset: { themeId: ThemeId; backgroundId: string; fontId: FontId; cardDesignId?: CardDesignId }) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-2.5">
+      {designPresets.map((preset) => {
+        const isSelected =
+          currentThemeId === preset.themeId &&
+          currentBackgroundId === preset.backgroundId &&
+          currentFontId === preset.fontId &&
+          (!preset.cardDesignId || currentCardDesignId === preset.cardDesignId);
+        return (
+          <button
+            key={preset.id}
+            type="button"
+            onClick={() => {
+              onSelect({
+                themeId: preset.themeId,
+                backgroundId: preset.backgroundId,
+                fontId: preset.fontId,
+                cardDesignId: preset.cardDesignId,
+              });
+              onClose();
+            }}
+            className={cn(
+              "relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 text-center transition-all",
+              isSelected ? "border-primary bg-accent" : "border-border bg-card hover:border-primary/40"
+            )}
+          >
+            {isSelected && (
+              <div className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+                <Check className="h-3 w-3" />
+              </div>
+            )}
+            <div
+              className="h-10 w-full rounded-lg"
+              style={{
+                background: preset.previewColor,
+                opacity: 0.9,
+              }}
+            />
+            <div className="flex flex-col">
+              <span className="text-xs font-bold leading-tight text-card-foreground">{preset.nameJa}</span>
+              <span className="mt-0.5 text-[10px] leading-tight text-muted-foreground">{preset.description}</span>
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function ThemeGrid({
   currentThemeId,
   onSelect,
@@ -214,6 +280,52 @@ function ThemeGrid({
           </div>
         </button>
       ))}
+    </div>
+  );
+}
+
+function CardDesignGrid({
+  currentCardDesignId,
+  onSelect,
+  onClose,
+}: {
+  currentCardDesignId: string;
+  onSelect: (id: CardDesignId) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-2.5">
+      {cardDesigns.map((design) => {
+        const selected = currentCardDesignId === design.id;
+        return (
+          <button
+            key={design.id}
+            type="button"
+            onClick={() => {
+              onSelect(design.id);
+              onClose();
+            }}
+            className={cn(
+              "relative flex flex-col items-stretch gap-2 rounded-xl border-2 p-3 text-left transition-all",
+              selected ? "border-primary bg-accent" : "border-border bg-card hover:border-primary/40"
+            )}
+          >
+            {selected && (
+              <div className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+                <Check className="h-3 w-3" />
+              </div>
+            )}
+            <div className={cn("flex items-center gap-2 p-2", design.listClassName)}>
+              <div className="h-8 w-8 shrink-0 rounded-lg bg-secondary" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[9px] font-medium text-primary">BRAND</p>
+                <p className="truncate text-[10px] text-card-foreground">商品名</p>
+              </div>
+            </div>
+            <span className="text-xs font-bold text-card-foreground">{design.nameJa}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -716,7 +828,7 @@ function BackgroundItem({
 
 export function StylePicker() {
   const slug = useCurrentSlug();
-  const { themeId, setThemeId, backgroundId, setBackgroundId, fontId, setFontId } = useTheme();
+  const { themeId, setThemeId, backgroundId, setBackgroundId, fontId, setFontId, cardDesignId, setCardDesignId } = useTheme();
   const ctx = useContext(StylePickerContext);
   const open = ctx?.open ?? false;
   const setOpen = ctx?.setOpen ?? (() => {});
@@ -750,9 +862,12 @@ export function StylePicker() {
             role="dialog"
             aria-modal="true"
             aria-label="スタイル設定"
-            className="relative z-10 flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-card shadow-xl animate-in slide-in-from-bottom duration-300"
+            className="relative z-10 flex max-h-[85dvh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-card shadow-xl animate-in slide-in-from-bottom duration-300"
           >
-            <div className="flex shrink-0 items-center justify-between border-b border-border px-5 pb-3 pt-5">
+            <div
+              className="flex shrink-0 items-center justify-between border-b border-border px-5 pb-3 pt-5"
+              style={{ paddingTop: "max(env(safe-area-inset-top, 0px), 2.75rem)" }}
+            >
               <h3 className="text-base font-bold text-card-foreground">スタイル設定</h3>
               <button
                 type="button"
@@ -764,50 +879,104 @@ export function StylePicker() {
               </button>
             </div>
 
-            <div className="flex shrink-0 gap-2 border-b border-border px-5 py-3">
+            <div className="flex shrink-0 flex-nowrap justify-center gap-1 overflow-x-auto border-b border-border px-3 py-2.5 scrollbar-hide">
+              <button
+                type="button"
+                onClick={() => setActiveTab("theme")}
+                className={cn(
+                  "flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors",
+                  activeTab === "theme"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground hover:bg-accent"
+                )}
+              >
+                <LayoutTemplate className="h-3.5 w-3.5 shrink-0" />
+                テーマ
+              </button>
               <button
                 type="button"
                 onClick={() => setActiveTab("color")}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-colors",
+                  "flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors",
                   activeTab === "color"
                     ? "bg-primary text-primary-foreground"
                     : "bg-secondary text-secondary-foreground hover:bg-accent"
                 )}
               >
-                <Palette className="h-4 w-4" />
+                <Palette className="h-3.5 w-3.5 shrink-0" />
                 カラー
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab("background")}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-colors",
+                  "flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors",
                   activeTab === "background"
                     ? "bg-primary text-primary-foreground"
                     : "bg-secondary text-secondary-foreground hover:bg-accent"
                 )}
               >
-                <Paintbrush className="h-4 w-4" />
+                <Paintbrush className="h-3.5 w-3.5 shrink-0" />
                 背景
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("card")}
+                className={cn(
+                  "flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors",
+                  activeTab === "card"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground hover:bg-accent"
+                )}
+              >
+                <LayoutGrid className="h-3.5 w-3.5 shrink-0" />
+                カード
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab("font")}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-colors",
+                  "flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors",
                   activeTab === "font"
                     ? "bg-primary text-primary-foreground"
                     : "bg-secondary text-secondary-foreground hover:bg-accent"
                 )}
               >
-                <Type className="h-4 w-4" />
+                <Type className="h-3.5 w-3.5 shrink-0" />
                 フォント
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto px-5 py-4">
-              {activeTab === "color" ? (
+              {activeTab === "theme" ? (
+                <PresetGrid
+                  currentThemeId={themeId}
+                  currentBackgroundId={backgroundId}
+                  currentFontId={fontId}
+                  currentCardDesignId={cardDesignId}
+                  onSelect={({ themeId: tid, backgroundId: bid, fontId: fid, cardDesignId: cid }) => {
+                    setThemeId(tid);
+                    setBackgroundId(bid);
+                    setFontId(fid);
+                    if (cid) setCardDesignId(cid);
+                    setProfile({
+                      username: slug,
+                      themeId: tid,
+                      backgroundId: bid,
+                      fontId: fid,
+                      ...(cid && { cardDesignId: cid }),
+                      usePreset: true,
+                      updatedAt: new Date().toISOString(),
+                    }).catch(() => {});
+                    window.dispatchEvent(
+                      new CustomEvent("cosmepik-background-change", {
+                        detail: { backgroundImageUrl: "" },
+                      })
+                    );
+                  }}
+                  onClose={() => setOpen(false)}
+                />
+              ) : activeTab === "color" ? (
                 <ThemeGrid
                   currentThemeId={themeId}
                   onSelect={(id) => {
@@ -820,7 +989,28 @@ export function StylePicker() {
                   }}
                   onClose={() => setOpen(false)}
                 />
-              ) : activeTab === "font" ? (
+              ) : activeTab === "background" ? (
+                <BackgroundGrid
+                  currentBackgroundId={backgroundId}
+                  onSelect={setBackgroundId}
+                  onClose={() => setOpen(false)}
+                  slug={slug}
+                  onClearPreset={() => setBackgroundId("custom-#ffffff")}
+                />
+              ) : activeTab === "card" ? (
+                <CardDesignGrid
+                  currentCardDesignId={cardDesignId}
+                  onSelect={(id) => {
+                    setCardDesignId(id);
+                    setProfile({
+                      username: slug,
+                      cardDesignId: id,
+                      updatedAt: new Date().toISOString(),
+                    }).catch(() => {});
+                  }}
+                  onClose={() => setOpen(false)}
+                />
+              ) : (
                 <FontGrid
                   currentFontId={fontId}
                   onSelect={(id) => {
@@ -832,14 +1022,6 @@ export function StylePicker() {
                     }).catch(() => {});
                   }}
                   onClose={() => setOpen(false)}
-                />
-              ) : (
-                <BackgroundGrid
-                  currentBackgroundId={backgroundId}
-                  onSelect={setBackgroundId}
-                  onClose={() => setOpen(false)}
-                  slug={slug}
-                  onClearPreset={() => setBackgroundId("custom-#ffffff")}
                 />
               )}
             </div>

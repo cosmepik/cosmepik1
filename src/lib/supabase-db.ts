@@ -160,6 +160,7 @@ export async function fetchProfileLight(
     themeId: data.theme_id as string | undefined,
     backgroundId: data.background_id as string | undefined,
     fontId: data.font_id as string | undefined,
+    cardDesignId: data.card_design_id as string | undefined,
     bio: data.bio as string | undefined,
     bioSub: data.bio_sub as string | undefined,
     skinType: data.skin_type as string | undefined,
@@ -195,6 +196,7 @@ export async function fetchProfile(
     themeId: data.theme_id as string | undefined,
     backgroundId: data.background_id as string | undefined,
     fontId: data.font_id as string | undefined,
+    cardDesignId: data.card_design_id as string | undefined,
     bio: data.bio as string | undefined,
     bioSub: data.bio_sub as string | undefined,
     skinType: data.skin_type as string | undefined,
@@ -219,6 +221,7 @@ async function updateProfileStyle(
   if (profile.usePreset !== undefined) updates.use_preset = profile.usePreset;
   if (profile.themeId !== undefined) updates.theme_id = profile.themeId;
   if (profile.fontId !== undefined) updates.font_id = profile.fontId;
+  if (profile.cardDesignId !== undefined) updates.card_design_id = profile.cardDesignId;
 
   if (Object.keys(updates).length <= 1) return false;
 
@@ -245,7 +248,8 @@ export async function saveProfile(
     profile.backgroundId !== undefined ||
     profile.usePreset !== undefined ||
     profile.themeId !== undefined ||
-    profile.fontId !== undefined;
+    profile.fontId !== undefined ||
+    profile.cardDesignId !== undefined;
   const hasOtherFields =
     profile.displayName !== undefined ||
     profile.avatarUrl !== undefined ||
@@ -272,6 +276,7 @@ export async function saveProfile(
     theme_id: profile.themeId ?? existing?.themeId ?? null,
     background_id: profile.backgroundId ?? existing?.backgroundId ?? null,
     font_id: profile.fontId ?? existing?.fontId ?? null,
+    card_design_id: profile.cardDesignId ?? existing?.cardDesignId ?? null,
     bio: profile.bio ?? existing?.bio ?? null,
     bio_sub: profile.bioSub ?? existing?.bioSub ?? null,
     skin_type: profile.skinType ?? existing?.skinType ?? null,
@@ -288,7 +293,7 @@ export async function saveProfile(
   if (result.error) {
     const msg = result.error.message ?? "";
     if (msg.includes("column") || result.error.code === "42703") {
-      const { use_preset: _, theme_id: __, background_id: ___, font_id: ____, ...rowMinimal } = rowWithUsePreset;
+      const { use_preset: _, theme_id: __, background_id: ___, font_id: ____, card_design_id: _____, ...rowMinimal } = rowWithUsePreset;
       result = await client
         .from("profiles")
         .upsert(rowMinimal, { onConflict: "username" });

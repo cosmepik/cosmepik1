@@ -41,7 +41,6 @@ export function ProfileHeader() {
   const [showEditor, setShowEditor] = useState(false);
 
   const displayName = profile.name?.trim() ? profile.name : "USER";
-  const initial = (profile.name?.trim() || "U").charAt(0).toUpperCase();
 
   return (
     <>
@@ -56,7 +55,7 @@ export function ProfileHeader() {
               プロフィール編集
             </button>
             <button
-              onClick={() => openWithTab("background")}
+              onClick={() => openWithTab("theme")}
               className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-md transition-all hover:bg-primary/90 active:scale-95"
             >
               <Palette className="h-3 w-3" />
@@ -79,9 +78,6 @@ export function ProfileHeader() {
               </div>
             )}
           </div>
-          <span className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
-            {initial}
-          </span>
         </div>
 
         <div className="flex flex-col items-center gap-1">

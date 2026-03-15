@@ -37,7 +37,7 @@ export function PublicProfileContent({
           }}
         />
       )}
-      <main className="page-transition-enter relative z-10 mx-auto flex max-w-md flex-col gap-6 px-4 py-8">
+      <main className="page-transition-enter relative z-10 mx-auto flex max-w-[400px] flex-col gap-6 px-4 py-8">
         {/* Logo */}
         <div className="flex justify-center">
           <CosmepikLogo className="h-6" height={26} />
@@ -53,11 +53,9 @@ export function PublicProfileContent({
 
         {/* Footer */}
         <footer className="flex flex-col items-center gap-2 pb-8 pt-4">
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <span className="text-xs font-medium">
-              Powered by{" "}
-              <CosmepikLogo className="h-4 inline-block align-middle" height={18} color="var(--green)" />
-            </span>
+          <div className="flex items-center justify-center gap-1.5 text-muted-foreground">
+            <span className="text-xs font-medium">Powered by</span>
+            <CosmepikLogo className="shrink-0" height={18} color="var(--green)" />
           </div>
           <Link
             href="/"

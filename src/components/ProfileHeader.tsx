@@ -46,8 +46,6 @@ export function ProfileHeaderView({ username, profile }: ProfileHeaderViewProps)
   const displayName = profile?.displayName?.trim() ? profile.displayName : "USER";
   const skinType = profile?.skinType;
   const personalColor = profile?.personalColor;
-  const initial = (profile?.displayName?.trim() || "U").charAt(0).toUpperCase();
-
   return (
     <header className="flex flex-col items-center gap-4 pb-6">
       <div className="relative">
@@ -60,9 +58,6 @@ export function ProfileHeaderView({ username, profile }: ProfileHeaderViewProps)
             </div>
           )}
         </div>
-        <span className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-green text-xs text-white">
-          {initial}
-        </span>
       </div>
 
       <div className="flex flex-col items-center gap-1">
@@ -157,8 +152,6 @@ export function ProfileHeaderEdit({
   onCancelEditName,
   onTempNameChange,
 }: ProfileHeaderEditProps) {
-  const initial = (displayName?.trim() || "U").charAt(0).toUpperCase();
-
   return (
     <header className="flex flex-col items-center gap-4 pb-6">
       <label htmlFor="avatar-upload" className="relative block cursor-pointer">
@@ -171,9 +164,6 @@ export function ProfileHeaderEdit({
             </div>
           )}
         </div>
-        <span className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-green text-xs text-white">
-          {initial}
-        </span>
         <input
           type="file"
           accept="image/*"

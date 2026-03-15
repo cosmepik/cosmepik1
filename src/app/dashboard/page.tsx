@@ -7,7 +7,6 @@ import {
   Ticket,
   Copy,
   Crown,
-  Sparkles,
   Plus,
   MoreHorizontal,
   Pencil,
@@ -19,16 +18,21 @@ import {
 import { toast } from "sonner";
 import { SideMenu } from "@/components/cosme-link/side-menu";
 import { DashboardHeader } from "@/components/DashboardHeader";
-import { useUser } from "@/hooks/use-user";
 import {
-  getCosmeSets,
   createCosmeSet,
   deleteCosmeSet,
   updateCosmeSetName,
+  seedProfileCache,
 } from "@/lib/store";
-import type { CosmeSet } from "@/types";
+import type { CosmeSet, InfluencerProfile } from "@/types";
 
 const ADMIN_EMAIL = "cosmepik.team@gmail.com";
+
+interface DashboardUser {
+  id: string;
+  email?: string;
+  metadata?: Record<string, unknown>;
+}
 
 function normalizeSlug(raw: string): string {
   return raw
@@ -47,15 +51,14 @@ function getGreeting(): string {
 
 export default function DashboardHomePage() {
   const router = useRouter();
-  const { user, loading: authLoading } = useUser();
-  const userId = user?.id ?? "demo";
-  const isAdmin = user?.email === ADMIN_EMAIL;
+  const [dashUser, setDashUser] = useState<DashboardUser | null>(null);
+  const userId = dashUser?.id ?? "demo";
+  const isAdmin = dashUser?.email === ADMIN_EMAIL;
+  const metadata = dashUser?.metadata as Record<string, string> | undefined;
   const displayName =
-    user?.user_metadata?.full_name ??
-    user?.user_metadata?.name ??
-    (user?.user_metadata?.user_name
-      ? `@${user.user_metadata.user_name}`
-      : null);
+    metadata?.full_name ??
+    metadata?.name ??
+    (metadata?.user_name ? `@${metadata.user_name}` : null);
 
   const [sets, setSets] = useState<CosmeSet[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,24 +73,47 @@ export default function DashboardHomePage() {
 
   const load = useCallback(() => {
     const timeout = setTimeout(() => setLoading(false), 10000);
-    getCosmeSets(userId)
-      .then((data) => setSets(data ?? []))
+    fetch("/api/dashboard")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.user) setDashUser(data.user);
+        setSets(data.sets ?? []);
+        setIsPremium(!!data.premium);
+        if (data.profiles) {
+          for (const [slug, p] of Object.entries(data.profiles)) {
+            const raw = p as Record<string, unknown>;
+            seedProfileCache(slug, {
+              username: raw.username as string,
+              displayName: (raw.display_name as string) ?? "",
+              avatarUrl: (raw.avatar_url as string) ?? undefined,
+              backgroundImageUrl: (raw.background_image_url as string) ?? undefined,
+              usePreset: (raw.use_preset as boolean) ?? undefined,
+              themeId: (raw.theme_id as string) ?? undefined,
+              backgroundId: (raw.background_id as string) ?? undefined,
+              fontId: (raw.font_id as string) ?? undefined,
+              cardDesignId: (raw.card_design_id as string) ?? undefined,
+              bio: (raw.bio as string) ?? undefined,
+              bioSub: (raw.bio_sub as string) ?? undefined,
+              skinType: (raw.skin_type as string) ?? undefined,
+              personalColor: (raw.personal_color as string) ?? undefined,
+              snsLinks: raw.sns_links as InfluencerProfile["snsLinks"],
+              rakutenAffiliateId: (raw.rakuten_affiliate_id as string) ?? undefined,
+              list: [],
+              updatedAt: (raw.updated_at as string) ?? new Date().toISOString(),
+            });
+          }
+        }
+      })
       .catch(() => setSets([]))
       .finally(() => {
         clearTimeout(timeout);
         setLoading(false);
       });
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
-    if (!authLoading) {
-      load();
-      fetch("/api/premium/me")
-        .then((r) => r.json())
-        .then((d) => setIsPremium(!!d.premium))
-        .catch(() => {});
-    }
-  }, [load, authLoading]);
+    load();
+  }, [load]);
 
   const canCreateMore = isAdmin || isPremium || sets.length < 1;
 
@@ -292,33 +318,26 @@ export default function DashboardHomePage() {
           <h2 className="text-sm font-bold text-foreground">
             マイコスメセット
           </h2>
-          {!loading && !authLoading && sets.length > 0 && (
+          {!loading && sets.length > 0 && (
             <span className="text-xs text-muted-foreground">
               タップして編集
             </span>
           )}
         </div>
 
-        {loading || authLoading ? (
-          <div className="space-y-3">
-            {[1, 2].map((i) => (
-              <div
-                key={i}
-                className="h-[88px] animate-pulse rounded-2xl bg-muted/50"
-              />
-            ))}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center gap-3 py-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-primary/30 border-t-primary" />
+            <p className="text-sm text-muted-foreground">コスメセットを読み込み中...</p>
           </div>
         ) : (
           <>
             {/* Empty State */}
             {sets.length === 0 && (
-              <div className="relative overflow-hidden rounded-2xl border border-dashed border-rose-200 bg-gradient-to-br from-rose-50 to-pink-50 p-8 text-center">
-                <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-rose-100/50 blur-2xl" />
-                <div className="absolute -bottom-4 -left-4 h-20 w-20 rounded-full bg-pink-100/50 blur-2xl" />
+              <div className="relative overflow-hidden rounded-2xl border border-primary/20 p-8 text-center shadow-lg shadow-primary/10 ring-1 ring-black/5" style={{ background: "linear-gradient(135deg, color-mix(in oklch, var(--primary) 35%, white) 0%, color-mix(in oklch, var(--primary) 20%, white) 50%, color-mix(in oklch, var(--primary) 45%, white) 100%)" }}>
+                <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary/10 blur-2xl" />
+                <div className="absolute -bottom-4 -left-4 h-20 w-20 rounded-full bg-primary/10 blur-2xl" />
                 <div className="relative">
-                  <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm">
-                    <Sparkles className="h-7 w-7 text-rose-400" />
-                  </div>
                   <p className="text-sm font-medium text-foreground">
                     はじめてのコスメセットを作ろう
                   </p>
@@ -545,7 +564,7 @@ export default function DashboardHomePage() {
               <button
                 type="button"
                 onClick={openCreateModal}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-rose-200/60 bg-rose-50/30 py-5 text-sm font-medium text-muted-foreground transition-all hover:border-rose-300 hover:bg-rose-50/60 hover:text-foreground"
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-primary/40 bg-primary/5 py-5 text-sm font-medium text-muted-foreground transition-all hover:border-primary/60 hover:bg-primary/10 hover:text-foreground"
               >
                 <Plus className="h-4 w-4" />
                 新しいコスメセットを作成
@@ -567,21 +586,6 @@ export default function DashboardHomePage() {
               </Link>
             )}
 
-            {/* #cosmepik編集部 */}
-            <section className="mt-10">
-              <div className="mb-3 flex items-center gap-2">
-                <span className="text-xs font-bold tracking-wider text-muted-foreground">
-                  #cosmepik編集部
-                </span>
-              </div>
-              <div className="relative overflow-hidden rounded-2xl border border-border bg-white p-6 text-center shadow-sm">
-                <div className="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-rose-50 blur-xl" />
-                <p className="relative text-sm text-muted-foreground">
-                  いっしょうけんめい準備中！
-                </p>
-              </div>
-            </section>
-
             {/* Create Modal */}
             {createModalOpen && (
               <div
@@ -596,12 +600,9 @@ export default function DashboardHomePage() {
                   onClick={(e) => e.stopPropagation()}
                 >
                   {/* Modal Header */}
-                  <div className="relative overflow-hidden bg-gradient-to-br from-rose-50 via-pink-50 to-white px-6 pb-5 pt-6">
-                    <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-rose-100/50 blur-2xl" />
+                  <div className="relative overflow-hidden bg-primary/5 px-6 pb-5 pt-6">
+                    <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-primary/10 blur-2xl" />
                     <div className="relative">
-                      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-rose-400 to-pink-500 text-white shadow-sm shadow-rose-200/50">
-                        <Sparkles className="h-5 w-5" />
-                      </div>
                       <h2
                         id="create-modal-title"
                         className="text-lg font-bold text-foreground"
@@ -631,7 +632,7 @@ export default function DashboardHomePage() {
                         value={createName}
                         onChange={(e) => setCreateName(e.target.value)}
                         placeholder="例：愛用コスメ"
-                        className="w-full rounded-xl border border-input bg-white px-4 py-3 text-sm text-card-foreground placeholder-muted-foreground transition-colors focus:border-rose-300 focus:outline-none focus:ring-2 focus:ring-rose-100"
+                        className="w-full rounded-xl border border-input bg-white px-4 py-3 text-sm text-card-foreground placeholder-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                       />
                     </div>
                     <div>
@@ -644,7 +645,7 @@ export default function DashboardHomePage() {
                       <p className="mb-2 text-xs text-muted-foreground">
                         英数字・ハイフン・アンダースコアで入力
                       </p>
-                      <div className="flex overflow-hidden rounded-xl border-2 border-input bg-white transition-all focus-within:border-rose-300 focus-within:ring-2 focus-within:ring-rose-100">
+                      <div className="flex overflow-hidden rounded-xl border-2 border-input bg-white transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
                         <span className="flex items-center pl-4 text-sm font-medium text-muted-foreground shrink-0">
                           {typeof window !== "undefined" &&
                           window.location?.origin
@@ -692,7 +693,7 @@ export default function DashboardHomePage() {
                             );
                           }}
                           placeholder="あなたのID"
-                          className="min-w-0 flex-1 px-3 py-3 text-sm text-card-foreground placeholder-muted-foreground focus:outline-none"
+                          className="min-w-0 flex-1 pl-1 pr-3 py-3 text-sm text-card-foreground placeholder-muted-foreground focus:outline-none"
                         />
                       </div>
                       {slugInputError && (
@@ -717,7 +718,7 @@ export default function DashboardHomePage() {
                       <button
                         type="submit"
                         disabled={creating}
-                        className="flex-1 rounded-xl bg-gradient-to-r from-rose-400 to-pink-500 py-3 text-sm font-semibold text-white shadow-sm shadow-rose-200/50 transition-all hover:opacity-90 disabled:opacity-50"
+                        className="flex-1 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:opacity-90 disabled:opacity-50"
                       >
                         {creating ? "作成中..." : "作成する"}
                       </button>

@@ -17,6 +17,11 @@ function useSupabase() {
 const profileCache = new Map<string, { data: InfluencerProfile | null; ts: number }>();
 const PROFILE_CACHE_TTL = 30_000;
 
+/** ダッシュボード等で取得済みのプロフィールデータでキャッシュを事前セット */
+export function seedProfileCache(slug: string, profile: InfluencerProfile): void {
+  profileCache.set(slug, { data: profile, ts: Date.now() });
+}
+
 /** デバッグ用：現在のストレージ種別（開発時のみコンソールに出力） */
 export function getStorageType(): "supabase" | "localStorage" {
   return useSupabase() ? "supabase" : "localStorage";
@@ -75,7 +80,7 @@ export async function setMyList(list: ListedCosmeItem[], slug?: string | null): 
   await db.saveList(s, list);
 }
 
-/** プロフィール取得（slug 指定） — インメモリキャッシュ付き */
+/** プロフィール取得（slug 指定） — インメモリキャッシュ付き、サーバーAPI経由で高速 */
 export async function getProfile(slug?: string | null): Promise<InfluencerProfile | null> {
   const s = slug ?? FALLBACK_USER_ID;
 
@@ -84,7 +89,23 @@ export async function getProfile(slug?: string | null): Promise<InfluencerProfil
     return cached.data;
   }
 
-  const data = !useSupabase() ? local.getProfile(s) : await db.fetchProfile(s);
+  if (!useSupabase()) {
+    const data = local.getProfile(s);
+    profileCache.set(s, { data, ts: Date.now() });
+    return data;
+  }
+
+  try {
+    const res = await fetch(`/api/profile/${encodeURIComponent(s)}`);
+    if (res.ok) {
+      const json = await res.json();
+      const data = (json.profile as InfluencerProfile) ?? null;
+      profileCache.set(s, { data, ts: Date.now() });
+      return data;
+    }
+  } catch {}
+
+  const data = await db.fetchProfile(s);
   profileCache.set(s, { data, ts: Date.now() });
   return data;
 }

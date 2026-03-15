@@ -7,8 +7,10 @@ import { useTheme } from "@/lib/theme-context";
 import { themes } from "@/lib/themes";
 import { backgrounds } from "@/lib/backgrounds";
 import { isValidFontId } from "@/lib/fonts";
+import { cardDesigns } from "@/lib/card-designs";
 import type { ThemeId } from "@/lib/themes";
 import type { FontId } from "@/lib/fonts";
+import type { CardDesignId } from "@/lib/card-designs";
 
 const CUSTOM_COLOR_PREFIX = "custom-";
 const CUSTOM_GRADIENT_PREFIX = "custom-gradient-";
@@ -18,7 +20,7 @@ const CUSTOM_GRADIENT_PREFIX = "custom-gradient-";
  */
 export function ProfileThemeLoader({ slug }: { slug: string }) {
   const pathname = usePathname();
-  const { setThemeId, setBackgroundId, setFontId } = useTheme();
+  const { setThemeId, setBackgroundId, setFontId, setCardDesignId } = useTheme();
 
   const isEditPage = pathname?.startsWith("/dashboard/edit/");
 
@@ -42,8 +44,11 @@ export function ProfileThemeLoader({ slug }: { slug: string }) {
       if (p.fontId && isValidFontId(p.fontId)) {
         setFontId(p.fontId as FontId);
       }
+      if (p.cardDesignId && cardDesigns.some((c) => c.id === p.cardDesignId)) {
+        setCardDesignId(p.cardDesignId as CardDesignId);
+      }
     });
-  }, [isEditPage, slug, setThemeId, setBackgroundId, setFontId]);
+  }, [isEditPage, slug, setThemeId, setBackgroundId, setFontId, setCardDesignId]);
 
   return null;
 }

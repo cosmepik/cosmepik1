@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { isSupabaseConfigured } from "@/lib/supabase";
-import { fetchProfile, fetchSections } from "@/lib/supabase-db";
+import { fetchProfileLight, fetchSections } from "@/lib/supabase-db";
 
 /**
- * 公開ページ用：profile + sections を1リクエストで取得（ロード軽量化）
+ * profile + sections を1リクエストで取得（編集画面・公開ページ兼用）
+ * fetchProfileLight で list_items を省略し高速化。
  */
 export async function GET(
   _request: Request,
@@ -23,7 +24,7 @@ export async function GET(
 
   try {
     const [profile, sections] = await Promise.all([
-      fetchProfile(username),
+      fetchProfileLight(username),
       fetchSections(username),
     ]);
 
@@ -31,7 +32,7 @@ export async function GET(
       { profile, sections: sections ?? [] },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
+          "Cache-Control": "private, no-cache",
         },
       }
     );

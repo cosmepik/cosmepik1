@@ -42,12 +42,12 @@ export function AddSectionInline({ insertIndex }: AddSectionInlineProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedType || !title.trim()) return;
+    if (!selectedType) return;
 
     const newSection: Section = {
       id: `section-${Date.now()}`,
       type: selectedType,
-      title: title.trim(),
+      title: title.trim() || "",
       subtitle: subtitle.trim() || undefined,
       items: [],
       showSteps: selectedType === "routine",
@@ -75,7 +75,7 @@ export function AddSectionInline({ insertIndex }: AddSectionInlineProps) {
   // Collapsed state: + line
   if (!isExpanded) {
     return (
-      <div className="group flex items-center gap-3 py-1">
+      <div className="group flex items-center gap-1 py-0">
         <div className="h-px flex-1 bg-border transition-colors group-hover:bg-primary/40" />
         <button
           type="button"
@@ -141,18 +141,17 @@ export function AddSectionInline({ insertIndex }: AddSectionInlineProps) {
             onChange={(e) => setTitle(e.target.value)}
             placeholder={
               selectedType === "routine"
-                ? "例: 朝のスキンケア"
+                ? "例: 朝のスキンケア（任意）"
                 : selectedType === "products"
-                  ? "例: お気に入り"
+                  ? "例: お気に入り（任意）"
                   : selectedType === "heading"
-                    ? "例: スキンケア"
+                    ? "例: スキンケア（任意）"
                     : selectedType === "link"
-                      ? "例: SNSリンク"
-                      : "セクション名"
+                      ? "例: SNSリンク（任意）"
+                      : "セクション名（任意）"
             }
             className="rounded-xl border-2 border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
             autoFocus
-            required
           />
 
           {(selectedType === "heading" || selectedType === "text") && (
@@ -167,8 +166,7 @@ export function AddSectionInline({ insertIndex }: AddSectionInlineProps) {
 
           <button
             type="submit"
-            disabled={!title.trim()}
-            className="flex items-center justify-center gap-1.5 rounded-xl bg-primary py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+            className="flex items-center justify-center gap-1.5 rounded-xl bg-primary py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             <Plus className="h-4 w-4" />
             追加

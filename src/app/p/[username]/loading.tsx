@@ -1,7 +1,7 @@
 export default function PublicPageLoading() {
   return (
     <div className="min-h-screen w-full">
-      <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-8">
+      <div className="mx-auto flex max-w-[400px] flex-col gap-6 px-4 py-8">
         {/* Logo skeleton */}
         <div className="flex justify-center">
           <div className="h-6 w-24 animate-pulse rounded bg-muted/50" />

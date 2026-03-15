@@ -11,10 +11,12 @@ import {
 import { themes, themeVariables, type ThemeId } from "@/lib/themes";
 import { backgrounds } from "@/lib/backgrounds";
 import { getFontFamily, isValidFontId, type FontId } from "@/lib/fonts";
+import { cardDesigns, getCardDesign, type CardDesignId } from "@/lib/card-designs";
 
 const THEME_STORAGE_KEY = "cosmepik-theme";
 const BACKGROUND_STORAGE_KEY = "cosmepik-background";
 const FONT_STORAGE_KEY = "cosmepik-font";
+const CARD_DESIGN_STORAGE_KEY = "cosmepik-card-design";
 
 type ThemeContextValue = {
   themeId: ThemeId;
@@ -23,6 +25,8 @@ type ThemeContextValue = {
   setBackgroundId: (id: string) => void;
   fontId: FontId;
   setFontId: (id: FontId) => void;
+  cardDesignId: CardDesignId;
+  setCardDesignId: (id: CardDesignId) => void;
 };
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -100,6 +104,7 @@ export function applyBackground(backgroundId: string) {
 const DEFAULT_THEME_ID: ThemeId = "mint-sparkle";
 const DEFAULT_BACKGROUND_ID = "gradient-mermaid";
 const DEFAULT_FONT_ID: FontId = "sans";
+const DEFAULT_CARD_DESIGN_ID: CardDesignId = "default";
 
 /** 公開ページでプロフィールのフォントを適用するためにエクスポート */
 export function applyFont(fontId: FontId) {
@@ -111,6 +116,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [themeId, setThemeIdState] = useState<ThemeId>(DEFAULT_THEME_ID);
   const [backgroundId, setBackgroundIdState] = useState<string>(DEFAULT_BACKGROUND_ID);
   const [fontId, setFontIdState] = useState<FontId>(DEFAULT_FONT_ID);
+  const [cardDesignId, setCardDesignIdState] = useState<CardDesignId>(DEFAULT_CARD_DESIGN_ID);
 
   useEffect(() => {
     try {
@@ -141,6 +147,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         applyFont(storedFont);
       } else {
         applyFont(DEFAULT_FONT_ID);
+      }
+
+      const storedCard = localStorage.getItem(CARD_DESIGN_STORAGE_KEY) as CardDesignId | null;
+      if (storedCard && cardDesigns.some((c) => c.id === storedCard)) {
+        setCardDesignIdState(storedCard);
       }
     } catch {
       applyTheme(DEFAULT_THEME_ID);
@@ -179,8 +190,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const setCardDesignId = useCallback((id: CardDesignId) => {
+    setCardDesignIdState(id);
+    try {
+      localStorage.setItem(CARD_DESIGN_STORAGE_KEY, id);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   return (
-    <ThemeContext.Provider value={{ themeId, setThemeId, backgroundId, setBackgroundId, fontId, setFontId }}>
+    <ThemeContext.Provider value={{ themeId, setThemeId, backgroundId, setBackgroundId, fontId, setFontId, cardDesignId, setCardDesignId }}>
       {children}
     </ThemeContext.Provider>
   );
@@ -196,7 +216,15 @@ export function useTheme() {
       setBackgroundId: () => {},
       fontId: DEFAULT_FONT_ID,
       setFontId: () => {},
+      cardDesignId: DEFAULT_CARD_DESIGN_ID,
+      setCardDesignId: () => {},
     };
   }
   return ctx;
+}
+
+/** 公開ページ用：カードデザインのクラス名を取得 */
+export function getCardDesignClasses(cardDesignId: string | undefined) {
+  const design = getCardDesign(cardDesignId);
+  return { listClassName: design.listClassName, productClassName: design.productClassName };
 }

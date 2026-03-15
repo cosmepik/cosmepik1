@@ -2,9 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ブラウザのダークモードの影響を受けない（常にライト表示） */
+/* ブラウザのダークモード・ナイトモードの影響を受けない（常にライト表示） */
 html {
   color-scheme: light;
+  background-color: #ffffff;
 }
 
 /* default テーマ（グリーンティー）と一致 */
@@ -35,6 +36,7 @@ html {
 
 body {
   @apply antialiased;
+  color-scheme: light;
   background-color: #ffffff;
   background-color: var(--background, #ffffff);
   color: var(--foreground, #1a1a2e);
@@ -101,6 +103,13 @@ body {
 }
 .page-transition-enter {
   animation: page-enter 0.3s ease-out both;
+}
+
+/* iOS Safari: 16px未満のinputフォーカス時にズームするのを防ぐ */
+input,
+select,
+textarea {
+  font-size: 16px !important;
 }
 
 /* スクロールバー非表示（横スクロール用） */
