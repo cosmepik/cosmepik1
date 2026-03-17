@@ -6,18 +6,41 @@ import { Upload } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { getProfile } from "@/lib/store";
 import { PublicProfileContent } from "@/components/PublicProfileContent";
+import { ProfileThemeApplier } from "@/components/ProfileThemeApplier";
 import { SectionProvider } from "@/lib/section-context";
 import { ShareModal } from "@/components/ShareModal";
+import { useProfile, toInfluencerProfile } from "@/lib/profile-context";
 import type { InfluencerProfile } from "@/types";
 
 function PreviewContent() {
   const searchParams = useSearchParams();
   const username = searchParams.get("slug") ?? "demo";
-  const [profile, setProfile] = useState<InfluencerProfile | null>(null);
+  const { profile: ctxProfile } = useProfile();
+
+  const initialProfile: InfluencerProfile | null =
+    ctxProfile.name
+      ? { ...toInfluencerProfile(ctxProfile), list: [], updatedAt: new Date().toISOString() } as InfluencerProfile
+      : null;
+
+  const [profile, setProfile] = useState<InfluencerProfile | null>(initialProfile);
   const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
-    getProfile(username).then(setProfile);
+    if (ctxProfile.name && !profile?.displayName) {
+      setProfile({ ...toInfluencerProfile(ctxProfile), list: [] } as InfluencerProfile);
+    }
+  }, [ctxProfile.name]);
+
+  useEffect(() => {
+    getProfile(username).then((full) => {
+      if (full) setProfile(full);
+    });
+  }, [username]);
+
+  useEffect(() => {
+    const handler = () => getProfile(username).then((full) => { if (full) setProfile(full); });
+    window.addEventListener("cosmepik-background-change", handler);
+    return () => window.removeEventListener("cosmepik-background-change", handler);
   }, [username]);
 
   const profileLink =
@@ -25,7 +48,7 @@ function PreviewContent() {
 
   return (
     <>
-      <div className="mx-auto max-w-md px-4 pb-4 pt-6">
+      <div className="relative z-10 mx-auto max-w-[400px] px-4 pb-4 pt-6">
         <div className="mb-4 flex items-center justify-between gap-4">
           <Link
             href={`/dashboard/edit/${username}`}
@@ -49,6 +72,7 @@ function PreviewContent() {
         url={profileLink}
         title="共有"
       />
+      <ProfileThemeApplier profile={profile} />
       <SectionProvider slug={username} userAffiliateId={profile?.rakutenAffiliateId}>
         <PublicProfileContent username={username} profile={profile} />
       </SectionProvider>
@@ -56,7 +80,6 @@ function PreviewContent() {
   );
 }
 
-/** プレビュー画面：UIBASE 完全準拠 */
 export default function PreviewPage() {
   return (
     <Suspense fallback={<div className="flex min-h-screen items-center justify-center text-muted-foreground">読み込み中...</div>}>

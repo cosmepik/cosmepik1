@@ -33,3 +33,4 @@ yarn-error.log*
 
 # Clerk（削除済み）
 .clerk/
+tsconfig.tsbuildinfo

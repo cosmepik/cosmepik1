@@ -16,9 +16,9 @@ export function useUser(): { user: User | null; loading: boolean } {
       return;
     }
     supabase.auth
-      .getUser()
-      .then(({ data }) => {
-        setUser(data.user ?? null);
+      .getSession()
+      .then(({ data: { session } }) => {
+        setUser(session?.user ?? null);
       })
       .catch(() => {
         setUser(null);

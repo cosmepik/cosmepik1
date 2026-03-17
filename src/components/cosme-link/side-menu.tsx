@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { X, Globe, Home, BarChart2, Settings, LogOut, ChevronRight } from "lucide-react";
+import { X, Globe, Home, BarChart2, Settings, LogOut, ChevronRight, DollarSign, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useProfile } from "@/lib/profile-context";
 import { useUser } from "@/hooks/use-user";
@@ -42,15 +42,42 @@ const menuItems = (
     href: "/dashboard/settings",
     description: "プロフィール・通知設定",
   },
+  {
+    icon: Crown,
+    label: "プレミアムプラン",
+    href: "/dashboard/premium",
+    description: "バナー広告消去・限定壁紙",
+  },
 ];
+
+const revenueItem = {
+  icon: DollarSign,
+  label: "収益化",
+  href: "/dashboard/revenue",
+  description: "楽天アフィリエイトID設定",
+};
 
 export function SideMenu({ isOpen, onClose }: SideMenuProps) {
   const { profile } = useProfile();
   const { user } = useUser();
   const username = profile.username || "demo";
+  const [dbLabel, setDbLabel] = useState<string>("");
 
   const email = user?.email ?? "";
   const initial = email ? email.charAt(0).toUpperCase() : "?";
+
+  useEffect(() => {
+    fetch("/api/db-info")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.storage === "supabase") {
+          setDbLabel(d.projectId ? `supabase: ${d.projectId}` : "supabase");
+        } else {
+          setDbLabel("localStorage");
+        }
+      })
+      .catch(() => setDbLabel(getStorageType()));
+  }, []);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -132,7 +159,7 @@ export function SideMenu({ isOpen, onClose }: SideMenuProps) {
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                       <Icon className="h-4.5 w-4.5" strokeWidth={1.75} />
                     </div>
-                    <div className="flex flex-1 flex-col">
+                    <div className="flex flex-1 flex-col items-start text-left">
                       <span className="text-sm font-medium text-foreground">{item.label}</span>
                       <span className="text-[11px] text-muted-foreground">{item.description}</span>
                     </div>
@@ -141,6 +168,22 @@ export function SideMenu({ isOpen, onClose }: SideMenuProps) {
                 </li>
               );
             })}
+            <li>
+              <Link
+                href={revenueItem.href}
+                onClick={onClose}
+                className="group flex items-center gap-3.5 rounded-xl px-3 py-3 transition-all hover:bg-accent"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                  <revenueItem.icon className="h-4.5 w-4.5" strokeWidth={1.75} />
+                </div>
+                <div className="flex flex-1 flex-col items-start text-left">
+                  <span className="text-sm font-medium text-foreground">{revenueItem.label}</span>
+                  <span className="text-[11px] text-muted-foreground">{revenueItem.description}</span>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            </li>
           </ul>
 
           {/* Divider */}
@@ -162,7 +205,7 @@ export function SideMenu({ isOpen, onClose }: SideMenuProps) {
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-destructive/10 text-destructive transition-colors group-hover:bg-destructive group-hover:text-white">
               <LogOut className="h-4 w-4" strokeWidth={1.75} />
             </div>
-            <div className="flex flex-1 flex-col items-start">
+            <div className="flex flex-1 flex-col items-start text-left">
               <span className="text-sm font-medium text-destructive">サインアウト</span>
               <span className="text-[11px] text-muted-foreground">アカウントからログアウト</span>
             </div>
@@ -174,13 +217,19 @@ export function SideMenu({ isOpen, onClose }: SideMenuProps) {
           <div className="flex items-center gap-2">
             <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
             <span className="text-[11px] text-muted-foreground">cosmepik v1.1</span>
-            <span className="text-[10px] text-muted-foreground/70">({getStorageType()})</span>
+            <span
+              className="max-w-[140px] truncate text-[10px] text-muted-foreground/70"
+              title={dbLabel || "(取得中…)"}
+            >
+              ({dbLabel || "…"})
+            </span>
           </div>
           <p className="mt-1 text-[10px] text-muted-foreground/60">
             &copy; 2026 cosmepik. All rights reserved.
           </p>
         </div>
       </aside>
+
     </>
   );
 }

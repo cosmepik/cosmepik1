@@ -29,7 +29,7 @@ export default function PrivacyPage() {
             <ul className="list-disc pl-6 space-y-1 text-muted-foreground">
               <li><strong className="text-foreground">認証情報</strong>：メールアドレス、パスワード（暗号化して保管）、または Google・X 等のソーシャルログインに紐づく識別子</li>
               <li><strong className="text-foreground">プロフィール情報</strong>：表示名、プロフィール画像、自己紹介文、肌質・パーソナルカラー、SNSリンクなど、ユーザーが入力した内容</li>
-              <li><strong className="text-foreground">コンテンツ情報</strong>：愛用コスメのリスト、セクション名、商品メモなど、本サービス上で作成・保存したデータ</li>
+              <li><strong className="text-foreground">コンテンツ情報</strong>：愛用コスメのリスト、グループ名、商品メモなど、本サービス上で作成・保存したデータ</li>
               <li><strong className="text-foreground">技術情報</strong>：IPアドレス、ブラウザ種類、アクセス日時、Cookie 等（サービスの提供・改善・不正防止のため）</li>
               <li><strong className="text-foreground">お問い合わせ内容</strong>：お問い合わせフォームまたはメールでいただいた内容および連絡先</li>
             </ul>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { X } from "lucide-react";
 
 interface ShareModalProps {
@@ -11,10 +11,14 @@ interface ShareModalProps {
 }
 
 export function ShareModal({ open, onClose, url, title = "共有" }: ShareModalProps) {
+  const [copied, setCopied] = useState(false);
+
   const handleCopy = useCallback(async () => {
     if (!url) return;
     try {
       await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
     } catch {
       const textarea = document.createElement("textarea");
       textarea.value = url;
@@ -22,11 +26,16 @@ export function ShareModal({ open, onClose, url, title = "共有" }: ShareModalP
       textarea.select();
       document.execCommand("copy");
       document.body.removeChild(textarea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
     }
   }, [url]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setCopied(false);
+      return;
+    }
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
@@ -71,9 +80,12 @@ export function ShareModal({ open, onClose, url, title = "共有" }: ShareModalP
             onClick={handleCopy}
             className="shrink-0 rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
           >
-            コピー
+            {copied ? "コピーしました！" : "コピー"}
           </button>
         </div>
+        <p className="mt-3 text-sm text-muted-foreground">
+          {copied ? "コピーしました！SNSに貼り付けてシェアしよう😎" : "SNSに貼り付けてシェアしよう😎"}
+        </p>
       </div>
     </div>
   );

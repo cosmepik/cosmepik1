@@ -1,36 +1,30 @@
-"use client";
+import { fetchPublicPageData } from "@/lib/supabase-fetch";
+import { generateThemeVars, getFontLinkUrl } from "@/lib/theme-css";
+import { PublicPageSSR } from "@/components/public/PublicPageSSR";
+import { AffiliateClickHandler } from "@/components/public/AffiliateClickHandler";
+import { AnalyticsBeacon } from "@/components/public/AnalyticsBeacon";
 
-import { useParams } from "next/navigation";
-import { useState, useEffect } from "react";
-import { getProfileByUsername } from "@/lib/store";
-import { PublicProfileContent } from "@/components/PublicProfileContent";
-import { SectionProvider } from "@/lib/section-context";
-import type { InfluencerProfile } from "@/types";
+export const revalidate = 86400;
 
-/**
- * ファン向け公開ページ（ユーザーが共有リンクで見る用）
- * プレビュー用の「戻る」「公開」ボタン等は一切表示しない。
- */
-export default function PublicPageByUsername() {
-  const params = useParams();
-  const username = (params?.username as string) ?? "demo";
+type Props = { params: Promise<{ username: string }> };
 
-  const [profile, setProfile] = useState<InfluencerProfile | null>(null);
-
-  useEffect(() => {
-    getProfileByUsername(username).then(setProfile);
-  }, [username]);
-
-  // 簡易アナリティクス: 閲覧数を1増やす（クライアントで1回だけ）
-  useEffect(() => {
-    fetch(`/api/analytics/view?username=${encodeURIComponent(username)}`, {
-      method: "POST",
-    }).catch(() => {});
-  }, [username]);
+export default async function PublicPageByUsername({ params }: Props) {
+  const { username } = await params;
+  const { profile, sections } = await fetchPublicPageData(username);
+  const themeVars = generateThemeVars(profile);
+  const fontUrl = getFontLinkUrl(profile);
 
   return (
-    <SectionProvider slug={username} userAffiliateId={profile?.rakutenAffiliateId}>
-      <PublicProfileContent username={username} profile={profile} />
-    </SectionProvider>
+    <>
+      {fontUrl && <link rel="stylesheet" href={fontUrl} />}
+      <AnalyticsBeacon username={username} />
+      <AffiliateClickHandler slug={username} userAffiliateId={profile?.rakutenAffiliateId} />
+      <PublicPageSSR
+        username={username}
+        profile={profile}
+        sections={sections}
+        themeVars={themeVars}
+      />
+    </>
   );
 }

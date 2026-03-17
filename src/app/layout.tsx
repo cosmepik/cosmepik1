@@ -1,35 +1,23 @@
 import type { Metadata, Viewport } from "next";
-import { Noto_Sans_JP, Cormorant_Garamond, M_PLUS_Rounded_1c, Shippori_Mincho } from "next/font/google";
+import { Noto_Sans_JP } from "next/font/google";
 import { ThemeWrapper } from "@/components/ThemeWrapper";
+import { LayoutBackground } from "@/components/LayoutBackground";
+import { LazyFonts } from "@/components/LazyFonts";
+import { Toaster } from "sonner";
+import { isProduction } from "@/lib/env";
 import "./globals.css";
 
 const notoSans = Noto_Sans_JP({
   subsets: ["latin"],
   variable: "--font-noto-sans",
   weight: ["400", "500", "700"],
-});
-
-const cormorant = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-serif",
-});
-
-const mPlusRounded = M_PLUS_Rounded_1c({
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  variable: "--font-rounded",
-});
-
-const shipporiMincho = Shippori_Mincho({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-mincho",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "cosmepik - あなたの愛用コスメをシェア",
+  title: "#cosmepik(コスメピック)",
   description: "インフルエンサーの愛用コスメをまとめたリンクツリー",
+  ...(isProduction ? {} : { robots: { index: false, follow: false } }),
 };
 
 export const viewport: Viewport = {
@@ -37,6 +25,7 @@ export const viewport: Viewport = {
   colorScheme: "light",
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -45,20 +34,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja" className={`${notoSans.variable} ${cormorant.variable} ${mPlusRounded.variable} ${shipporiMincho.variable}`}>
-      <body className="min-h-screen antialiased">
-        <div
-          className="min-h-screen transition-all duration-300"
-          style={{
-            backgroundColor: "var(--page-bg, var(--background))",
-            backgroundImage: "var(--page-bg-image, none)",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundAttachment: "fixed",
-          }}
-        >
+    <html lang="ja" className={`${notoSans.variable} light`} style={{ colorScheme: "light" }} suppressHydrationWarning>
+      <body className="min-h-screen bg-white antialiased">
+        <LazyFonts />
+        <LayoutBackground>
           <ThemeWrapper>{children}</ThemeWrapper>
-        </div>
+          <Toaster richColors position="top-center" />
+        </LayoutBackground>
       </body>
     </html>
   );

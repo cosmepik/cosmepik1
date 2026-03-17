@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { CosmepikLogo } from "@/components/cosmepik-logo";
 import { useUser } from "@/hooks/use-user";
 import type { User } from "@supabase/supabase-js";
 
@@ -16,7 +17,9 @@ export function ProfileIcon({ user, onClick, className }: { user: User; onClick?
   const containerRef = useRef<HTMLDivElement>(null);
 
   const meta = user.user_metadata ?? {};
-  const avatarUrl = meta.avatar_url ?? meta.picture ?? undefined;
+  const provider = user.app_metadata?.provider as string | undefined;
+  const isEmailLogin = provider === "email";
+  const avatarUrl = !isEmailLogin ? (meta.avatar_url ?? meta.picture ?? undefined) : undefined;
   const initial = (user.email?.[0] ?? meta.name?.[0] ?? meta.full_name?.[0] ?? "?").toUpperCase();
 
   // Google: full_name, name, email | X: user_name, name, email
@@ -110,8 +113,8 @@ export function DashboardHeader({ onMenuClick, rightContent }: DashboardHeaderPr
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
             </svg>
           </button>
-          <Link href="/dashboard" className="text-lg font-bold tracking-tight text-foreground hover:opacity-80">
-            cosmepik
+          <Link href="/dashboard" className="flex items-center hover:opacity-80">
+            <CosmepikLogo className="h-6" height={26} />
           </Link>
         </div>
         <div className="flex items-center gap-3">

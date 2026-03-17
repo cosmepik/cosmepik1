@@ -43,13 +43,13 @@ export async function fetchList(username: string): Promise<ListedCosmeItem[]> {
   }));
 }
 
-/** プロフィールが無ければ作成（list の FK 用） */
+/** プロフィールが無ければ作成（list の FK 用）。既存プロフィールは上書きしない */
 async function ensureProfileExists(username: string): Promise<void> {
   const client = getClient();
   if (!client) return;
   await client.from("profiles").upsert(
     { username, display_name: "", updated_at: new Date().toISOString() },
-    { onConflict: "username" }
+    { onConflict: "username", ignoreDuplicates: true }
   );
 }
 
@@ -136,8 +136,8 @@ export async function reorderListItems(
   return next;
 }
 
-/** プロフィール取得 */
-export async function fetchProfile(
+/** プロフィール取得（軽量版: list_items をスキップ。公開ページ用） */
+export async function fetchProfileLight(
   username: string
 ): Promise<InfluencerProfile | null> {
   const client = getClient();
@@ -151,12 +151,54 @@ export async function fetchProfile(
 
   if (error || !data) return null;
 
-  const list = await fetchList(username);
   return {
     username: data.username as string,
     displayName: (data.display_name as string) ?? "",
     avatarUrl: data.avatar_url as string | undefined,
     backgroundImageUrl: data.background_image_url as string | undefined,
+    usePreset: data.use_preset as boolean | undefined,
+    themeId: data.theme_id as string | undefined,
+    backgroundId: data.background_id as string | undefined,
+    fontId: data.font_id as string | undefined,
+    cardDesignId: data.card_design_id as string | undefined,
+    cardColor: data.card_color as string | undefined,
+    bio: data.bio as string | undefined,
+    bioSub: data.bio_sub as string | undefined,
+    skinType: data.skin_type as string | undefined,
+    personalColor: data.personal_color as string | undefined,
+    snsLinks: data.sns_links as InfluencerProfile["snsLinks"],
+    rakutenAffiliateId: data.rakuten_affiliate_id as string | undefined,
+    list: [],
+    updatedAt: (data.updated_at as string) ?? new Date().toISOString(),
+  };
+}
+
+/** プロフィール取得（list_items 含む完全版） */
+export async function fetchProfile(
+  username: string
+): Promise<InfluencerProfile | null> {
+  const client = getClient();
+  if (!client) return null;
+
+  const [profileResult, list] = await Promise.all([
+    client.from("profiles").select("*").eq("username", username).single(),
+    fetchList(username),
+  ]);
+
+  const { data, error } = profileResult;
+  if (error || !data) return null;
+
+  return {
+    username: data.username as string,
+    displayName: (data.display_name as string) ?? "",
+    avatarUrl: data.avatar_url as string | undefined,
+    backgroundImageUrl: data.background_image_url as string | undefined,
+    usePreset: data.use_preset as boolean | undefined,
+    themeId: data.theme_id as string | undefined,
+    backgroundId: data.background_id as string | undefined,
+    fontId: data.font_id as string | undefined,
+    cardDesignId: data.card_design_id as string | undefined,
+    cardColor: data.card_color as string | undefined,
     bio: data.bio as string | undefined,
     bioSub: data.bio_sub as string | undefined,
     skinType: data.skin_type as string | undefined,
@@ -166,6 +208,33 @@ export async function fetchProfile(
     list,
     updatedAt: (data.updated_at as string) ?? new Date().toISOString(),
   };
+}
+
+/** スタイル系フィールドのみ軽量更新（fetch なしで高速化） */
+async function updateProfileStyle(
+  username: string,
+  profile: Partial<InfluencerProfile>
+): Promise<boolean> {
+  const client = getClient();
+  if (!client) return false;
+
+  const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (profile.backgroundId !== undefined) updates.background_id = profile.backgroundId;
+  if (profile.usePreset !== undefined) updates.use_preset = profile.usePreset;
+  if (profile.themeId !== undefined) updates.theme_id = profile.themeId;
+  if (profile.fontId !== undefined) updates.font_id = profile.fontId;
+  if (profile.cardDesignId !== undefined) updates.card_design_id = profile.cardDesignId;
+  if (profile.cardColor !== undefined) updates.card_color = profile.cardColor;
+
+  if (Object.keys(updates).length <= 1) return false;
+
+  const { data, error } = await client
+    .from("profiles")
+    .update(updates)
+    .eq("username", username)
+    .select("username");
+
+  return !error && (data?.length ?? 0) > 0;
 }
 
 /** プロフィール保存（認証ユーザー紐付け前提。現状は username で一意） */
@@ -178,12 +247,41 @@ export async function saveProfile(
     return;
   }
 
+  const styleOnly =
+    profile.backgroundId !== undefined ||
+    profile.usePreset !== undefined ||
+    profile.themeId !== undefined ||
+    profile.fontId !== undefined ||
+    profile.cardDesignId !== undefined ||
+    profile.cardColor !== undefined;
+  const hasOtherFields =
+    profile.displayName !== undefined ||
+    profile.avatarUrl !== undefined ||
+    profile.backgroundImageUrl !== undefined ||
+    profile.bio !== undefined ||
+    profile.bioSub !== undefined ||
+    profile.skinType !== undefined ||
+    profile.personalColor !== undefined ||
+    profile.snsLinks !== undefined ||
+    profile.rakutenAffiliateId !== undefined;
+
+  if (styleOnly && !hasOtherFields) {
+    const ok = await updateProfileStyle(profile.username, profile);
+    if (ok) return;
+  }
+
   const existing = await fetchProfile(profile.username);
-  const row = {
+  const rowWithUsePreset = {
     username: profile.username,
     display_name: profile.displayName ?? existing?.displayName ?? "",
     avatar_url: profile.avatarUrl ?? existing?.avatarUrl ?? null,
     background_image_url: profile.backgroundImageUrl ?? existing?.backgroundImageUrl ?? null,
+    use_preset: profile.usePreset ?? existing?.usePreset ?? false,
+    theme_id: profile.themeId ?? existing?.themeId ?? null,
+    background_id: profile.backgroundId ?? existing?.backgroundId ?? null,
+    font_id: profile.fontId ?? existing?.fontId ?? null,
+    card_design_id: profile.cardDesignId ?? existing?.cardDesignId ?? null,
+    card_color: profile.cardColor ?? existing?.cardColor ?? null,
     bio: profile.bio ?? existing?.bio ?? null,
     bio_sub: profile.bioSub ?? existing?.bioSub ?? null,
     skin_type: profile.skinType ?? existing?.skinType ?? null,
@@ -193,13 +291,23 @@ export async function saveProfile(
     updated_at: new Date().toISOString(),
   };
 
-  const { error } = await client
+  let result = await client
     .from("profiles")
-    .upsert(row, { onConflict: "username" });
+    .upsert(rowWithUsePreset, { onConflict: "username" });
 
-  if (error) {
-    console.error("[saveProfile] Supabase error:", error.message, error.code);
-    throw new Error(`プロフィール保存に失敗しました: ${error.message}`);
+  if (result.error) {
+    const msg = result.error.message ?? "";
+    if (msg.includes("column") || result.error.code === "42703") {
+      const { use_preset: _, theme_id: __, background_id: ___, font_id: ____, card_design_id: _____, card_color: ______, ...rowMinimal } = rowWithUsePreset;
+      result = await client
+        .from("profiles")
+        .upsert(rowMinimal, { onConflict: "username" });
+    }
+  }
+
+  if (result.error) {
+    console.error("[saveProfile] Supabase error:", result.error.message, result.error.code);
+    throw new Error(`プロフィール保存に失敗しました: ${result.error.message}`);
   }
 }
 
@@ -249,21 +357,39 @@ export async function fetchCosmeSets(userId: string): Promise<CosmeSet[]> {
 
   if (error || !data?.length) return [];
 
-  const sets: CosmeSet[] = await Promise.all(
-    data.map(async (row: Record<string, unknown>) => {
-      const slug = row.slug as string;
-      const profile = await fetchProfile(slug);
-      const list = await fetchList(slug);
-      return {
-        id: row.id as string,
-        name: (row.name as string) ?? "マイコスメ",
-        slug,
-        itemCount: list.length,
-        avatarUrl: profile?.avatarUrl,
-      };
-    })
-  );
-  return sets;
+  const slugs = data.map((row: Record<string, unknown>) => row.slug as string);
+
+  const [profilesResult, sectionsResult] = await Promise.all([
+    client.from("profiles").select("username, avatar_url").in("username", slugs),
+    client.from("sections").select("username, sections_json").in("username", slugs),
+  ]);
+
+  const avatarMap = new Map<string, string>();
+  for (const row of profilesResult.data ?? []) {
+    if (row.avatar_url) avatarMap.set(row.username as string, row.avatar_url as string);
+  }
+
+  const itemCountMap = new Map<string, number>();
+  for (const row of sectionsResult.data ?? []) {
+    const arr = row.sections_json as unknown;
+    if (Array.isArray(arr)) {
+      const count = (arr as { items?: unknown[] }[]).reduce(
+        (sum, sec) => sum + (sec.items?.length ?? 0), 0,
+      );
+      itemCountMap.set(row.username as string, count);
+    }
+  }
+
+  return data.map((row: Record<string, unknown>) => {
+    const slug = row.slug as string;
+    return {
+      id: row.id as string,
+      name: (row.name as string) ?? "マイコスメ",
+      slug,
+      itemCount: itemCountMap.get(slug) ?? 0,
+      avatarUrl: avatarMap.get(slug),
+    };
+  });
 }
 
 /** コスメセット作成 */
@@ -295,6 +421,24 @@ export async function createCosmeSet(
     slug: data.slug as string,
     itemCount: 0,
   };
+}
+
+/** コスメセットの名前を更新 */
+export async function updateCosmeSetName(
+  userId: string,
+  slug: string,
+  name: string
+): Promise<boolean> {
+  const client = getClient();
+  if (!client) return false;
+
+  const { error } = await client
+    .from("cosme_sets")
+    .update({ name: name.trim() || "マイコスメ" })
+    .eq("user_id", userId)
+    .eq("slug", slug);
+
+  return !error;
 }
 
 /** コスメセット削除（cosme_sets, list_items, profiles を削除） */

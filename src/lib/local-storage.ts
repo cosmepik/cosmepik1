@@ -186,6 +186,12 @@ export function setProfile(slug: string, profile: Partial<InfluencerProfile> & {
     displayName: profile.displayName ?? existing?.displayName ?? "",
     avatarUrl: profile.avatarUrl ?? existing?.avatarUrl,
     backgroundImageUrl: profile.backgroundImageUrl !== undefined ? profile.backgroundImageUrl : existing?.backgroundImageUrl,
+    usePreset: profile.usePreset !== undefined ? profile.usePreset : existing?.usePreset,
+    themeId: profile.themeId !== undefined ? profile.themeId : existing?.themeId,
+    backgroundId: profile.backgroundId !== undefined ? profile.backgroundId : existing?.backgroundId,
+    fontId: profile.fontId !== undefined ? profile.fontId : existing?.fontId,
+    cardDesignId: profile.cardDesignId !== undefined ? profile.cardDesignId : existing?.cardDesignId,
+    cardColor: profile.cardColor !== undefined ? profile.cardColor : existing?.cardColor,
     bio: profile.bio ?? existing?.bio,
     bioSub: profile.bioSub !== undefined ? profile.bioSub : existing?.bioSub,
     skinType: profile.skinType ?? existing?.skinType,
@@ -216,6 +222,18 @@ export function deleteCosmeSet(slug: string): boolean {
   const filtered = sets.filter((s) => s.slug !== slug);
   if (filtered.length === sets.length) return false;
   saveStoredSets(filtered);
+  return true;
+}
+
+/**
+ * コスメセットの名前を変更
+ */
+export function updateCosmeSetName(slug: string, name: string): boolean {
+  const sets = getStoredSets();
+  const idx = sets.findIndex((s) => s.slug === slug);
+  if (idx < 0) return false;
+  sets[idx] = { ...sets[idx], name: name.trim() || "マイコスメ" };
+  saveStoredSets(sets);
   return true;
 }
 

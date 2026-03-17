@@ -29,7 +29,14 @@ export function useAffiliateClick() {
         }),
       }).catch(() => {});
 
-      window.open(url, "_blank", "noopener,noreferrer");
+      // ポップアップブロッカー対策: 一時的な <a> でクリック（window.open はブロックされやすい）
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     },
     [slug, userAffiliateId]
   );

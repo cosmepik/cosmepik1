@@ -70,6 +70,17 @@ const REMOVE_PHRASES = [
   "特価",
   "スーパーSALE",
   "セット販売",
+  "追跡番号",
+  "追跡番号あり",
+  "追跡",
+  "◎",
+  "再入荷",
+  "割引クーポン",
+  "⚫️",
+  "！",
+  "!",
+  "楽天",
+  "楽天一位",
 ];
 
 /** 括弧付き【】[] のプロモーション文言を除去する正規表現 */
@@ -84,6 +95,9 @@ const COUPON_PATTERN = /\d*%クーポン/gi;
 /** ★に続く文言を除去（★送料無料、★5つ星 など。スペースまたは末尾で区切られた場合のみ） */
 const STAR_PATTERN = /★\s*[^\s★]+(?=\s|$)/g;
 
+/** ◎に続く文言を除去（◎送料無料 など） */
+const CIRCLE_PATTERN = /◎\s*[^\s◎]+(?=\s|$)/g;
+
 /** %OFF、MAX 円 などの割引・価格表記を除去 */
 const DISCOUNT_PATTERNS = [
   /\d+%OFF/gi,
@@ -92,10 +106,11 @@ const DISCOUNT_PATTERNS = [
   /MAX\s*[\d,，]+/gi,
 ];
 
-/** ポイント　倍　など（スペース入り）を除去 */
+/** ポイント　倍　など（スペース入り・数字入り）を除去 */
 const POINT_BAI_PATTERNS = [
   /楽天?ポイント[\s　]*[×xX]?[\s　]*[２2]?[\s　]*倍/gi,
   /ポイント[\s　]+倍/gi,
+  /ポイント[\d１２３４５６７８９０〇○×xX\s　]*倍/gi,
 ];
 
 /** 日付表記を除去（2024/1/15、1/31、1月15日、〜1/15まで など）※1.5ml等は除外 */
@@ -128,8 +143,9 @@ export function cleanseItemName(name: string): string {
   s = s.replace(BRACKET_PATTERN, " ").trim();
   s = s.replace(ANGLE_BRACKET_PATTERN, " ").trim();
 
-  // 2. ★に続く文言を除去
+  // 2. ★・◎に続く文言を除去
   s = s.replace(STAR_PATTERN, " ").trim();
+  s = s.replace(CIRCLE_PATTERN, " ").trim();
 
   // 3. %OFF、MAX 円、%クーポン などを除去
   for (const re of DISCOUNT_PATTERNS) {
@@ -160,8 +176,9 @@ export function cleanseItemName(name: string): string {
     }
   }
 
-  // 7. 残った★を除去（★送料無料資生堂 → 送料無料資生堂、REMOVE_PHRASESで送料無料が消える）
+  // 7. 残った★・◎を除去
   s = s.replace(/★/g, " ").trim();
+  s = s.replace(/◎/g, " ").trim();
 
   // 8. 連続スペース・前後のスペースを整理
   s = s.replace(/\s+/g, " ").trim();

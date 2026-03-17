@@ -34,7 +34,7 @@ const sectionTypes: {
   {
     type: "heading",
     label: "見出し",
-    description: "セクションを区切る見出しテキスト",
+    description: "グループを区切る見出しテキスト",
     icon: <Type className="h-5 w-5" />,
   },
   {
@@ -65,12 +65,12 @@ export function AddSectionModal({ isOpen, onClose }: AddSectionModalProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedType || !title.trim()) return;
+    if (!selectedType) return;
 
     const newSection: Section = {
       id: `section-${Date.now()}`,
       type: selectedType,
-      title: title.trim(),
+      title: title.trim() || "",
       subtitle: subtitle.trim() || undefined,
       icon: icon.trim() || undefined,
       items: [],
@@ -102,7 +102,7 @@ export function AddSectionModal({ isOpen, onClose }: AddSectionModalProps) {
       <div className="relative z-10 flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-card shadow-xl animate-in slide-in-from-bottom duration-300">
         <div className="flex shrink-0 items-center justify-between border-b border-border px-5 pb-3 pt-5">
           <h3 className="text-base font-bold text-card-foreground">
-            セクションを追加
+            グループを追加
           </h3>
           <button
             type="button"
@@ -118,7 +118,7 @@ export function AddSectionModal({ isOpen, onClose }: AddSectionModalProps) {
           {!selectedType ? (
             <div className="flex flex-col gap-2">
               <p className="mb-2 text-sm text-muted-foreground">
-                追加するセクションの種類を選択してください
+                追加するグループの種類を選択してください
               </p>
               {sectionTypes.map((item) => (
                 <button
@@ -158,7 +158,7 @@ export function AddSectionModal({ isOpen, onClose }: AddSectionModalProps) {
 
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium text-card-foreground">
-                  タイトル <span className="text-destructive">*</span>
+                  タイトル（任意）
                 </label>
                 <input
                   type="text"
@@ -167,10 +167,9 @@ export function AddSectionModal({ isOpen, onClose }: AddSectionModalProps) {
                   placeholder={
                     selectedType === "routine"
                       ? "朝のスキンケア"
-                      : "セクション名"
+                      : "グループ名"
                   }
                   className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-                  required
                 />
               </div>
 
@@ -207,11 +206,10 @@ export function AddSectionModal({ isOpen, onClose }: AddSectionModalProps) {
 
               <button
                 type="submit"
-                disabled={!title.trim()}
-                className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-primary py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+                className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-primary py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
               >
                 <Plus className="h-4 w-4" />
-                セクションを追加
+                グループを追加
               </button>
             </form>
           )}

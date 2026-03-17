@@ -30,6 +30,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/lib/theme-context";
+import { getCardDesign } from "@/lib/card-designs";
 import { type Section, type SectionItem } from "@/lib/sections";
 import { useSections } from "@/lib/section-context";
 import { useAffiliateClick } from "@/hooks/use-affiliate-click";
@@ -44,6 +46,8 @@ interface SectionRendererProps {
 interface SectionContentProps {
   section: Section;
   onAddItem?: () => void;
+  listClassName?: string;
+  productClassName?: string;
 }
 
 function StarRating({ rating, count }: { rating: number; count: number }) {
@@ -65,16 +69,27 @@ function StarRating({ rating, count }: { rating: number; count: number }) {
   );
 }
 
+function cardBgStyle(cardColor: string): React.CSSProperties | undefined {
+  if (!cardColor) return undefined;
+  return { backgroundColor: cardColor };
+}
+
 function SortableRoutineItem({
   item,
   isEditMode,
   onDelete,
   onAffiliateClick,
+  listClassName,
+  listImageClassName,
+  cardColorStyle,
 }: {
   item: SectionItem;
   isEditMode: boolean;
   onDelete: () => void;
   onAffiliateClick: (link: string | undefined, itemId?: string) => void;
+  listClassName: string;
+  listImageClassName: string;
+  cardColorStyle?: React.CSSProperties;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
@@ -85,31 +100,31 @@ function SortableRoutineItem({
   };
   const cardContent = (
     <>
-      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-secondary">
+      <div className={cn("relative", listImageClassName)}>
         {item.image && (
           <CosmeImage
             src={item.image}
             alt={item.product || ""}
             fill
             className="object-cover"
-            sizes="64px"
+            sizes="48px"
           />
         )}
       </div>
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         {item.brand && (
-          <span className="text-[10px] font-medium uppercase tracking-wider text-primary">
+          <span className="text-[9px] font-medium uppercase tracking-wider text-primary">
             {item.brand}
           </span>
         )}
-        <span className="truncate text-sm font-medium text-card-foreground">
+        <span className="line-clamp-2 text-xs font-medium leading-snug text-card-foreground">
           {item.product}
         </span>
         {item.label && (
-          <span className="text-xs text-muted-foreground">{item.label}</span>
+          <span className="text-[10px] text-muted-foreground">{item.label}</span>
         )}
       </div>
-      <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+      <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
     </>
   );
 
@@ -121,7 +136,8 @@ function SortableRoutineItem({
     >
       {isEditMode ? (
         <div
-          className="flex cursor-grab active:cursor-grabbing items-center gap-3 rounded-xl bg-card p-3 shadow-sm transition-all hover:shadow-md touch-manipulation"
+          className={cn("flex cursor-grab active:cursor-grabbing items-center gap-2 touch-manipulation", listClassName)}
+          style={cardColorStyle}
           {...listeners}
           {...attributes}
           onClick={(e) => {
@@ -138,7 +154,8 @@ function SortableRoutineItem({
           href={item.link || "#"}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-3 rounded-xl bg-card p-3 shadow-sm transition-all hover:shadow-md"
+          className={cn("flex items-center gap-2", listClassName)}
+          style={cardColorStyle}
           onClick={(e) => {
             if (item.link) {
               e.preventDefault();
@@ -170,8 +187,13 @@ function SortableRoutineItem({
   );
 }
 
-function RoutineSection({ section, onAddItem }: SectionContentProps) {
+function RoutineSection({ section, onAddItem, listClassName }: SectionContentProps) {
   const { isEditMode, deleteItemFromSection, reorderItemsInSection } = useSections();
+  const { cardDesignId, cardColor } = useTheme();
+  const design = getCardDesign(cardDesignId);
+  const listClass = listClassName ?? design.listClassName;
+  const listImageClass = design.listImageClassName;
+  const colorStyle = cardBgStyle(cardColor);
   const onAffiliateClick = useAffiliateClick();
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -224,6 +246,9 @@ function RoutineSection({ section, onAddItem }: SectionContentProps) {
                   isEditMode={isEditMode}
                   onDelete={() => deleteItemFromSection(section.id, item.id)}
                   onAffiliateClick={onAffiliateClick}
+                  listClassName={listClass}
+                  listImageClassName={listImageClass}
+                  cardColorStyle={colorStyle}
                 />
               ))}
             </SortableContext>
@@ -236,6 +261,9 @@ function RoutineSection({ section, onAddItem }: SectionContentProps) {
               isEditMode={false}
               onDelete={() => {}}
               onAffiliateClick={onAffiliateClick}
+              listClassName={listClass}
+              listImageClassName={listImageClass}
+              cardColorStyle={colorStyle}
             />
           ))
         )}
@@ -254,19 +282,16 @@ function RoutineSection({ section, onAddItem }: SectionContentProps) {
   );
 }
 
-function ProductsSection({ section, onAddItem }: SectionContentProps) {
+function ProductsSection({ section, onAddItem, productClassName }: SectionContentProps) {
   const { isEditMode } = useSections();
+  const { cardDesignId, cardColor } = useTheme();
+  const design = getCardDesign(cardDesignId);
+  const productClass = productClassName ?? design.productClassName;
+  const productImageClass = design.productImageClassName;
+  const colorStyle = cardBgStyle(cardColor);
 
   return (
     <div className="flex flex-col gap-4">
-      {section.items.length > 0 && (
-        <div className="flex items-center justify-end">
-          <span className="text-xs text-muted-foreground">
-            {section.items.length}個のアイテム
-          </span>
-        </div>
-      )}
-
       {section.items.length === 0 && isEditMode && onAddItem && (
         <div className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border py-8 text-center">
           <Grid2X2 className="h-8 w-8 text-muted-foreground/50" />
@@ -289,7 +314,16 @@ function ProductsSection({ section, onAddItem }: SectionContentProps) {
         )}
       >
         {section.items.map((item) => (
-          <ProductCard key={item.id} item={item} isEditMode={isEditMode} section={section} onAddItem={onAddItem} />
+          <ProductCard
+            key={item.id}
+            item={item}
+            isEditMode={isEditMode}
+            section={section}
+            onAddItem={onAddItem}
+            productClassName={productClass}
+            productImageClassName={productImageClass}
+            cardColorStyle={colorStyle}
+          />
         ))}
       </div>
 
@@ -312,11 +346,17 @@ function ProductCard({
   isEditMode,
   section,
   onAddItem,
+  productClassName,
+  productImageClassName,
+  cardColorStyle,
 }: {
   item: SectionItem;
   isEditMode: boolean;
   section: Section;
   onAddItem?: () => void;
+  productClassName: string;
+  productImageClassName: string;
+  cardColorStyle?: React.CSSProperties;
 }) {
   const { deleteItemFromSection } = useSections();
   const onAffiliateClick = useAffiliateClick();
@@ -335,7 +375,8 @@ function ProductCard({
         href={item.link || "#"}
         target="_blank"
         rel="noopener noreferrer"
-        className="relative block overflow-hidden rounded-xl bg-card shadow-sm transition-all hover:shadow-md"
+        className={cn("relative block overflow-hidden", productClassName)}
+        style={cardColorStyle}
         onClick={(e) => {
           if (item.link) {
             e.preventDefault();
@@ -343,7 +384,7 @@ function ProductCard({
           }
         }}
       >
-              <div className="relative aspect-square overflow-hidden bg-secondary">
+              <div className={cn(productImageClassName)}>
                 {item.image && (
                   <CosmeImage
                     src={item.image}
@@ -354,7 +395,7 @@ function ProductCard({
                   />
                 )}
                 {item.badge && (
-                  <span className="absolute left-2 top-2 rounded-md bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground">
+                  <span className="absolute left-1.5 top-1.5 rounded-md bg-primary px-1.5 py-0.5 text-[9px] font-bold text-primary-foreground">
                     {item.badge}
                   </span>
                 )}
@@ -366,7 +407,7 @@ function ProductCard({
                       toggleLike(item.id);
                     }}
                     aria-label="お気に入り"
-                    className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-card/80 backdrop-blur-sm transition-colors hover:bg-card"
+                    className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-card/80 backdrop-blur-sm transition-colors hover:bg-card"
                   >
                     <Heart
                       className={cn(
@@ -379,18 +420,18 @@ function ProductCard({
                   </button>
                 )}
               </div>
-              <div className="flex flex-col gap-1 p-3">
+              <div className="flex flex-col gap-0.5 p-2.5">
                 {item.brand && (
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-primary">
+                  <p className="text-[9px] font-medium uppercase tracking-wider text-primary">
                     {item.brand}
                   </p>
                 )}
-                <h3 className="line-clamp-2 text-sm font-semibold leading-tight text-card-foreground">
+                <h3 className="line-clamp-2 text-xs font-semibold leading-tight text-card-foreground">
                   {item.product}
                 </h3>
                 <div className="mt-0.5 flex items-center justify-between">
                   {item.price && (
-                    <span className="text-sm font-bold text-card-foreground">
+                    <span className="text-xs font-bold text-card-foreground">
                       {item.price}
                     </span>
                   )}
@@ -425,9 +466,12 @@ function HeadingSection({ section }: { section: Section }) {
   );
 }
 
-function TextSection({ section }: { section: Section }) {
+function TextSection({ section, listClassName }: SectionContentProps) {
+  const { cardDesignId, cardColor } = useTheme();
+  const design = getCardDesign(cardDesignId);
+  const listClass = listClassName ?? design.listClassName;
   return (
-    <div className="rounded-xl bg-card p-4 shadow-sm">
+    <div className={cn("p-2.5", listClass)} style={cardBgStyle(cardColor)}>
       <p className="text-sm leading-relaxed text-card-foreground">
         {section.title}
       </p>
@@ -435,9 +479,13 @@ function TextSection({ section }: { section: Section }) {
   );
 }
 
-function LinkSection({ section, onAddItem }: SectionContentProps) {
+function LinkSection({ section, onAddItem, listClassName }: SectionContentProps) {
   const { isEditMode, deleteItemFromSection } = useSections();
   const onAffiliateClick = useAffiliateClick();
+  const { cardDesignId, cardColor } = useTheme();
+  const design = getCardDesign(cardDesignId);
+  const listClass = listClassName ?? design.listClassName;
+  const colorStyle = cardBgStyle(cardColor);
 
   return (
     <div className="flex flex-col gap-2">
@@ -461,7 +509,8 @@ function LinkSection({ section, onAddItem }: SectionContentProps) {
             href={item.link || "#"}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-between rounded-xl bg-card p-4 shadow-sm transition-all hover:shadow-md"
+            className={cn("flex items-center justify-between p-2.5", listClass)}
+            style={colorStyle}
             onClick={(e) => {
               if (item.link) {
                 e.preventDefault();
@@ -518,7 +567,7 @@ export function SectionRenderer({ section }: SectionRendererProps) {
 
   const handleTitleCommit = () => {
     const next = editingTitle.trim();
-    if (!next || next === section.title) {
+    if (next === section.title) {
       setEditingTitle(section.title);
       setIsEditingTitle(false);
       return;
@@ -565,7 +614,7 @@ export function SectionRenderer({ section }: SectionRendererProps) {
     const showReadOnlyTitle = !["heading", "text"].includes(section.type);
     return (
       <section className="relative">
-        {showReadOnlyTitle && (
+        {showReadOnlyTitle && section.title && (
           <div className="mb-2 flex items-center gap-1 px-1 py-0.5">
             <span className="text-sm font-semibold text-foreground">
               {section.title}
@@ -596,13 +645,13 @@ export function SectionRenderer({ section }: SectionRendererProps) {
                 }
               }}
               className="max-w-[200px] rounded bg-transparent px-1 text-sm font-semibold text-foreground placeholder:text-muted-foreground focus:outline-none"
-              placeholder="セクション名"
+              placeholder="グループ名"
               autoFocus
             />
           ) : (
             <>
               <span className="max-w-[200px] truncate text-sm font-semibold text-foreground">
-                {section.title || "セクション名"}
+                {section.title || "グループ名"}
               </span>
               <button
                 type="button"
@@ -611,7 +660,7 @@ export function SectionRenderer({ section }: SectionRendererProps) {
                   setIsEditingTitle(true);
                 }}
                 className="ml-1 flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
-                aria-label="セクション名を編集"
+                aria-label="グループ名を編集"
               >
                 <Pencil className="h-3 w-3" />
               </button>

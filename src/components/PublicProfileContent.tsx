@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { CosmepikLogo } from "@/components/cosmepik-logo";
 import { ProfileHeaderView } from "@/components/ProfileHeader";
 import { SectionRenderer } from "@/components/cosme-link/section-renderer";
 import { useSections } from "@/lib/section-context";
@@ -20,23 +21,26 @@ export function PublicProfileContent({
 }: PublicProfileContentProps) {
   const { sections } = useSections();
 
-  const bgStyle = profile?.backgroundImageUrl
-    ? {
-        backgroundImage: `url(${profile.backgroundImageUrl})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-      }
-    : undefined;
+  const hasCustomBg = !!profile?.backgroundImageUrl;
+  const usePreset = !!profile?.usePreset;
 
   return (
-    <div className="min-h-screen" style={bgStyle}>
-      <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-8">
+    <div className="relative min-h-screen w-full">
+      {hasCustomBg && !usePreset && (
+        <div
+          className="fixed inset-0 z-0"
+          style={{
+            backgroundImage: `url(${profile!.backgroundImageUrl})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+          }}
+        />
+      )}
+      <main className="page-transition-enter relative z-10 mx-auto flex max-w-[400px] flex-col gap-3 px-4 py-8">
         {/* Logo */}
         <div className="flex justify-center">
-          <span className="text-lg font-bold tracking-tight text-foreground">
-            cosmepik
-          </span>
+          <CosmepikLogo className="h-6" height={26} />
         </div>
 
         {/* Profile */}
@@ -49,11 +53,9 @@ export function PublicProfileContent({
 
         {/* Footer */}
         <footer className="flex flex-col items-center gap-2 pb-8 pt-4">
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <span className="text-xs font-medium">
-              Powered by{" "}
-              <span className="font-bold text-green">cosmepik</span>
-            </span>
+          <div className="flex items-center justify-center gap-1.5 text-muted-foreground">
+            <span className="text-xs font-medium">Powered by</span>
+            <CosmepikLogo className="shrink-0" height={18} color="var(--green)" />
           </div>
           <Link
             href="/"

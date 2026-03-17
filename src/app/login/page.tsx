@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { CosmepikLogo } from "@/components/cosmepik-logo";
 import { createClient } from "@/lib/supabase/client";
 import { supabase as supabaseFallback } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
@@ -32,7 +33,12 @@ export default function LoginPage() {
       router.push("/dashboard");
       router.refresh();
     } catch (err: unknown) {
-      setMessage({ type: "error", text: err instanceof Error ? err.message : "エラーが発生しました" });
+      const msg = err instanceof Error ? err.message : "エラーが発生しました";
+      const displayText =
+        msg === "Invalid login credentials"
+          ? "ログインできませんでした。もう一度正しい情報を入力してください。"
+          : msg;
+      setMessage({ type: "error", text: displayText });
     } finally {
       setLoading(false);
     }
@@ -40,7 +46,7 @@ export default function LoginPage() {
 
   const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : undefined;
 
-  const handleOAuth = async (provider: "google" | "twitter") => {
+  const handleOAuth = async (provider: "google" | "x") => {
     const supabase = createClient() ?? supabaseFallback;
     if (!supabase) {
       setMessage({ type: "error", text: "Supabase が設定されていません。" });
@@ -55,7 +61,7 @@ export default function LoginPage() {
       });
       if (error) throw error;
     } catch (err: unknown) {
-      const labels = { google: "Google", twitter: "X" };
+      const labels = { google: "Google", x: "X" };
       setMessage({
         type: "error",
         text: err instanceof Error ? err.message : `${labels[provider]}ログインに失敗しました`,
@@ -64,18 +70,23 @@ export default function LoginPage() {
     }
   };
 
-  const handleTryDemo = () => {
-    document.cookie = "cosmepik_demo=1; path=/; max-age=86400";
-    router.push("/dashboard");
-    router.refresh();
-  };
-
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-4">
       <div className="w-full max-w-md rounded-xl border border-border bg-white p-6 shadow-sm">
+        <div className="mb-4 flex items-center justify-between">
+          <Link
+            href="/"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            aria-label="トップに戻る"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+          </Link>
+        </div>
         <div className="mb-6 flex justify-center">
-          <Link href="/" className="text-xl font-bold tracking-tight text-foreground hover:opacity-80">
-            cosmepik
+          <Link href="/" className="flex justify-center hover:opacity-80">
+            <CosmepikLogo className="h-7" height={30} />
           </Link>
         </div>
         <h1 className="mb-6 text-center text-lg font-semibold text-foreground">ログイン</h1>
@@ -114,7 +125,7 @@ export default function LoginPage() {
           </button>
           <button
             type="button"
-            onClick={() => handleOAuth("twitter")}
+            onClick={() => handleOAuth("x")}
             disabled={loading}
             className="w-full flex items-center justify-center gap-2 rounded-lg border border-border bg-white py-3 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"
           >
@@ -123,15 +134,9 @@ export default function LoginPage() {
             </svg>
             Xでログイン
           </button>
-          <button type="button" onClick={handleTryDemo} disabled={loading} className="w-full rounded-lg border border-dashed border-border py-3 text-sm text-muted-foreground hover:bg-accent disabled:opacity-50">
-            とりあえずつかってみる
-          </button>
         </form>
         <p className="mt-4 text-center">
           <Link href="/register" className="text-sm text-green hover:underline">新規登録はこちら</Link>
-        </p>
-        <p className="mt-2 text-center">
-          <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">← トップに戻る</Link>
         </p>
       </div>
     </main>

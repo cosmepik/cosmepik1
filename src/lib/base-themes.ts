@@ -1,5 +1,5 @@
 import type { ThemeId } from "@/lib/theme";
-import type { CardDesignId } from "@/lib/design-options";
+import type { CardDesignId } from "@/lib/card-designs";
 import type { FontId } from "@/lib/design-options";
 
 export type BaseThemeId =
@@ -28,7 +28,7 @@ export const BASE_THEMES: BaseTheme[] = [
     name: "ミニマル",
     description: "シンプルで洗練された印象",
     themeId: "white",
-    cardDesignId: "minimal",
+    cardDesignId: "square",
     fontId: "sans",
   },
   {
@@ -36,7 +36,7 @@ export const BASE_THEMES: BaseTheme[] = [
     name: "エレガント",
     description: "上品で大人っぽい雰囲気",
     themeId: "gold-cream",
-    cardDesignId: "border-gold",
+    cardDesignId: "default",
     fontId: "shippori",
   },
   {
@@ -44,7 +44,7 @@ export const BASE_THEMES: BaseTheme[] = [
     name: "キュート",
     description: "かわいらしいピンク系",
     themeId: "cute",
-    cardDesignId: "pink",
+    cardDesignId: "pill",
     fontId: "mplus-rounded",
   },
   {
@@ -60,7 +60,7 @@ export const BASE_THEMES: BaseTheme[] = [
     name: "和モダン",
     description: "和を感じるモダンなデザイン",
     themeId: "sand",
-    cardDesignId: "elegant",
+    cardDesignId: "neubrutalism",
     fontId: "shippori",
   },
   {
@@ -68,7 +68,7 @@ export const BASE_THEMES: BaseTheme[] = [
     name: "モダン",
     description: "クールでスタイリッシュ",
     themeId: "tech",
-    cardDesignId: "glass",
+    cardDesignId: "rectangle",
     fontId: "zen",
   },
   {
@@ -76,7 +76,7 @@ export const BASE_THEMES: BaseTheme[] = [
     name: "フェミニン",
     description: "華やかで女性らしい",
     themeId: "feminine",
-    cardDesignId: "rose",
+    cardDesignId: "pop",
     fontId: "kosugi",
   },
   {
@@ -84,7 +84,7 @@ export const BASE_THEMES: BaseTheme[] = [
     name: "フレッシュ",
     description: "爽やかで清潔感のある印象",
     themeId: "mint",
-    cardDesignId: "mint",
+    cardDesignId: "default",
     fontId: "noto-sans",
   },
 ];

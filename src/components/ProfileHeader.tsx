@@ -46,23 +46,18 @@ export function ProfileHeaderView({ username, profile }: ProfileHeaderViewProps)
   const displayName = profile?.displayName?.trim() ? profile.displayName : "USER";
   const skinType = profile?.skinType;
   const personalColor = profile?.personalColor;
-  const initial = (profile?.displayName?.trim() || "U").charAt(0).toUpperCase();
-
   return (
-    <header className="flex flex-col items-center gap-4 pb-6">
+    <header className="flex flex-col items-center gap-4 pb-3">
       <div className="relative">
-        <div className="h-24 w-24 overflow-hidden rounded-full border-[3px] border-green shadow-md">
+        <div className="h-20 w-20 overflow-hidden rounded-full border border-green shadow-md">
           {profile?.avatarUrl ? (
             <img src={profile.avatarUrl} alt="" className="h-full w-full object-cover" />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-secondary text-green">
-              <User className="h-12 w-12" />
+              <User className="h-10 w-10" />
             </div>
           )}
         </div>
-        <span className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-green text-xs text-white">
-          {initial}
-        </span>
       </div>
 
       <div className="flex flex-col items-center gap-1">
@@ -157,23 +152,18 @@ export function ProfileHeaderEdit({
   onCancelEditName,
   onTempNameChange,
 }: ProfileHeaderEditProps) {
-  const initial = (displayName?.trim() || "U").charAt(0).toUpperCase();
-
   return (
-    <header className="flex flex-col items-center gap-4 pb-6">
+    <header className="flex flex-col items-center gap-4 pb-3">
       <label htmlFor="avatar-upload" className="relative block cursor-pointer">
-        <div className="h-24 w-24 overflow-hidden rounded-full border-[3px] border-green shadow-md">
+        <div className="h-20 w-20 overflow-hidden rounded-full border border-green shadow-md">
           {avatarUrl ? (
             <img src={avatarUrl} alt="" className="h-full w-full object-cover" onError={(e) => ((e.target as HTMLImageElement).style.display = "none")} />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-secondary text-green">
-              <User className="h-12 w-12" />
+              <User className="h-10 w-10" />
             </div>
           )}
         </div>
-        <span className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-green text-xs text-white">
-          {initial}
-        </span>
         <input
           type="file"
           accept="image/*"

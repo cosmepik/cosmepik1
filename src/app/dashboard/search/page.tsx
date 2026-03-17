@@ -7,7 +7,6 @@ import { Loader2 } from "lucide-react";
 import { searchMockCosme } from "@/lib/mock-data";
 import { getSections, addItemToSection } from "@/lib/store";
 import { CosmeCard } from "@/components/CosmeCard";
-import { AddCommentModal } from "@/components/AddCommentModal";
 import { ProfileIcon } from "@/components/DashboardHeader";
 import { useUser } from "@/hooks/use-user";
 import type { CosmeItem } from "@/types";
@@ -25,9 +24,8 @@ function SearchContent() {
   const [isPending, setIsPending] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searchDebug, setSearchDebug] = useState<object | null>(null);
-  const [modalItem, setModalItem] = useState<CosmeItem | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
-  const [sectionPicker, setSectionPicker] = useState<{ item: CosmeItem; comment: string } | null>(null);
+  const [sectionPicker, setSectionPicker] = useState<CosmeItem | null>(null);
 
   useEffect(() => {
     getSections(slug).then(setSections);
@@ -109,18 +107,12 @@ function SearchContent() {
   const addableSections = (sections ?? []).filter((s) =>
     ["routine", "products"].includes(s.type)
   );
-  const openModal = useCallback((item: CosmeItem) => setModalItem(item), []);
-  const closeModal = useCallback(() => {
-    setModalItem(null);
-    setSectionPicker(null);
-  }, []);
 
-  const handleAddToList = useCallback(
-    (item: CosmeItem, comment: string) => {
+  const handleAddItem = useCallback(
+    (item: CosmeItem) => {
       setAddError(null);
       if (addableSections.length === 0) {
-        setAddError("編集画面でセクションを作成してから追加できます。");
-        setModalItem(null);
+        setAddError("編集画面でグループを作成してから追加できます。");
         return;
       }
       if (addableSections.length === 1) {
@@ -128,11 +120,9 @@ function SearchContent() {
           product: item.name,
           image: item.imageUrl,
           link: item.rakutenUrl ?? item.amazonUrl,
-          label: comment.trim() || undefined,
         })
           .then((ok) => {
             if (ok) {
-              setModalItem(null);
               router.push(`/dashboard/edit/${slug}`);
             } else {
               setAddError("追加に失敗しました。もう一度お試しください。");
@@ -141,8 +131,7 @@ function SearchContent() {
           .catch(() => setAddError("追加に失敗しました。もう一度お試しください。"));
         return;
       }
-      setModalItem(null);
-      setSectionPicker({ item, comment });
+      setSectionPicker(item);
     },
     [router, slug, addableSections]
   );
@@ -150,13 +139,11 @@ function SearchContent() {
   const handlePickSection = useCallback(
     (sectionId: string) => {
       if (!sectionPicker) return;
-      const { item, comment } = sectionPicker;
       setAddError(null);
       addItemToSection(slug, sectionId, {
-        product: item.name,
-        image: item.imageUrl,
-        link: item.rakutenUrl ?? item.amazonUrl,
-        label: comment.trim() || undefined,
+        product: sectionPicker.name,
+        image: sectionPicker.imageUrl,
+        link: sectionPicker.rakutenUrl ?? sectionPicker.amazonUrl,
       })
         .then((ok) => {
           if (ok) {
@@ -222,7 +209,7 @@ function SearchContent() {
           {!isSearching && searchResults.length === 0 && keyword.trim() && !searchError && <p className="text-sm text-muted-foreground">該当する商品がありません</p>}
           {!isSearching && searchResults.length === 0 && !keyword.trim() && <p className="text-sm text-muted-foreground">検索窓に文字を入れると候補が表示されます</p>}
           {searchResults.map((item) => (
-            <CosmeCard key={item.id} item={item} onAdd={openModal} isInList={false} />
+            <CosmeCard key={item.id} item={item} onAdd={handleAddItem} isInList={false} />
           ))}
         </div>
       </div>
@@ -230,7 +217,7 @@ function SearchContent() {
       {addError && (
         <div className="mt-4 flex flex-col gap-2 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           <span>{addError}</span>
-          {addError.includes("セクションを作成") && (
+          {addError.includes("グループを作成") && (
             <Link
               href={`/dashboard/edit/${slug}`}
               className="font-medium text-green hover:underline"
@@ -240,14 +227,6 @@ function SearchContent() {
           )}
         </div>
       )}
-      <AddCommentModal
-        item={modalItem}
-        onClose={() => {
-          setModalItem(null);
-          setAddError(null);
-        }}
-        onConfirm={handleAddToList}
-      />
       {sectionPicker && (
         <div className="fixed inset-0 z-50 flex items-end justify-center">
           <div
@@ -257,7 +236,7 @@ function SearchContent() {
           />
           <div className="relative z-10 w-full max-w-md rounded-t-3xl bg-card p-5 shadow-xl">
             <h3 className="mb-4 text-base font-bold text-card-foreground">
-              どのセクションに追加しますか？
+              どのグループに追加しますか？
             </h3>
             <div className="flex flex-col gap-2">
               {addableSections.map((section) => (

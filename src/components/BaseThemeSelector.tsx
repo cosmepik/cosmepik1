@@ -33,7 +33,7 @@ export function BaseThemeSelector() {
 
   const handleSelect = (theme: (typeof BASE_THEMES)[0]) => {
     setThemeId(theme.themeId);
-    setCardDesignId(theme.cardDesignId);
+    setCardDesignId(theme.cardDesignId as Parameters<typeof setCardDesignId>[0]);
     setFontId(theme.fontId);
     setBaseThemeId(theme.id);
     setOpen(false);

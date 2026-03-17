@@ -61,6 +61,24 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW
 
 実行後、プロフィール保存を再度お試しください。
 
+### 壁紙選択機能（use_preset）用
+
+壁紙選択時にアップロード写真を保持する機能を使う場合:
+
+```sql
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS use_preset BOOLEAN DEFAULT false;
+```
+
+### テーマ・壁紙・フォント（本番リンク反映）用
+
+本番リンク（/p/username）でテーマ・壁紙・フォントを反映する場合:
+
+```sql
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS theme_id TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS background_id TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS font_id TEXT;
+```
+
 ### 楽天アフィリエイト（確率分散型レベニューシェア）用
 
 `supabase/migrations/20250307000002_affiliate_and_click_logs.sql` を実行:

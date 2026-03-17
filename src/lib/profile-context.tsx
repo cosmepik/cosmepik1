@@ -66,6 +66,9 @@ export interface Profile {
   personalColor: PersonalColor;
   /** 楽天アフィリエイトID（確率分散型レベニューシェア用） */
   rakutenAffiliateId?: string;
+  themeId?: string;
+  backgroundId?: string;
+  backgroundImageUrl?: string;
 }
 
 /** store の InfluencerProfile を Profile に変換（編集ページの初期化用にエクスポート） */
@@ -80,6 +83,9 @@ export function toProfile(p: InfluencerProfile | null, slug: string): Profile {
       snsLinks: [],
       skinType: "",
       personalColor: "",
+      themeId: undefined,
+      backgroundId: undefined,
+      backgroundImageUrl: undefined,
     };
   }
   const skinType =
@@ -98,6 +104,9 @@ export function toProfile(p: InfluencerProfile | null, slug: string): Profile {
     skinType,
     personalColor,
     rakutenAffiliateId: p.rakutenAffiliateId?.trim() || "",
+    themeId: p.themeId,
+    backgroundId: p.backgroundId,
+    backgroundImageUrl: p.backgroundImageUrl,
   };
 }
 

@@ -6,6 +6,7 @@ import {
   Youtube,
   Share2,
   Pencil,
+  Palette,
   Link as LinkIcon,
   User,
 } from "lucide-react";
@@ -17,7 +18,9 @@ import {
 import type { SnsLink } from "@/types";
 import { XIcon } from "@/components/icons/x-icon";
 import { useSections } from "@/lib/section-context";
+import { useStylePickerOpen } from "@/components/cosme-link/style-picker";
 import { ProfileEditor } from "./profile-editor";
+import { SetupGuide } from "./setup-guide";
 
 function getSnsIcon(type: SnsLink["type"]) {
   switch (type) {
@@ -35,26 +38,40 @@ function getSnsIcon(type: SnsLink["type"]) {
 export function ProfileHeader() {
   const { profile } = useProfile();
   const { isEditMode } = useSections();
+  const { openWithTab } = useStylePickerOpen();
   const [showEditor, setShowEditor] = useState(false);
 
   const displayName = profile.name?.trim() ? profile.name : "USER";
-  const initial = (profile.name?.trim() || "U").charAt(0).toUpperCase();
 
   return (
     <>
-      <header className="relative flex flex-col items-center gap-4 pb-6">
+      <header className="relative flex flex-col items-center gap-4 pb-3">
         {isEditMode && (
-          <button
-            onClick={() => setShowEditor(true)}
-            className="absolute right-0 z-10 flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-md transition-all hover:bg-primary/90 active:scale-95"
-          >
-            <Pencil className="h-3 w-3" />
-            プロフィール編集
-          </button>
+          <>
+            <div className="absolute left-0 top-0 z-10">
+              <SetupGuide />
+            </div>
+            <div className="absolute right-0 top-0 z-10 flex flex-col items-end gap-2">
+              <button
+                onClick={() => setShowEditor(true)}
+                className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-md transition-all hover:bg-primary/90 active:scale-95"
+              >
+                <Pencil className="h-3 w-3" />
+                プロフィール編集
+              </button>
+              <button
+                onClick={() => openWithTab("theme")}
+                className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-md transition-all hover:bg-primary/90 active:scale-95"
+              >
+                <Palette className="h-3 w-3" />
+                デザイン編集
+              </button>
+            </div>
+          </>
         )}
 
         <div className="relative">
-          <div className="h-24 w-24 overflow-hidden rounded-full border-[3px] border-primary shadow-md">
+          <div className="h-20 w-20 overflow-hidden rounded-full border border-primary shadow-md">
             {profile.avatarUrl ? (
               <img
                 src={profile.avatarUrl}
@@ -63,20 +80,17 @@ export function ProfileHeader() {
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-secondary text-primary">
-                <User className="h-12 w-12" />
+                <User className="h-10 w-10" />
               </div>
             )}
           </div>
-          <span className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
-            {initial}
-          </span>
         </div>
 
         <div className="flex flex-col items-center gap-1">
           <h1 className="text-xl font-bold tracking-tight text-foreground">
             {displayName}
           </h1>
-          <p className="text-xs text-muted-foreground">@{profile.username}</p>
+          <p className="text-sm text-muted-foreground">@{profile.username}</p>
           <p className="max-w-[280px] text-center text-sm leading-relaxed text-muted-foreground">
             {profile.bio}
           </p>
