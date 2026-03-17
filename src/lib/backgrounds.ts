@@ -298,7 +298,7 @@ const WALLPAPER_BACKGROUNDS: Background[] = [
 export const backgrounds: Background[] = [...SOLID_BACKGROUNDS, ...GRADIENT_BACKGROUNDS, ...WALLPAPER_BACKGROUNDS];
 
 export const backgroundGroups = [
+  { type: "wallpaper" as const, label: "壁紙", backgrounds: backgrounds.filter((b) => b.type === "wallpaper") },
   { type: "solid" as const, label: "単色", backgrounds: backgrounds.filter((b) => b.type === "solid") },
   { type: "gradient" as const, label: "グラデーション", backgrounds: backgrounds.filter((b) => b.type === "gradient") },
-  { type: "wallpaper" as const, label: "壁紙", backgrounds: backgrounds.filter((b) => b.type === "wallpaper") },
 ];

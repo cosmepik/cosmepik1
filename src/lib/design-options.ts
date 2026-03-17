@@ -80,4 +80,4 @@ export const FONT_OPTIONS: FontOption[] = [
   { id: "noto-serif", name: "Noto Serif JP", fontClassName: "font-noto-serif" },
 ];
 
-export const DEFAULT_FONT_ID: FontId = "sans";
+export const DEFAULT_FONT_ID: FontId = "noto-sans";

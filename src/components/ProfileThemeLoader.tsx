@@ -20,7 +20,7 @@ const CUSTOM_GRADIENT_PREFIX = "custom-gradient-";
  */
 export function ProfileThemeLoader({ slug }: { slug: string }) {
   const pathname = usePathname();
-  const { setThemeId, setBackgroundId, setFontId, setCardDesignId } = useTheme();
+  const { setThemeId, setBackgroundId, setFontId, setCardDesignId, setCardColor } = useTheme();
 
   const isEditPage = pathname?.startsWith("/dashboard/edit/");
 
@@ -47,8 +47,11 @@ export function ProfileThemeLoader({ slug }: { slug: string }) {
       if (p.cardDesignId && cardDesigns.some((c) => c.id === p.cardDesignId)) {
         setCardDesignId(p.cardDesignId as CardDesignId);
       }
+      if (p.cardColor !== undefined) {
+        setCardColor(p.cardColor ?? "");
+      }
     });
-  }, [isEditPage, slug, setThemeId, setBackgroundId, setFontId, setCardDesignId]);
+  }, [isEditPage, slug, setThemeId, setBackgroundId, setFontId, setCardDesignId, setCardColor]);
 
   return null;
 }

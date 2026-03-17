@@ -4,6 +4,26 @@
 
 ---
 
+## 検索エンジン対策（本番・テストの分離）
+
+develop ブランチ用のテストサイトが Google などにインデックスされないようにするため、**本番サイト（main ブランチ用）のみ** に環境変数を設定します。
+
+### 本番サイト（main ブランチ用）でやること
+
+1. [Netlify](https://app.netlify.com) にログイン
+2. **本番サイト**（main ブランチと連携している方）を選択
+3. **Site configuration** → **Environment variables**
+4. **Add a variable** で次を追加：
+   - **Key**: `IS_PRODUCTION`
+   - **Value**: `true`
+5. **Save** 後、再デプロイ
+
+### テストサイト（develop ブランチ用）でやること
+
+**何もしない**。`IS_PRODUCTION` を設定しないままにしておくことで、自動的に `noindex` と `robots.txt` の `Disallow: /` が適用され、検索エンジンがクロールを控えます。
+
+---
+
 ## OGP（Twitter・LINEでシェア時のプレビュー）を効かせる
 
 `/p/あなたのID` のリンクをシェアしたときに、プロフィール写真とコスメが並んだ画像が出るようにするには、**環境変数** でアプリのURLを指定します。

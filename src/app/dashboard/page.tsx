@@ -55,12 +55,14 @@ export default function DashboardHomePage() {
   const userId = dashUser?.id ?? "demo";
   const isAdmin = dashUser?.email === ADMIN_EMAIL;
   const metadata = dashUser?.metadata as Record<string, string> | undefined;
-  const displayName =
-    metadata?.full_name ??
-    metadata?.name ??
-    (metadata?.user_name ? `@${metadata.user_name}` : null);
 
   const [sets, setSets] = useState<CosmeSet[]>([]);
+  const displayName =
+    sets[0]?.displayName ??
+    metadata?.full_name ??
+    metadata?.name ??
+    (metadata?.user_name ? `@${metadata.user_name}` : null) ??
+    null;
   const [loading, setLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -114,6 +116,12 @@ export default function DashboardHomePage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (!loading && dashUser && sets.length === 0) {
+      router.replace("/dashboard/onboarding");
+    }
+  }, [loading, dashUser, sets.length, router]);
 
   const canCreateMore = isAdmin || isPremium || sets.length < 1;
 

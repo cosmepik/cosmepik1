@@ -4,6 +4,7 @@ import { ThemeWrapper } from "@/components/ThemeWrapper";
 import { LayoutBackground } from "@/components/LayoutBackground";
 import { LazyFonts } from "@/components/LazyFonts";
 import { Toaster } from "sonner";
+import { isProduction } from "@/lib/env";
 import "./globals.css";
 
 const notoSans = Noto_Sans_JP({
@@ -16,6 +17,7 @@ const notoSans = Noto_Sans_JP({
 export const metadata: Metadata = {
   title: "#cosmepik(コスメピック)",
   description: "インフルエンサーの愛用コスメをまとめたリンクツリー",
+  ...(isProduction ? {} : { robots: { index: false, follow: false } }),
 };
 
 export const viewport: Viewport = {

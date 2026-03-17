@@ -16,6 +16,65 @@ import { getProfile, renameCosmeSet } from "@/lib/store";
 import { ProfileProvider, toProfile, useProfile } from "@/lib/profile-context";
 import { ProfileThemeLoader } from "@/components/ProfileThemeLoader";
 import { ShareModal } from "@/components/ShareModal";
+import { SetupGuide } from "@/components/cosme-link/setup-guide";
+import { useStylePickerOpen } from "@/components/cosme-link/style-picker";
+import { CosmepikLogo } from "@/components/cosmepik-logo";
+
+const WELCOME_DISMISSED_KEY = "cosmepik-welcome-dismissed";
+
+function WelcomePopup() {
+  const [show, setShow] = useState(false);
+  const { openWithTab } = useStylePickerOpen();
+
+  useEffect(() => {
+    if (localStorage.getItem(WELCOME_DISMISSED_KEY) === "true") return;
+    setShow(true);
+  }, []);
+
+  if (!show) return null;
+
+  const handleStart = () => {
+    setShow(false);
+    localStorage.setItem(WELCOME_DISMISSED_KEY, "true");
+    openWithTab("background");
+  };
+
+  const handleClose = () => {
+    setShow(false);
+    localStorage.setItem(WELCOME_DISMISSED_KEY, "true");
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="absolute inset-0 bg-foreground/30 backdrop-blur-sm"
+        onClick={handleClose}
+        aria-hidden="true"
+      />
+      <div className="relative z-10 flex w-full max-w-sm flex-col items-center gap-5 rounded-2xl border border-border bg-white p-8 shadow-xl animate-in fade-in zoom-in-95 duration-300">
+        <CosmepikLogo height={22} color="var(--primary)" />
+        <div className="flex flex-col items-center gap-2 text-center">
+          <h2 className="text-lg font-bold text-foreground">編集ページへようこそ！</h2>
+          <p className="text-sm text-muted-foreground">まずは、壁紙を設定しよう！</p>
+        </div>
+        <button
+          type="button"
+          onClick={handleStart}
+          className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground shadow-md transition-all hover:bg-primary/90 active:scale-[0.98]"
+        >
+          壁紙を選ぶ
+        </button>
+        <button
+          type="button"
+          onClick={handleClose}
+          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+        >
+          あとで設定する
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function EditPageContent({ slug }: { slug: string }) {
   const router = useRouter();
@@ -129,7 +188,18 @@ function EditPageContent({ slug }: { slug: string }) {
         }
       />
 
-      <div className="mx-auto max-w-md px-4 py-5">
+      <div className="mx-auto max-w-md px-4 pt-0 pb-5">
+        {/* 他の子のページを見るバナー（ビューポート幅で中央揃え） */}
+        <div className="relative mb-4 w-screen max-w-none ml-[calc(-50vw+50%)]">
+          <Link
+            href="/dashboard"
+            className="flex w-full items-center justify-center gap-1.5 rounded-none border-b border-border bg-white py-2.5 text-sm font-medium text-primary transition-colors hover:bg-muted/50"
+          >
+            他の子のページを参考にする
+            <span aria-hidden>👀</span>
+          </Link>
+        </div>
+
         {/* デザイン編集ボタン群（背景・テーマ） */}
         <DesignEditButtons
           slug={slug}
@@ -177,7 +247,7 @@ function EditPageContent({ slug }: { slug: string }) {
                 href={profileUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex max-w-sm items-center gap-2 rounded-full border border-border bg-white px-3 py-2 text-sm text-foreground no-underline shadow-sm transition-colors hover:bg-muted/50"
+                className="flex max-w-sm items-center gap-2 rounded-full border border-border bg-white px-3 py-2 text-sm text-foreground/80 no-underline shadow-sm transition-colors hover:bg-muted/50 hover:text-foreground"
               >
                 <span className="min-w-0 truncate">{profileUrl}</span>
                 <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
@@ -198,7 +268,7 @@ function EditPageContent({ slug }: { slug: string }) {
 
         <ProfileHeader />
 
-        <div className="mx-auto mt-6 flex max-w-[400px] flex-col gap-2">
+        <div className="mx-auto mt-3 flex max-w-[400px] flex-col gap-2">
           {isEditMode && sections.length === 0 && (
             <AddSectionInline insertIndex={0} />
           )}
@@ -220,6 +290,7 @@ function EditPageContent({ slug }: { slug: string }) {
       url={profileUrl}
       title="共有"
     />
+    <WelcomePopup />
     </>
   );
 }

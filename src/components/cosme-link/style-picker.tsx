@@ -126,6 +126,109 @@ export function useStylePickerOpen() {
       };
 }
 
+const textColorPresets = [
+  { id: "", label: "デフォルト", color: "" },
+  { id: "#1a1a1a", label: "ブラック", color: "#1a1a1a" },
+  { id: "#ffffff", label: "ホワイト", color: "#ffffff" },
+  { id: "#4a4a4a", label: "ダークグレー", color: "#4a4a4a" },
+  { id: "#8b7355", label: "ブラウン", color: "#8b7355" },
+  { id: "#c94c4c", label: "レッド", color: "#c94c4c" },
+  { id: "#e8829a", label: "ピンク", color: "#e8829a" },
+  { id: "#9b8ec4", label: "パープル", color: "#9b8ec4" },
+  { id: "#4a5e8a", label: "ネイビー", color: "#4a5e8a" },
+  { id: "#56c8c8", label: "ティール", color: "#56c8c8" },
+  { id: "#4a9e6e", label: "グリーン", color: "#4a9e6e" },
+  { id: "#c9a84c", label: "ゴールド", color: "#c9a84c" },
+];
+
+function TextColorPicker({
+  currentColor,
+  onSelect,
+}: {
+  currentColor: string;
+  onSelect: (color: string) => void;
+}) {
+  const customId = useId();
+  const isCustom =
+    currentColor && !textColorPresets.some((p) => p.id === currentColor);
+
+  return (
+    <div className="flex flex-col gap-2.5">
+      <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+        テキストカラー
+      </h4>
+      <div className="grid grid-cols-6 gap-2">
+        {textColorPresets.map((preset) => {
+          const selected = currentColor === preset.id;
+          return (
+            <button
+              key={preset.id || "default"}
+              type="button"
+              onClick={() => onSelect(preset.id)}
+              className={cn(
+                "relative flex aspect-square items-center justify-center rounded-xl border-2 transition-all",
+                selected
+                  ? "border-primary ring-2 ring-primary/30"
+                  : "border-border hover:border-primary/40"
+              )}
+              title={preset.label}
+            >
+              {preset.id ? (
+                <div
+                  className="h-full w-full rounded-[10px]"
+                  style={{ backgroundColor: preset.color }}
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-gradient-to-br from-gray-100 to-gray-300">
+                  <span className="text-[9px] font-medium text-gray-500">
+                    自動
+                  </span>
+                </div>
+              )}
+              {selected && (
+                <div className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+                  <Check className="h-2.5 w-2.5" />
+                </div>
+              )}
+            </button>
+          );
+        })}
+        <label
+          htmlFor={customId}
+          className={cn(
+            "relative flex cursor-pointer aspect-square items-center justify-center overflow-hidden rounded-xl border-2 transition-all",
+            isCustom
+              ? "border-primary ring-2 ring-primary/30"
+              : "border-dashed border-border hover:border-primary/40"
+          )}
+          title="カスタムカラー"
+        >
+          <input
+            id={customId}
+            type="color"
+            value={currentColor || "#000000"}
+            onChange={(e) => onSelect(e.target.value)}
+            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+          />
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(135deg, #ff0000, #ff8000, #ffff00, #00ff00, #00ffff, #0080ff, #8000ff, #ff0080)",
+            }}
+          />
+          <Plus className="pointer-events-none h-5 w-5 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]" strokeWidth={2.5} />
+          {isCustom && (
+            <div className="pointer-events-none absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+              <Check className="h-2.5 w-2.5" />
+            </div>
+          )}
+        </label>
+      </div>
+    </div>
+  );
+}
+
 function FontGrid({
   currentFontId,
   onSelect,
@@ -284,48 +387,163 @@ function ThemeGrid({
   );
 }
 
+const cardColorPresets = [
+  { id: "", label: "デフォルト", color: "" },
+  { id: "transparent", label: "透明", color: "transparent" },
+  { id: "#ffffff", label: "ホワイト", color: "#ffffff" },
+  { id: "#fef3f3", label: "ベビーピンク", color: "#fef3f3" },
+  { id: "#fdf5ef", label: "ベージュ", color: "#fdf5ef" },
+  { id: "#fefce8", label: "クリーム", color: "#fefce8" },
+  { id: "#f0fdf4", label: "ミントグリーン", color: "#f0fdf4" },
+  { id: "#eff6ff", label: "アイスブルー", color: "#eff6ff" },
+  { id: "#f5f3ff", label: "ラベンダー", color: "#f5f3ff" },
+  { id: "#faf5ff", label: "ライラック", color: "#faf5ff" },
+  { id: "#1a1a1a", label: "ブラック", color: "#1a1a1a" },
+];
+
+function CardColorPicker({
+  currentColor,
+  onSelect,
+}: {
+  currentColor: string;
+  onSelect: (color: string) => void;
+}) {
+  const customId = useId();
+  const isCustom =
+    currentColor && currentColor !== "transparent" && !cardColorPresets.some((p) => p.id === currentColor);
+
+  return (
+    <div className="flex flex-col gap-2.5">
+      <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+        カードカラー
+      </h4>
+      <div className="grid grid-cols-6 gap-2">
+        {cardColorPresets.map((preset) => {
+          const selected = currentColor === preset.id;
+          return (
+            <button
+              key={preset.id}
+              type="button"
+              onClick={() => onSelect(preset.id)}
+              className={cn(
+                "group relative flex flex-col items-center gap-1",
+              )}
+              title={preset.label}
+            >
+              <div
+                className={cn(
+                  "relative h-9 w-9 rounded-full border-2 transition-all",
+                  selected ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/40",
+                  preset.id === "transparent" && "bg-[repeating-conic-gradient(#e5e7eb_0%_25%,transparent_0%_50%)] bg-[length:8px_8px]",
+                  !preset.id && "bg-card",
+                )}
+                style={
+                  preset.color && preset.color !== "transparent"
+                    ? { backgroundColor: preset.color }
+                    : undefined
+                }
+              >
+                {selected && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Check className={cn("h-4 w-4", preset.color === "#1a1a1a" ? "text-white" : "text-primary")} />
+                  </div>
+                )}
+                {!preset.id && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-[8px] font-medium text-muted-foreground">初期</span>
+                  </div>
+                )}
+              </div>
+              <span className="text-[9px] text-muted-foreground">{preset.label}</span>
+            </button>
+          );
+        })}
+        <label
+          htmlFor={customId}
+          className="group relative flex cursor-pointer flex-col items-center gap-1"
+          title="カスタム"
+        >
+          <div
+            className={cn(
+              "relative flex h-9 w-9 items-center justify-center rounded-full border-2 transition-all",
+              isCustom ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/40",
+            )}
+            style={isCustom ? { backgroundColor: currentColor } : undefined}
+          >
+            {isCustom ? (
+              <Check className="h-4 w-4 text-primary" />
+            ) : (
+              <Plus className="h-4 w-4 text-muted-foreground" />
+            )}
+          </div>
+          <span className="text-[9px] text-muted-foreground">カスタム</span>
+          <input
+            id={customId}
+            type="color"
+            className="sr-only"
+            value={isCustom ? currentColor : "#f5f5f5"}
+            onChange={(e) => onSelect(e.target.value)}
+          />
+        </label>
+      </div>
+    </div>
+  );
+}
+
 function CardDesignGrid({
   currentCardDesignId,
   onSelect,
   onClose,
+  currentCardColor,
+  onSelectColor,
 }: {
   currentCardDesignId: string;
   onSelect: (id: CardDesignId) => void;
   onClose: () => void;
+  currentCardColor: string;
+  onSelectColor: (color: string) => void;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-2.5">
-      {cardDesigns.map((design) => {
-        const selected = currentCardDesignId === design.id;
-        return (
-          <button
-            key={design.id}
-            type="button"
-            onClick={() => {
-              onSelect(design.id);
-              onClose();
-            }}
-            className={cn(
-              "relative flex flex-col items-stretch gap-2 rounded-xl border-2 p-3 text-left transition-all",
-              selected ? "border-primary bg-accent" : "border-border bg-card hover:border-primary/40"
-            )}
-          >
-            {selected && (
-              <div className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
-                <Check className="h-3 w-3" />
-              </div>
-            )}
-            <div className={cn("flex items-center gap-2 p-2", design.listClassName)}>
-              <div className="h-8 w-8 shrink-0 rounded-lg bg-secondary" />
-              <div className="min-w-0 flex-1">
-                <p className="text-[9px] font-medium text-primary">BRAND</p>
-                <p className="truncate text-[10px] text-card-foreground">商品名</p>
-              </div>
-            </div>
-            <span className="text-xs font-bold text-card-foreground">{design.nameJa}</span>
-          </button>
-        );
-      })}
+    <div className="flex flex-col gap-5">
+      <CardColorPicker currentColor={currentCardColor} onSelect={onSelectColor} />
+      <div>
+        <h4 className="mb-2.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          カードデザイン
+        </h4>
+        <div className="grid grid-cols-2 gap-2.5">
+          {cardDesigns.map((design) => {
+            const selected = currentCardDesignId === design.id;
+            return (
+              <button
+                key={design.id}
+                type="button"
+                onClick={() => {
+                  onSelect(design.id);
+                  onClose();
+                }}
+                className={cn(
+                  "relative flex flex-col items-stretch gap-2 rounded-xl border-2 p-3 text-left transition-all",
+                  selected ? "border-primary bg-accent" : "border-border bg-card hover:border-primary/40"
+                )}
+              >
+                {selected && (
+                  <div className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+                    <Check className="h-3 w-3" />
+                  </div>
+                )}
+                <div className={cn("flex items-center gap-2", design.listClassName)}>
+                  <div className={cn("shrink-0", design.listImageClassName)} style={{ width: 32, height: 32 }} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[9px] font-medium text-primary">BRAND</p>
+                    <p className="truncate text-[10px] text-card-foreground">商品名</p>
+                  </div>
+                </div>
+                <span className="text-xs font-bold text-card-foreground">{design.nameJa}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -753,7 +971,7 @@ function BackgroundGrid({
           <div
             className={cn(
               "grid gap-2.5",
-              group.type === "wallpaper" ? "grid-cols-3" : "grid-cols-4"
+              group.type === "wallpaper" ? "grid-cols-4" : "grid-cols-5"
             )}
           >
             {group.type === "solid" && (
@@ -828,7 +1046,7 @@ function BackgroundItem({
 
 export function StylePicker() {
   const slug = useCurrentSlug();
-  const { themeId, setThemeId, backgroundId, setBackgroundId, fontId, setFontId, cardDesignId, setCardDesignId } = useTheme();
+  const { themeId, setThemeId, backgroundId, setBackgroundId, fontId, setFontId, cardDesignId, setCardDesignId, textColor, setTextColor, cardColor, setCardColor } = useTheme();
   const ctx = useContext(StylePickerContext);
   const open = ctx?.open ?? false;
   const setOpen = ctx?.setOpen ?? (() => {});
@@ -943,7 +1161,7 @@ export function StylePicker() {
                 )}
               >
                 <Type className="h-3.5 w-3.5 shrink-0" />
-                フォント
+                テキスト
               </button>
             </div>
 
@@ -1009,20 +1227,47 @@ export function StylePicker() {
                     }).catch(() => {});
                   }}
                   onClose={() => setOpen(false)}
-                />
-              ) : (
-                <FontGrid
-                  currentFontId={fontId}
-                  onSelect={(id) => {
-                    setFontId(id);
+                  currentCardColor={cardColor}
+                  onSelectColor={(color) => {
+                    setCardColor(color);
                     setProfile({
                       username: slug,
-                      fontId: id,
+                      cardColor: color,
                       updatedAt: new Date().toISOString(),
                     }).catch(() => {});
                   }}
-                  onClose={() => setOpen(false)}
                 />
+              ) : (
+                <div className="flex flex-col gap-5">
+                  <TextColorPicker
+                    currentColor={textColor}
+                    onSelect={(color) => {
+                      setTextColor(color);
+                      setProfile({
+                        username: slug,
+                        textColor: color,
+                        updatedAt: new Date().toISOString(),
+                      } as Parameters<typeof setProfile>[0]).catch(() => {});
+                    }}
+                  />
+                  <div>
+                    <h4 className="mb-2.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                      フォント
+                    </h4>
+                    <FontGrid
+                      currentFontId={fontId}
+                      onSelect={(id) => {
+                        setFontId(id);
+                        setProfile({
+                          username: slug,
+                          fontId: id,
+                          updatedAt: new Date().toISOString(),
+                        }).catch(() => {});
+                      }}
+                      onClose={() => setOpen(false)}
+                    />
+                  </div>
+                </div>
               )}
             </div>
           </div>

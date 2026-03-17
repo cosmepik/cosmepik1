@@ -33,7 +33,12 @@ export default function LoginPage() {
       router.push("/dashboard");
       router.refresh();
     } catch (err: unknown) {
-      setMessage({ type: "error", text: err instanceof Error ? err.message : "エラーが発生しました" });
+      const msg = err instanceof Error ? err.message : "エラーが発生しました";
+      const displayText =
+        msg === "Invalid login credentials"
+          ? "ログインできませんでした。もう一度正しい情報を入力してください。"
+          : msg;
+      setMessage({ type: "error", text: displayText });
     } finally {
       setLoading(false);
     }

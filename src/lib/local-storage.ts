@@ -191,6 +191,7 @@ export function setProfile(slug: string, profile: Partial<InfluencerProfile> & {
     backgroundId: profile.backgroundId !== undefined ? profile.backgroundId : existing?.backgroundId,
     fontId: profile.fontId !== undefined ? profile.fontId : existing?.fontId,
     cardDesignId: profile.cardDesignId !== undefined ? profile.cardDesignId : existing?.cardDesignId,
+    cardColor: profile.cardColor !== undefined ? profile.cardColor : existing?.cardColor,
     bio: profile.bio ?? existing?.bio,
     bioSub: profile.bioSub !== undefined ? profile.bioSub : existing?.bioSub,
     skinType: profile.skinType ?? existing?.skinType,

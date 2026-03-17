@@ -72,7 +72,7 @@ export function AddCommentModal({
               type="submit"
               className="rounded-lg bg-green px-5 py-2 text-sm font-medium text-white hover:opacity-90"
             >
-              セクションに追加
+              グループに追加
             </button>
           </div>
         </form>

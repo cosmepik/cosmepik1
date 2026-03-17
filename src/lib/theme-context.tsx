@@ -17,6 +17,8 @@ const THEME_STORAGE_KEY = "cosmepik-theme";
 const BACKGROUND_STORAGE_KEY = "cosmepik-background";
 const FONT_STORAGE_KEY = "cosmepik-font";
 const CARD_DESIGN_STORAGE_KEY = "cosmepik-card-design";
+const TEXT_COLOR_STORAGE_KEY = "cosmepik-text-color";
+const CARD_COLOR_STORAGE_KEY = "cosmepik-card-color";
 
 type ThemeContextValue = {
   themeId: ThemeId;
@@ -27,6 +29,10 @@ type ThemeContextValue = {
   setFontId: (id: FontId) => void;
   cardDesignId: CardDesignId;
   setCardDesignId: (id: CardDesignId) => void;
+  textColor: string;
+  setTextColor: (color: string) => void;
+  cardColor: string;
+  setCardColor: (color: string) => void;
 };
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -103,8 +109,9 @@ export function applyBackground(backgroundId: string) {
 
 const DEFAULT_THEME_ID: ThemeId = "mint-sparkle";
 const DEFAULT_BACKGROUND_ID = "gradient-mermaid";
-const DEFAULT_FONT_ID: FontId = "sans";
+const DEFAULT_FONT_ID: FontId = "noto-sans";
 const DEFAULT_CARD_DESIGN_ID: CardDesignId = "default";
+const DEFAULT_TEXT_COLOR = "";
 
 /** 公開ページでプロフィールのフォントを適用するためにエクスポート */
 export function applyFont(fontId: FontId) {
@@ -112,11 +119,30 @@ export function applyFont(fontId: FontId) {
   root.style.setProperty("--font-body", getFontFamily(fontId));
 }
 
+/** カードカラーを適用（空文字＝デフォルト、"transparent"＝透明、hex＝カラー） */
+export function applyCardColor(_color: string) {
+  // inline style で各カードコンポーネントが適用するため、CSS変数は不要
+}
+
+/** テキストカラーを適用（空文字ならリセット） */
+export function applyTextColor(color: string) {
+  const root = document.documentElement;
+  if (color) {
+    root.style.setProperty("--foreground", color);
+    root.style.setProperty("--card-foreground", color);
+  } else {
+    root.style.removeProperty("--foreground");
+    root.style.removeProperty("--card-foreground");
+  }
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [themeId, setThemeIdState] = useState<ThemeId>(DEFAULT_THEME_ID);
   const [backgroundId, setBackgroundIdState] = useState<string>(DEFAULT_BACKGROUND_ID);
   const [fontId, setFontIdState] = useState<FontId>(DEFAULT_FONT_ID);
   const [cardDesignId, setCardDesignIdState] = useState<CardDesignId>(DEFAULT_CARD_DESIGN_ID);
+  const [textColor, setTextColorState] = useState<string>(DEFAULT_TEXT_COLOR);
+  const [cardColor, setCardColorState] = useState<string>("");
 
   useEffect(() => {
     try {
@@ -153,6 +179,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       if (storedCard && cardDesigns.some((c) => c.id === storedCard)) {
         setCardDesignIdState(storedCard);
       }
+
+      const storedTextColor = localStorage.getItem(TEXT_COLOR_STORAGE_KEY) ?? "";
+      if (storedTextColor) {
+        setTextColorState(storedTextColor);
+        applyTextColor(storedTextColor);
+      }
+
+      const storedCardColor = localStorage.getItem(CARD_COLOR_STORAGE_KEY) ?? "";
+      if (storedCardColor) {
+        setCardColorState(storedCardColor);
+        applyCardColor(storedCardColor);
+      }
     } catch {
       applyTheme(DEFAULT_THEME_ID);
       applyBackground(DEFAULT_BACKGROUND_ID);
@@ -163,12 +201,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const setThemeId = useCallback((id: ThemeId) => {
     setThemeIdState(id);
     applyTheme(id);
+    const savedTextColor = textColor || (localStorage.getItem(TEXT_COLOR_STORAGE_KEY) ?? "");
+    if (savedTextColor) applyTextColor(savedTextColor);
     try {
       localStorage.setItem(THEME_STORAGE_KEY, id);
     } catch {
       /* ignore */
     }
-  }, []);
+  }, [textColor]);
 
   const setBackgroundId = useCallback((id: string) => {
     setBackgroundIdState(id);
@@ -199,8 +239,36 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const setTextColor = useCallback((color: string) => {
+    setTextColorState(color);
+    applyTextColor(color);
+    try {
+      if (color) {
+        localStorage.setItem(TEXT_COLOR_STORAGE_KEY, color);
+      } else {
+        localStorage.removeItem(TEXT_COLOR_STORAGE_KEY);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const setCardColor = useCallback((color: string) => {
+    setCardColorState(color);
+    applyCardColor(color);
+    try {
+      if (color) {
+        localStorage.setItem(CARD_COLOR_STORAGE_KEY, color);
+      } else {
+        localStorage.removeItem(CARD_COLOR_STORAGE_KEY);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   return (
-    <ThemeContext.Provider value={{ themeId, setThemeId, backgroundId, setBackgroundId, fontId, setFontId, cardDesignId, setCardDesignId }}>
+    <ThemeContext.Provider value={{ themeId, setThemeId, backgroundId, setBackgroundId, fontId, setFontId, cardDesignId, setCardDesignId, textColor, setTextColor, cardColor, setCardColor }}>
       {children}
     </ThemeContext.Provider>
   );
@@ -218,6 +286,10 @@ export function useTheme() {
       setFontId: () => {},
       cardDesignId: DEFAULT_CARD_DESIGN_ID,
       setCardDesignId: () => {},
+      textColor: DEFAULT_TEXT_COLOR,
+      setTextColor: () => {},
+      cardColor: "",
+      setCardColor: () => {},
     };
   }
   return ctx;
@@ -226,5 +298,10 @@ export function useTheme() {
 /** 公開ページ用：カードデザインのクラス名を取得 */
 export function getCardDesignClasses(cardDesignId: string | undefined) {
   const design = getCardDesign(cardDesignId);
-  return { listClassName: design.listClassName, productClassName: design.productClassName };
+  return {
+    listClassName: design.listClassName,
+    productClassName: design.productClassName,
+    listImageClassName: design.listImageClassName,
+    productImageClassName: design.productImageClassName,
+  };
 }

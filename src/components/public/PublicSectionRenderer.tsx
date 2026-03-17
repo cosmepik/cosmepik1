@@ -13,6 +13,7 @@ interface Props {
   slug: string;
   userAffiliateId?: string | null;
   cardDesignId?: string;
+  cardColor?: string;
 }
 
 function usePublicAffiliateClick(slug: string, userAffiliateId?: string | null) {
@@ -38,14 +39,23 @@ function usePublicAffiliateClick(slug: string, userAffiliateId?: string | null) 
   );
 }
 
+function cardBgStyle(cardColor: string | undefined): React.CSSProperties | undefined {
+  if (!cardColor) return undefined;
+  return { backgroundColor: cardColor };
+}
+
 function RoutineItem({
   item,
   onClick,
   listClassName,
+  listImageClassName,
+  cardColorStyle,
 }: {
   item: SectionItem;
   onClick: (link: string | undefined, id?: string) => void;
   listClassName: string;
+  listImageClassName: string;
+  cardColorStyle?: React.CSSProperties;
 }) {
   return (
     <a
@@ -53,6 +63,7 @@ function RoutineItem({
       target="_blank"
       rel="noopener noreferrer"
       className={cn("flex items-stretch gap-2", listClassName)}
+      style={cardColorStyle}
       onClick={(e) => {
         if (item.link) {
           e.preventDefault();
@@ -60,7 +71,7 @@ function RoutineItem({
         }
       }}
     >
-      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-secondary">
+      <div className={cn("relative", listImageClassName)}>
         {item.image && (
           <CosmeImage src={item.image} alt={item.product || ""} fill className="object-cover" sizes="48px" />
         )}
@@ -83,10 +94,14 @@ function ProductCard({
   item,
   onClick,
   productClassName,
+  productImageClassName,
+  cardColorStyle,
 }: {
   item: SectionItem;
   onClick: (link: string | undefined, id?: string) => void;
   productClassName: string;
+  productImageClassName: string;
+  cardColorStyle?: React.CSSProperties;
 }) {
   const [liked, setLiked] = useState(false);
   return (
@@ -96,6 +111,7 @@ function ProductCard({
         target="_blank"
         rel="noopener noreferrer"
         className={cn("relative block overflow-hidden", productClassName)}
+        style={cardColorStyle}
         onClick={(e) => {
           if (item.link) {
             e.preventDefault();
@@ -103,7 +119,7 @@ function ProductCard({
           }
         }}
       >
-        <div className="relative aspect-square overflow-hidden bg-secondary">
+        <div className={cn(productImageClassName)}>
           {item.image && (
             <CosmeImage
               src={item.image}
@@ -140,9 +156,11 @@ function ProductCard({
   );
 }
 
-export function PublicSectionRenderer({ section, slug, userAffiliateId, cardDesignId }: Props) {
+export function PublicSectionRenderer({ section, slug, userAffiliateId, cardDesignId, cardColor }: Props) {
   const onClick = usePublicAffiliateClick(slug, userAffiliateId);
-  const { listClassName, productClassName } = getCardDesign(cardDesignId);
+  const design = getCardDesign(cardDesignId);
+  const { listClassName, productClassName, listImageClassName, productImageClassName } = design;
+  const colorStyle = cardBgStyle(cardColor);
 
   const showTitle = !["heading", "text"].includes(section.type);
 
@@ -157,7 +175,7 @@ export function PublicSectionRenderer({ section, slug, userAffiliateId, cardDesi
         {section.type === "routine" && (
           <div className="flex flex-col gap-2">
             {section.items.map((item) => (
-              <RoutineItem key={item.id} item={item} onClick={onClick} listClassName={listClassName} />
+              <RoutineItem key={item.id} item={item} onClick={onClick} listClassName={listClassName} listImageClassName={listImageClassName} cardColorStyle={colorStyle} />
             ))}
           </div>
         )}
@@ -165,7 +183,7 @@ export function PublicSectionRenderer({ section, slug, userAffiliateId, cardDesi
         {section.type === "products" && (
           <div className={cn("grid gap-3", section.columns === 1 ? "grid-cols-1" : "grid-cols-2")}>
             {section.items.map((item) => (
-              <ProductCard key={item.id} item={item} onClick={onClick} productClassName={productClassName} />
+              <ProductCard key={item.id} item={item} onClick={onClick} productClassName={productClassName} productImageClassName={productImageClassName} cardColorStyle={colorStyle} />
             ))}
           </div>
         )}
@@ -178,7 +196,7 @@ export function PublicSectionRenderer({ section, slug, userAffiliateId, cardDesi
         )}
 
         {section.type === "text" && (
-          <div className={cn("p-4", listClassName)}>
+          <div className={cn("p-4", listClassName)} style={colorStyle}>
             <p className="text-sm leading-relaxed text-card-foreground">{section.title}</p>
           </div>
         )}
@@ -192,6 +210,7 @@ export function PublicSectionRenderer({ section, slug, userAffiliateId, cardDesi
                   target="_blank"
                   rel="noopener noreferrer"
                   className={cn("flex items-center justify-between p-4", listClassName)}
+                  style={colorStyle}
                   onClick={(e) => {
                     if (item.link) { e.preventDefault(); onClick(item.link, item.id); }
                   }}

@@ -27,6 +27,22 @@ export function getStorageType(): "supabase" | "localStorage" {
   return useSupabase() ? "supabase" : "localStorage";
 }
 
+/** 接続先DBの表示用ラベル（supabase の場合は project ID を表示） */
+export function getDatabaseDisplayLabel(): string {
+  if (!useSupabase()) return "localStorage";
+  const url = typeof window !== "undefined"
+    ? (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "")
+    : "";
+  if (!url) return "supabase";
+  try {
+    const host = new URL(url).hostname;
+    const projectId = host.replace(/\.supabase\.co$/, "");
+    return projectId ? `supabase: ${projectId}` : "supabase";
+  } catch {
+    return "supabase";
+  }
+}
+
 function uid(userId?: string | null) {
   return userId ?? FALLBACK_USER_ID;
 }

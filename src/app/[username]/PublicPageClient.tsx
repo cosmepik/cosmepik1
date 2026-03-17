@@ -54,6 +54,7 @@ export function PublicPageClient({ username, profile, sections }: Props) {
               slug={username}
               userAffiliateId={profile?.rakutenAffiliateId}
               cardDesignId={profile?.cardDesignId}
+              cardColor={profile?.cardColor}
             />
           ))}
 

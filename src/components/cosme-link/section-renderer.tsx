@@ -69,18 +69,27 @@ function StarRating({ rating, count }: { rating: number; count: number }) {
   );
 }
 
+function cardBgStyle(cardColor: string): React.CSSProperties | undefined {
+  if (!cardColor) return undefined;
+  return { backgroundColor: cardColor };
+}
+
 function SortableRoutineItem({
   item,
   isEditMode,
   onDelete,
   onAffiliateClick,
   listClassName,
+  listImageClassName,
+  cardColorStyle,
 }: {
   item: SectionItem;
   isEditMode: boolean;
   onDelete: () => void;
   onAffiliateClick: (link: string | undefined, itemId?: string) => void;
   listClassName: string;
+  listImageClassName: string;
+  cardColorStyle?: React.CSSProperties;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
@@ -91,7 +100,7 @@ function SortableRoutineItem({
   };
   const cardContent = (
     <>
-      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-secondary">
+      <div className={cn("relative", listImageClassName)}>
         {item.image && (
           <CosmeImage
             src={item.image}
@@ -128,6 +137,7 @@ function SortableRoutineItem({
       {isEditMode ? (
         <div
           className={cn("flex cursor-grab active:cursor-grabbing items-center gap-2 touch-manipulation", listClassName)}
+          style={cardColorStyle}
           {...listeners}
           {...attributes}
           onClick={(e) => {
@@ -145,6 +155,7 @@ function SortableRoutineItem({
           target="_blank"
           rel="noopener noreferrer"
           className={cn("flex items-center gap-2", listClassName)}
+          style={cardColorStyle}
           onClick={(e) => {
             if (item.link) {
               e.preventDefault();
@@ -178,9 +189,11 @@ function SortableRoutineItem({
 
 function RoutineSection({ section, onAddItem, listClassName }: SectionContentProps) {
   const { isEditMode, deleteItemFromSection, reorderItemsInSection } = useSections();
-  const { cardDesignId } = useTheme();
-  const { listClassName: defaultList } = getCardDesign(cardDesignId);
-  const listClass = listClassName ?? defaultList;
+  const { cardDesignId, cardColor } = useTheme();
+  const design = getCardDesign(cardDesignId);
+  const listClass = listClassName ?? design.listClassName;
+  const listImageClass = design.listImageClassName;
+  const colorStyle = cardBgStyle(cardColor);
   const onAffiliateClick = useAffiliateClick();
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -234,6 +247,8 @@ function RoutineSection({ section, onAddItem, listClassName }: SectionContentPro
                   onDelete={() => deleteItemFromSection(section.id, item.id)}
                   onAffiliateClick={onAffiliateClick}
                   listClassName={listClass}
+                  listImageClassName={listImageClass}
+                  cardColorStyle={colorStyle}
                 />
               ))}
             </SortableContext>
@@ -247,6 +262,8 @@ function RoutineSection({ section, onAddItem, listClassName }: SectionContentPro
               onDelete={() => {}}
               onAffiliateClick={onAffiliateClick}
               listClassName={listClass}
+              listImageClassName={listImageClass}
+              cardColorStyle={colorStyle}
             />
           ))
         )}
@@ -267,9 +284,11 @@ function RoutineSection({ section, onAddItem, listClassName }: SectionContentPro
 
 function ProductsSection({ section, onAddItem, productClassName }: SectionContentProps) {
   const { isEditMode } = useSections();
-  const { cardDesignId } = useTheme();
-  const { productClassName: defaultProduct } = getCardDesign(cardDesignId);
-  const productClass = productClassName ?? defaultProduct;
+  const { cardDesignId, cardColor } = useTheme();
+  const design = getCardDesign(cardDesignId);
+  const productClass = productClassName ?? design.productClassName;
+  const productImageClass = design.productImageClassName;
+  const colorStyle = cardBgStyle(cardColor);
 
   return (
     <div className="flex flex-col gap-4">
@@ -302,6 +321,8 @@ function ProductsSection({ section, onAddItem, productClassName }: SectionConten
             section={section}
             onAddItem={onAddItem}
             productClassName={productClass}
+            productImageClassName={productImageClass}
+            cardColorStyle={colorStyle}
           />
         ))}
       </div>
@@ -326,12 +347,16 @@ function ProductCard({
   section,
   onAddItem,
   productClassName,
+  productImageClassName,
+  cardColorStyle,
 }: {
   item: SectionItem;
   isEditMode: boolean;
   section: Section;
   onAddItem?: () => void;
   productClassName: string;
+  productImageClassName: string;
+  cardColorStyle?: React.CSSProperties;
 }) {
   const { deleteItemFromSection } = useSections();
   const onAffiliateClick = useAffiliateClick();
@@ -351,6 +376,7 @@ function ProductCard({
         target="_blank"
         rel="noopener noreferrer"
         className={cn("relative block overflow-hidden", productClassName)}
+        style={cardColorStyle}
         onClick={(e) => {
           if (item.link) {
             e.preventDefault();
@@ -358,7 +384,7 @@ function ProductCard({
           }
         }}
       >
-              <div className="relative aspect-square overflow-hidden bg-secondary">
+              <div className={cn(productImageClassName)}>
                 {item.image && (
                   <CosmeImage
                     src={item.image}
@@ -441,11 +467,11 @@ function HeadingSection({ section }: { section: Section }) {
 }
 
 function TextSection({ section, listClassName }: SectionContentProps) {
-  const { cardDesignId } = useTheme();
-  const { listClassName: defaultList } = getCardDesign(cardDesignId);
-  const listClass = listClassName ?? defaultList;
+  const { cardDesignId, cardColor } = useTheme();
+  const design = getCardDesign(cardDesignId);
+  const listClass = listClassName ?? design.listClassName;
   return (
-    <div className={cn("p-2.5", listClass)}>
+    <div className={cn("p-2.5", listClass)} style={cardBgStyle(cardColor)}>
       <p className="text-sm leading-relaxed text-card-foreground">
         {section.title}
       </p>
@@ -456,9 +482,10 @@ function TextSection({ section, listClassName }: SectionContentProps) {
 function LinkSection({ section, onAddItem, listClassName }: SectionContentProps) {
   const { isEditMode, deleteItemFromSection } = useSections();
   const onAffiliateClick = useAffiliateClick();
-  const { cardDesignId } = useTheme();
-  const { listClassName: defaultList } = getCardDesign(cardDesignId);
-  const listClass = listClassName ?? defaultList;
+  const { cardDesignId, cardColor } = useTheme();
+  const design = getCardDesign(cardDesignId);
+  const listClass = listClassName ?? design.listClassName;
+  const colorStyle = cardBgStyle(cardColor);
 
   return (
     <div className="flex flex-col gap-2">
@@ -483,6 +510,7 @@ function LinkSection({ section, onAddItem, listClassName }: SectionContentProps)
             target="_blank"
             rel="noopener noreferrer"
             className={cn("flex items-center justify-between p-2.5", listClass)}
+            style={colorStyle}
             onClick={(e) => {
               if (item.link) {
                 e.preventDefault();
@@ -617,13 +645,13 @@ export function SectionRenderer({ section }: SectionRendererProps) {
                 }
               }}
               className="max-w-[200px] rounded bg-transparent px-1 text-sm font-semibold text-foreground placeholder:text-muted-foreground focus:outline-none"
-              placeholder="セクション名"
+              placeholder="グループ名"
               autoFocus
             />
           ) : (
             <>
               <span className="max-w-[200px] truncate text-sm font-semibold text-foreground">
-                {section.title || "セクション名"}
+                {section.title || "グループ名"}
               </span>
               <button
                 type="button"
@@ -632,7 +660,7 @@ export function SectionRenderer({ section }: SectionRendererProps) {
                   setIsEditingTitle(true);
                 }}
                 className="ml-1 flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
-                aria-label="セクション名を編集"
+                aria-label="グループ名を編集"
               >
                 <Pencil className="h-3 w-3" />
               </button>

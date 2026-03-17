@@ -7,7 +7,7 @@ import { useTheme, applyFont } from "@/lib/theme-context";
 import { getFontFamily } from "@/lib/fonts";
 import type { FontId } from "@/lib/fonts";
 
-const DEFAULT_FONT_ID: FontId = "sans";
+const DEFAULT_FONT_ID: FontId = "noto-sans";
 
 /** ダッシュボード等ではフォントをデフォルトに、編集・プレビュー・公開ページではプロフィールのフォントを適用 */
 export function LayoutFont() {

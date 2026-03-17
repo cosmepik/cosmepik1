@@ -48,6 +48,8 @@ export interface InfluencerProfile {
   fontId?: string;
   /** コスメカードデザインID */
   cardDesignId?: string;
+  /** カードカラー（空＝デフォルト、"transparent"＝透明、hex＝カスタム色） */
+  cardColor?: string;
   bio?: string;
   /** サブテキスト（ひとこと） */
   bioSub?: string;
@@ -71,4 +73,6 @@ export interface CosmeSet {
   slug: string;
   itemCount?: number;
   avatarUrl?: string;
+  /** プロフィール表示名（APIから返る） */
+  displayName?: string;
 }

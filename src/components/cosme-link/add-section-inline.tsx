@@ -81,7 +81,7 @@ export function AddSectionInline({ insertIndex }: AddSectionInlineProps) {
           type="button"
           onClick={() => setIsExpanded(true)}
           className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-border bg-card text-muted-foreground shadow-sm transition-all hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-md active:scale-95"
-          aria-label="セクションを追加"
+          aria-label="グループを追加"
         >
           <Plus className="h-4 w-4" />
         </button>
@@ -104,7 +104,7 @@ export function AddSectionInline({ insertIndex }: AddSectionInlineProps) {
       {!selectedType ? (
         <div className="flex flex-col gap-3">
           <p className="text-sm font-medium text-card-foreground">
-            追加するセクション
+            追加するグループ
           </p>
           <div className="flex flex-wrap gap-2">
             {quickOptions.map((opt) => (
@@ -148,7 +148,7 @@ export function AddSectionInline({ insertIndex }: AddSectionInlineProps) {
                     ? "例: スキンケア（任意）"
                     : selectedType === "link"
                       ? "例: SNSリンク（任意）"
-                      : "セクション名（任意）"
+                      : "グループ名（任意）"
             }
             className="rounded-xl border-2 border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
             autoFocus

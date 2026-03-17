@@ -34,7 +34,7 @@ const sectionTypes: {
   {
     type: "heading",
     label: "見出し",
-    description: "セクションを区切る見出しテキスト",
+    description: "グループを区切る見出しテキスト",
     icon: <Type className="h-5 w-5" />,
   },
   {
@@ -102,7 +102,7 @@ export function AddSectionModal({ isOpen, onClose }: AddSectionModalProps) {
       <div className="relative z-10 flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-card shadow-xl animate-in slide-in-from-bottom duration-300">
         <div className="flex shrink-0 items-center justify-between border-b border-border px-5 pb-3 pt-5">
           <h3 className="text-base font-bold text-card-foreground">
-            セクションを追加
+            グループを追加
           </h3>
           <button
             type="button"
@@ -118,7 +118,7 @@ export function AddSectionModal({ isOpen, onClose }: AddSectionModalProps) {
           {!selectedType ? (
             <div className="flex flex-col gap-2">
               <p className="mb-2 text-sm text-muted-foreground">
-                追加するセクションの種類を選択してください
+                追加するグループの種類を選択してください
               </p>
               {sectionTypes.map((item) => (
                 <button
@@ -167,7 +167,7 @@ export function AddSectionModal({ isOpen, onClose }: AddSectionModalProps) {
                   placeholder={
                     selectedType === "routine"
                       ? "朝のスキンケア"
-                      : "セクション名"
+                      : "グループ名"
                   }
                   className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                 />
@@ -209,7 +209,7 @@ export function AddSectionModal({ isOpen, onClose }: AddSectionModalProps) {
                 className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-primary py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
               >
                 <Plus className="h-4 w-4" />
-                セクションを追加
+                グループを追加
               </button>
             </form>
           )}

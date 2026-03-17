@@ -117,14 +117,14 @@ function ProfileHeader({ username, profile }: { username: string; profile: Influ
   const personalColor = profile?.personalColor;
 
   return (
-    <header className="flex flex-col items-center gap-4 pb-6">
+    <header className="flex flex-col items-center gap-4 pb-3">
       <div className="relative">
-        <div className="h-24 w-24 overflow-hidden rounded-full border-[3px] border-green shadow-md">
+        <div className="h-20 w-20 overflow-hidden rounded-full border border-green shadow-md">
           {profile?.avatarUrl ? (
             <img src={profile.avatarUrl} alt="" className="h-full w-full object-cover" loading="eager" />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-secondary text-green">
-              <UserIcon className="h-12 w-12" />
+              <UserIcon className="h-10 w-10" />
             </div>
           )}
         </div>
@@ -176,7 +176,7 @@ function SafeImage({ src, alt, className, sizes }: { src?: string; alt: string; 
   );
 }
 
-function RoutineItem({ item, listClassName }: { item: SectionItem; listClassName: string }) {
+function RoutineItem({ item, listClassName, listImageClassName, cardColorStyle }: { item: SectionItem; listClassName: string; listImageClassName: string; cardColorStyle?: React.CSSProperties }) {
   return (
     <a
       href={item.link || "#"}
@@ -185,8 +185,9 @@ function RoutineItem({ item, listClassName }: { item: SectionItem; listClassName
       data-afl={item.link || undefined}
       data-item-id={item.id}
       className={cn("flex items-stretch gap-2", listClassName)}
+      style={cardColorStyle}
     >
-      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-secondary">
+      <div className={cn("relative", listImageClassName)}>
         {item.image && <SafeImage src={item.image} alt={item.product || ""} className="h-full w-full object-cover" sizes="48px" />}
       </div>
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 overflow-hidden">
@@ -199,7 +200,7 @@ function RoutineItem({ item, listClassName }: { item: SectionItem; listClassName
   );
 }
 
-function ProductCard({ item, productClassName }: { item: SectionItem; productClassName: string }) {
+function ProductCard({ item, productClassName, productImageClassName, cardColorStyle }: { item: SectionItem; productClassName: string; productImageClassName: string; cardColorStyle?: React.CSSProperties }) {
   return (
     <div className="group relative">
       <a
@@ -209,8 +210,9 @@ function ProductCard({ item, productClassName }: { item: SectionItem; productCla
         data-afl={item.link || undefined}
         data-item-id={item.id}
         className={cn("relative block overflow-hidden", productClassName)}
+        style={cardColorStyle}
       >
-        <div className="relative aspect-square overflow-hidden bg-secondary">
+        <div className={cn(productImageClassName)}>
           {item.image && (
             <SafeImage
               src={item.image}
@@ -239,8 +241,15 @@ function ProductCard({ item, productClassName }: { item: SectionItem; productCla
   );
 }
 
-function SectionBlock({ section, cardDesignId }: { section: Section; cardDesignId?: string }) {
-  const { listClassName, productClassName } = getCardDesign(cardDesignId);
+function cardBgStyle(cardColor: string | undefined): React.CSSProperties | undefined {
+  if (!cardColor) return undefined;
+  return { backgroundColor: cardColor };
+}
+
+function SectionBlock({ section, cardDesignId, cardColor }: { section: Section; cardDesignId?: string; cardColor?: string }) {
+  const design = getCardDesign(cardDesignId);
+  const { listClassName, productClassName, listImageClassName, productImageClassName } = design;
+  const colorStyle = cardBgStyle(cardColor);
   const showTitle = !["heading", "text"].includes(section.type);
   return (
     <section className="relative">
@@ -252,12 +261,12 @@ function SectionBlock({ section, cardDesignId }: { section: Section; cardDesignI
       <div>
         {section.type === "routine" && (
           <div className="flex flex-col gap-2">
-            {section.items.map((item) => <RoutineItem key={item.id} item={item} listClassName={listClassName} />)}
+            {section.items.map((item) => <RoutineItem key={item.id} item={item} listClassName={listClassName} listImageClassName={listImageClassName} cardColorStyle={colorStyle} />)}
           </div>
         )}
         {section.type === "products" && (
           <div className={cn("grid gap-3", section.columns === 1 ? "grid-cols-1" : "grid-cols-2")}>
-            {section.items.map((item) => <ProductCard key={item.id} item={item} productClassName={productClassName} />)}
+            {section.items.map((item) => <ProductCard key={item.id} item={item} productClassName={productClassName} productImageClassName={productImageClassName} cardColorStyle={colorStyle} />)}
           </div>
         )}
         {section.type === "heading" && (
@@ -267,7 +276,7 @@ function SectionBlock({ section, cardDesignId }: { section: Section; cardDesignI
           </div>
         )}
         {section.type === "text" && (
-          <div className={cn("p-2.5", listClassName)}>
+          <div className={cn("p-2.5", listClassName)} style={colorStyle}>
             <p className="text-sm leading-relaxed text-card-foreground">{section.title}</p>
           </div>
         )}
@@ -282,6 +291,7 @@ function SectionBlock({ section, cardDesignId }: { section: Section; cardDesignI
                 data-afl={item.link || undefined}
                 data-item-id={item.id}
                 className={cn("flex items-center justify-between p-2.5", listClassName)}
+                style={colorStyle}
               >
                 <span className="font-medium text-card-foreground">{item.label || item.product}</span>
                 <ExternalLinkIcon className="h-4 w-4 text-muted-foreground" />
@@ -330,7 +340,7 @@ export function PublicPageSSR({ username, profile, sections, themeVars }: Public
             }}
           />
         )}
-        <main className="page-transition-enter relative z-10 mx-auto flex max-w-[400px] flex-col gap-6 px-4 py-8">
+        <main className="page-transition-enter relative z-10 mx-auto flex max-w-[400px] flex-col gap-3 px-4 py-8">
           <div className="flex justify-center">
             <Logo className="h-6" height={26} />
           </div>
@@ -338,7 +348,7 @@ export function PublicPageSSR({ username, profile, sections, themeVars }: Public
           <ProfileHeader username={username} profile={profile} />
 
           {sections.map((section) => (
-            <SectionBlock key={section.id} section={section} cardDesignId={profile?.cardDesignId} />
+            <SectionBlock key={section.id} section={section} cardDesignId={profile?.cardDesignId} cardColor={profile?.cardColor} />
           ))}
 
           <footer className="flex flex-col items-center gap-2 pb-8 pt-4">

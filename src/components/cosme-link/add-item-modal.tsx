@@ -14,7 +14,6 @@ import { useSections } from "@/lib/section-context";
 import { type SectionItem, type SectionType } from "@/lib/sections";
 import { searchMockCosme } from "@/lib/mock-data";
 import { CosmeCard } from "@/components/CosmeCard";
-import { AddCommentModal } from "@/components/AddCommentModal";
 import type { CosmeItem } from "@/types";
 
 interface AddItemModalProps {
@@ -44,7 +43,6 @@ export function AddItemModal({
   const [isSearchPending, setIsSearchPending] = useState(false);
   const [searchApiError, setSearchApiError] = useState<string | null>(null);
   const [searchApiDebug, setSearchApiDebug] = useState<object | null>(null);
-  const [commentModalItem, setCommentModalItem] = useState<CosmeItem | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,7 +89,6 @@ export function AddItemModal({
     setIsSearchPending(false);
     setSearchApiError(null);
     setSearchApiDebug(null);
-    setCommentModalItem(null);
     onClose();
   };
 
@@ -160,20 +157,18 @@ export function AddItemModal({
     return () => clearTimeout(timer);
   }, [searchKeyword]);
 
-  const handleAddFromSearch = (item: CosmeItem, comment: string) => {
+  const handleAddFromSearch = (item: CosmeItem) => {
     const newItem: SectionItem = {
       id: `item-${Date.now()}`,
       product: item.name,
       image: item.imageUrl,
       link: item.rakutenUrl ?? item.amazonUrl,
-      label: comment.trim() || undefined,
     };
     if (sectionType === "routine") {
       addItemToSection(sectionId, { ...newItem });
     } else if (sectionType === "products") {
       addItemToSection(sectionId, { ...newItem, rating: 0, reviewCount: 0 });
     }
-    setCommentModalItem(null);
     handleClose();
   };
 
@@ -292,7 +287,7 @@ export function AddItemModal({
                     <CosmeCard
                       key={item.id}
                       item={item}
-                      onAdd={(i) => setCommentModalItem(i)}
+                      onAdd={(i) => handleAddFromSearch(i)}
                       isInList={false}
                       compact
                     />
@@ -412,13 +407,6 @@ export function AddItemModal({
           ) : null}
         </div>
       </div>
-      {canAddCosme && (
-        <AddCommentModal
-          item={commentModalItem}
-          onClose={() => setCommentModalItem(null)}
-          onConfirm={handleAddFromSearch}
-        />
-      )}
     </div>
   );
 }

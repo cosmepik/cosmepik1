@@ -37,7 +37,7 @@ export function PublicProfileContent({
           }}
         />
       )}
-      <main className="page-transition-enter relative z-10 mx-auto flex max-w-[400px] flex-col gap-6 px-4 py-8">
+      <main className="page-transition-enter relative z-10 mx-auto flex max-w-[400px] flex-col gap-3 px-4 py-8">
         {/* Logo */}
         <div className="flex justify-center">
           <CosmepikLogo className="h-6" height={26} />

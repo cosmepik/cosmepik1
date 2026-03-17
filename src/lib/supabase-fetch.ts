@@ -67,6 +67,7 @@ function mapProfile(d: Record<string, unknown>): InfluencerProfile {
     backgroundId: (d.background_id as string) ?? undefined,
     fontId: (d.font_id as string) ?? undefined,
     cardDesignId: (d.card_design_id as string) ?? undefined,
+    cardColor: (d.card_color as string) ?? undefined,
     bio: (d.bio as string) ?? undefined,
     bioSub: (d.bio_sub as string) ?? undefined,
     skinType: (d.skin_type as string) ?? undefined,
@@ -79,7 +80,7 @@ function mapProfile(d: Record<string, unknown>): InfluencerProfile {
 }
 
 async function fetchProfileRest(username: string): Promise<InfluencerProfile | null> {
-  const url = `${SUPABASE_URL}/rest/v1/profiles?username=eq.${encodeURIComponent(username)}&select=username,display_name,avatar_url,background_image_url,use_preset,theme_id,background_id,font_id,card_design_id,bio,bio_sub,skin_type,personal_color,sns_links,rakuten_affiliate_id,updated_at`;
+  const url = `${SUPABASE_URL}/rest/v1/profiles?username=eq.${encodeURIComponent(username)}&select=username,display_name,avatar_url,background_image_url,use_preset,theme_id,background_id,font_id,card_design_id,card_color,bio,bio_sub,skin_type,personal_color,sns_links,rakuten_affiliate_id,updated_at`;
   try {
     const res = await fetch(url, {
       headers: {

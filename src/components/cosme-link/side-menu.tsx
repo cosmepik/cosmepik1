@@ -61,9 +61,23 @@ export function SideMenu({ isOpen, onClose }: SideMenuProps) {
   const { profile } = useProfile();
   const { user } = useUser();
   const username = profile.username || "demo";
+  const [dbLabel, setDbLabel] = useState<string>("");
 
   const email = user?.email ?? "";
   const initial = email ? email.charAt(0).toUpperCase() : "?";
+
+  useEffect(() => {
+    fetch("/api/db-info")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.storage === "supabase") {
+          setDbLabel(d.projectId ? `supabase: ${d.projectId}` : "supabase");
+        } else {
+          setDbLabel("localStorage");
+        }
+      })
+      .catch(() => setDbLabel(getStorageType()));
+  }, []);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -203,7 +217,12 @@ export function SideMenu({ isOpen, onClose }: SideMenuProps) {
           <div className="flex items-center gap-2">
             <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
             <span className="text-[11px] text-muted-foreground">cosmepik v1.1</span>
-            <span className="text-[10px] text-muted-foreground/70">({getStorageType()})</span>
+            <span
+              className="max-w-[140px] truncate text-[10px] text-muted-foreground/70"
+              title={dbLabel || "(取得中…)"}
+            >
+              ({dbLabel || "…"})
+            </span>
           </div>
           <p className="mt-1 text-[10px] text-muted-foreground/60">
             &copy; 2026 cosmepik. All rights reserved.

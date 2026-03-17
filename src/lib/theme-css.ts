@@ -11,7 +11,7 @@ const CUSTOM_COLOR_PREFIX = "custom-";
 const CUSTOM_GRADIENT_PREFIX = "custom-gradient-";
 const DEFAULT_THEME_ID: ThemeId = "mint-sparkle";
 const DEFAULT_BACKGROUND_ID = "gradient-mermaid";
-const DEFAULT_FONT_ID: FontId = "sans";
+const DEFAULT_FONT_ID: FontId = "noto-sans";
 
 function resolveThemeId(profile: InfluencerProfile): ThemeId {
   if (profile.themeId && themes.some((t) => t.id === profile.themeId)) {
