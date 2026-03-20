@@ -1,26 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
-import { redirect } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { CosmepikLogo } from "@/components/cosmepik-logo";
-import { createClient } from "@/lib/supabase/server";
 import { HeroSlideshow } from "@/components/landing/HeroSlideshow";
 import { HeroLinkInput } from "@/components/landing/HeroLinkInput";
 import { LandingHeaderActions } from "@/components/landing/LandingHeaderActions";
 
-/**
- * トップページ (LP) - cosmepik ランディングページ
- * ログイン済み: ダッシュボードへリダイレクト
- * 未ログイン: サービス概要・サインイン・サインアップ誘導
- */
-export default async function LandingPage() {
-  const supabase = await createClient();
-  if (supabase) {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      redirect("/dashboard");
-    }
-  }
+export default function LandingPage() {
   const gradientBg = "linear-gradient(160deg, #9de0d8 0%, #b8eae4 30%, #cff2ee 60%, #e0f7f5 100%)";
 
   return (
@@ -222,7 +208,7 @@ export default async function LandingPage() {
                     fill
                     sizes="(max-width: 768px) 100vw, 50vw"
                     className="object-cover object-center"
-                    priority={false}
+                    priority
                   />
                 </div>
               </div>
