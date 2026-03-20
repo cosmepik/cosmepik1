@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 
-/**
- * LINE OAuth 認証を開始する。
- * CSRF 対策用の state をクッキーに保存し、LINE の認証画面へリダイレクトする。
- */
+function getOrigin(request: NextRequest) {
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || request.nextUrl.host;
+  const proto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() || "https";
+  return `${proto}://${host}`;
+}
+
 export async function GET(request: NextRequest) {
   const channelId = process.env.LINE_CHANNEL_ID;
   if (!channelId) {
@@ -14,19 +15,8 @@ export async function GET(request: NextRequest) {
   }
 
   const state = crypto.randomUUID();
-  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || request.nextUrl.host;
-  const proto = request.headers.get("x-forwarded-proto") || (request.nextUrl.protocol === "https:" ? "https" : "http");
-  const origin = `${proto}://${host}`;
+  const origin = getOrigin(request);
   const redirectUri = `${origin}/api/auth/line/callback`;
-
-  const cookieStore = await cookies();
-  cookieStore.set("line_oauth_state", state, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 600,
-    path: "/",
-  });
 
   const lineAuthUrl = new URL(
     "https://access.line.me/oauth2/v2.1/authorize",
@@ -37,5 +27,13 @@ export async function GET(request: NextRequest) {
   lineAuthUrl.searchParams.set("state", state);
   lineAuthUrl.searchParams.set("scope", "profile openid email");
 
-  return NextResponse.redirect(lineAuthUrl.toString());
+  const response = NextResponse.redirect(lineAuthUrl.toString());
+  response.cookies.set("line_oauth_state", state, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    maxAge: 600,
+    path: "/",
+  });
+  return response;
 }
