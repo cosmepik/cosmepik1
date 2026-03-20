@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { verifySignedState } from "../route";
 
 function getOrigin(request: NextRequest) {
   const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || request.nextUrl.host;
@@ -14,17 +15,16 @@ export async function GET(request: NextRequest) {
   const lineError = searchParams.get("error");
   const origin = getOrigin(request);
 
-  const loginError = (reason: string) => {
-    const res = NextResponse.redirect(`${origin}/login?error=${reason}`);
-    res.cookies.delete("line_oauth_state");
-    return res;
-  };
+  const loginError = (reason: string) =>
+    NextResponse.redirect(`${origin}/login?error=${reason}`);
 
   if (lineError || !code) return loginError("line_auth_denied");
 
-  /* ── CSRF state 検証 ── */
-  const storedState = request.cookies.get("line_oauth_state")?.value;
-  if (!storedState || storedState !== state) return loginError("line_state_mismatch");
+  /* ── CSRF state 検証（署名ベース、cookie不要） ── */
+  const channelSecret = process.env.LINE_CHANNEL_SECRET;
+  if (!state || !channelSecret || !verifySignedState(state, channelSecret)) {
+    return loginError("line_state_mismatch");
+  }
 
   /* ── LINE トークン取得 ── */
   const redirectUri = `${origin}/api/auth/line/callback`;
@@ -119,7 +119,5 @@ export async function GET(request: NextRequest) {
   callbackUrl.searchParams.set("token_hash", tokenHash);
   callbackUrl.searchParams.set("type", "magiclink");
   callbackUrl.searchParams.set("next", "/dashboard");
-  const successResponse = NextResponse.redirect(callbackUrl.toString());
-  successResponse.cookies.delete("line_oauth_state");
-  return successResponse;
+  return NextResponse.redirect(callbackUrl.toString());
 }
