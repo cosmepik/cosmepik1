@@ -1,30 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-/**
- * LINE OAuth コールバック。
- * 認証コードを LINE トークンに交換し、Supabase にユーザーを作成/取得して
- * マジックリンクでセッションを確立する。
- */
+function getOrigin(request: NextRequest) {
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || request.nextUrl.host;
+  const proto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() || "https";
+  return `${proto}://${host}`;
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const state = searchParams.get("state");
   const lineError = searchParams.get("error");
-  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || request.nextUrl.host;
-  const proto = request.headers.get("x-forwarded-proto") || (request.nextUrl.protocol === "https:" ? "https" : "http");
-  const origin = `${proto}://${host}`;
+  const origin = getOrigin(request);
 
-  const loginError = (reason: string) =>
-    NextResponse.redirect(`${origin}/login?error=${reason}`);
+  const loginError = (reason: string) => {
+    const res = NextResponse.redirect(`${origin}/login?error=${reason}`);
+    res.cookies.delete("line_oauth_state");
+    return res;
+  };
 
   if (lineError || !code) return loginError("line_auth_denied");
 
   /* ── CSRF state 検証 ── */
-  const cookieStore = await cookies();
-  const storedState = cookieStore.get("line_oauth_state")?.value;
-  cookieStore.delete("line_oauth_state");
+  const storedState = request.cookies.get("line_oauth_state")?.value;
   if (!storedState || storedState !== state) return loginError("line_state_mismatch");
 
   /* ── LINE トークン取得 ── */
@@ -120,5 +119,7 @@ export async function GET(request: NextRequest) {
   callbackUrl.searchParams.set("token_hash", tokenHash);
   callbackUrl.searchParams.set("type", "magiclink");
   callbackUrl.searchParams.set("next", "/dashboard");
-  return NextResponse.redirect(callbackUrl.toString());
+  const successResponse = NextResponse.redirect(callbackUrl.toString());
+  successResponse.cookies.delete("line_oauth_state");
+  return successResponse;
 }
