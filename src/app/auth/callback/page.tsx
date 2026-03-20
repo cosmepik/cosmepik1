@@ -28,6 +28,19 @@ function AuthCallbackContent() {
     let sub: { unsubscribe: () => void } | null = null;
 
     const run = async () => {
+      // Supabase がエラー付きでリダイレクトしてきた場合
+      const authError = searchParams.get("error_description") || searchParams.get("error");
+      if (authError) {
+        setStatus("error");
+        const desc = decodeURIComponent(authError.replace(/\+/g, " "));
+        if (desc.includes("expired")) {
+          setMessage("メールリンクの有効期限が切れています。もう一度登録またはログインしてください。");
+        } else {
+          setMessage(desc || "認証に失敗しました");
+        }
+        return;
+      }
+
       // LINE ログイン: token_hash を手動で検証
       if (token_hash && type) {
         const { error } = await supabase.auth.verifyOtp({
@@ -63,7 +76,7 @@ function AuthCallbackContent() {
         subscription.unsubscribe();
         setStatus("error");
         setMessage("ログインに失敗しました。もう一度お試しください。");
-      }, 10000);
+      }, 15000);
     };
 
     run();
