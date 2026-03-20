@@ -4,6 +4,7 @@ import { ThemeWrapper } from "@/components/ThemeWrapper";
 import { LayoutBackground } from "@/components/LayoutBackground";
 import { LazyFonts } from "@/components/LazyFonts";
 import { Toaster } from "sonner";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { isProduction } from "@/lib/env";
 import "./globals.css";
 
@@ -35,6 +36,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja" className={`${notoSans.variable} light`} style={{ colorScheme: "light" }} suppressHydrationWarning>
+      <head>
+        <GoogleAnalytics />
+      </head>
       <body className="min-h-screen bg-white antialiased">
         <LazyFonts />
         <LayoutBackground>

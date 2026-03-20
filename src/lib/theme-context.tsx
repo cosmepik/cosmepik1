@@ -8,10 +8,26 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
+import { usePathname } from "next/navigation";
 import { themes, themeVariables, type ThemeId } from "@/lib/themes";
 import { backgrounds } from "@/lib/backgrounds";
 import { getFontFamily, isValidFontId, type FontId } from "@/lib/fonts";
 import { cardDesigns, getCardDesign, type CardDesignId } from "@/lib/card-designs";
+
+function isPublicProfilePage(pathname: string | null): boolean {
+  if (!pathname) return false;
+  if (pathname.startsWith("/p/")) return true;
+  if (
+    /^\/[^/]+$/.test(pathname) &&
+    !["/", "/login", "/register", "/contact", "/faq", "/privacy", "/price", "/guide", "/demo", "/tokushoho"].includes(pathname) &&
+    !pathname.startsWith("/dashboard") &&
+    !pathname.startsWith("/influencer") &&
+    !pathname.startsWith("/auth")
+  ) {
+    return true;
+  }
+  return false;
+}
 
 const THEME_STORAGE_KEY = "cosmepik-theme";
 const BACKGROUND_STORAGE_KEY = "cosmepik-background";
@@ -137,6 +153,7 @@ export function applyTextColor(color: string) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const [themeId, setThemeIdState] = useState<ThemeId>(DEFAULT_THEME_ID);
   const [backgroundId, setBackgroundIdState] = useState<string>(DEFAULT_BACKGROUND_ID);
   const [fontId, setFontIdState] = useState<FontId>(DEFAULT_FONT_ID);
@@ -145,6 +162,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [cardColor, setCardColorState] = useState<string>("");
 
   useEffect(() => {
+    // 公開プロフィールページでは SSR の inline style が正しいテーマを提供するため
+    // localStorage からの上書きをスキップ
+    if (isPublicProfilePage(pathname)) return;
+
     try {
       const storedTheme = localStorage.getItem(THEME_STORAGE_KEY) as ThemeId | null;
       if (storedTheme && themes.some((t) => t.id === storedTheme)) {
@@ -196,7 +217,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       applyBackground(DEFAULT_BACKGROUND_ID);
       applyFont(DEFAULT_FONT_ID);
     }
-  }, []);
+  }, [pathname]);
 
   const setThemeId = useCallback((id: ThemeId) => {
     setThemeIdState(id);

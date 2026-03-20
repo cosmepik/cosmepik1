@@ -150,6 +150,16 @@ export default function RegisterPage() {
           </div>
           <button
             type="button"
+            onClick={() => { window.location.href = "/api/auth/line"; }}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+            style={{ backgroundColor: "#06C755" }}
+          >
+            <img src="/line-icon.png" alt="" className="h-6 w-6 shrink-0 object-contain align-middle" aria-hidden />
+            LINEで登録
+          </button>
+          <button
+            type="button"
             onClick={() => handleOAuth("google")}
             disabled={loading}
             className="w-full flex items-center justify-center gap-2 rounded-lg border border-border bg-white py-3 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"

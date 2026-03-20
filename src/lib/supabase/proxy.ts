@@ -33,9 +33,15 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getUser();
   const hasDemoCookie = request.cookies.get("cosmepik_demo")?.value === "1";
 
+  // LIFF 経由のアクセスはクライアント側で自動ログインするため許可
+  const isLiffAccess =
+    request.headers.get("user-agent")?.includes("Line/") ||
+    request.nextUrl.searchParams.has("liff.state");
+
   if (
     !data.user &&
     !hasDemoCookie &&
+    !isLiffAccess &&
     isProtectedRoute(request.nextUrl.pathname)
   ) {
     const loginUrl = request.nextUrl.clone();

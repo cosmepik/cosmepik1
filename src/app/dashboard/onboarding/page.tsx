@@ -14,6 +14,7 @@ export default function OnboardingPage() {
   const [slugWarning, setSlugWarning] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -181,13 +182,25 @@ export default function OnboardingPage() {
               )}
             </div>
 
+            <label className="flex items-start gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={(e) => setAgreed(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-input accent-primary"
+              />
+              <span className="text-xs leading-relaxed text-muted-foreground">
+                <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline underline-offset-2 hover:opacity-80">利用規約</a>を確認し、同意します
+              </span>
+            </label>
+
             {error && (
               <p className="text-sm text-destructive">{error}</p>
             )}
 
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || !agreed}
               className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:opacity-90 disabled:opacity-50"
             >
               {submitting ? "作成中..." : "はじめる"}
