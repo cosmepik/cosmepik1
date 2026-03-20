@@ -12,7 +12,9 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const state = searchParams.get("state");
   const lineError = searchParams.get("error");
-  const origin = request.nextUrl.origin;
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || request.nextUrl.host;
+  const proto = request.headers.get("x-forwarded-proto") || (request.nextUrl.protocol === "https:" ? "https" : "http");
+  const origin = `${proto}://${host}`;
 
   const loginError = (reason: string) =>
     NextResponse.redirect(`${origin}/login?error=${reason}`);

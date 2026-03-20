@@ -14,7 +14,9 @@ export async function GET(request: NextRequest) {
   }
 
   const state = crypto.randomUUID();
-  const origin = request.nextUrl.origin;
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || request.nextUrl.host;
+  const proto = request.headers.get("x-forwarded-proto") || (request.nextUrl.protocol === "https:" ? "https" : "http");
+  const origin = `${proto}://${host}`;
   const redirectUri = `${origin}/api/auth/line/callback`;
 
   const cookieStore = await cookies();
