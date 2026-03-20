@@ -14,7 +14,6 @@ function AuthCallbackContent() {
   const [message, setMessage] = useState("ログイン処理中...");
 
   useEffect(() => {
-    const code = searchParams.get("code");
     const token_hash = searchParams.get("token_hash");
     const type = searchParams.get("type");
     const next = searchParams.get("next") ?? "/dashboard";
@@ -26,14 +25,11 @@ function AuthCallbackContent() {
       return;
     }
 
+    let sub: { unsubscribe: () => void } | null = null;
+
     const run = async () => {
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (!error) {
-          router.replace(next);
-          return;
-        }
-      } else if (token_hash && type) {
+      // LINE ログイン: token_hash を手動で検証
+      if (token_hash && type) {
         const { error } = await supabase.auth.verifyOtp({
           token_hash,
           type: type as "signup" | "invite" | "magiclink" | "recovery" | "email_change" | "email",
@@ -42,16 +38,37 @@ function AuthCallbackContent() {
           router.replace(next);
           return;
         }
-      } else {
         setStatus("error");
-        setMessage("認証情報がありません");
+        setMessage(error.message || "ログインに失敗しました");
         return;
       }
-      setStatus("error");
-      setMessage("ログインに失敗しました");
+
+      // Google / X / メール認証: createBrowserClient の detectSessionInUrl が
+      // 自動的にコード交換するので、セッション確立を待つだけでOK
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        router.replace(next);
+        return;
+      }
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (session) {
+          subscription.unsubscribe();
+          router.replace(next);
+        }
+      });
+      sub = subscription;
+
+      setTimeout(() => {
+        subscription.unsubscribe();
+        setStatus("error");
+        setMessage("ログインに失敗しました。もう一度お試しください。");
+      }, 10000);
     };
 
     run();
+
+    return () => { sub?.unsubscribe(); };
   }, [searchParams, router]);
 
   return (
