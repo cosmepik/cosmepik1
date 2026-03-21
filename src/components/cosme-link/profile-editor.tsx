@@ -52,39 +52,67 @@ const snsTypeOptions = [
     type: "instagram" as const,
     label: "Instagram",
     icon: Instagram,
-    placeholder: "https://instagram.com/username",
+    placeholder: "ユーザーネーム or URL",
+    baseUrl: "https://instagram.com/",
   },
   {
     type: "twitter" as const,
     label: "X",
     icon: XIcon,
-    placeholder: "https://x.com/username",
+    placeholder: "ユーザーネーム or URL",
+    baseUrl: "https://x.com/",
   },
   {
     type: "youtube" as const,
     label: "YouTube",
     icon: Youtube,
-    placeholder: "https://youtube.com/@channel",
+    placeholder: "@チャンネル名 or URL",
+    baseUrl: "https://youtube.com/",
   },
   {
     type: "tiktok" as const,
     label: "TikTok",
     icon: LinkIcon,
-    placeholder: "https://tiktok.com/@username",
+    placeholder: "ユーザーネーム or URL",
+    baseUrl: "https://tiktok.com/@",
   },
   {
     type: "threads" as const,
     label: "Threads",
     icon: LinkIcon,
-    placeholder: "https://threads.net/@username",
+    placeholder: "ユーザーネーム or URL",
+    baseUrl: "https://threads.net/@",
   },
   {
     type: "custom" as const,
     label: "その他",
     icon: LinkIcon,
     placeholder: "https://example.com",
+    baseUrl: "",
   },
 ];
+
+function resolveSnUrl(type: string, input: string): string {
+  const trimmed = input.trim();
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+
+  const username = trimmed.replace(/^@/, "");
+  switch (type) {
+    case "instagram":
+      return `https://instagram.com/${username}`;
+    case "twitter":
+      return `https://x.com/${username}`;
+    case "youtube":
+      return `https://youtube.com/@${username.replace(/^@/, "")}`;
+    case "tiktok":
+      return `https://tiktok.com/@${username}`;
+    case "threads":
+      return `https://threads.net/@${username}`;
+    default:
+      return trimmed;
+  }
+}
 
 function getSnsIcon(type: SnsLink["type"]) {
   switch (type) {
@@ -167,11 +195,12 @@ export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
   const handleAddSns = () => {
     if (!newSnsUrl.trim()) return;
     const option = snsTypeOptions.find((o) => o.type === newSnsType);
+    const resolvedUrl = resolveSnUrl(newSnsType, newSnsUrl);
     addSnsLink({
       id: `sns-${Date.now()}`,
       type: newSnsType,
       label: newSnsLabel.trim() || option?.label || "Link",
-      url: newSnsUrl.trim(),
+      url: resolvedUrl,
     });
     setNewSnsUrl("");
     setNewSnsLabel("");
@@ -186,9 +215,9 @@ export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
         className="absolute inset-0 bg-foreground/20 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-md animate-in slide-in-from-bottom duration-300 rounded-t-3xl bg-card shadow-xl max-h-[90dvh] flex flex-col">
+      <div className="relative z-10 w-full max-w-md animate-in slide-in-from-bottom duration-300 rounded-t-3xl bg-card shadow-xl max-h-[92dvh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-border shrink-0">
+        <div className="flex items-center justify-between px-5 pt-4 pb-2.5 border-b border-border shrink-0">
           <h3 className="text-base font-bold text-card-foreground">
             プロフィール編集
           </h3>
@@ -210,7 +239,7 @@ export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-5">
+        <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
           {/* Basic info */}
           <div className="flex flex-col gap-3">
             <h4 className="text-sm font-bold text-card-foreground">基本情報</h4>
@@ -479,11 +508,11 @@ export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
                 )}
 
                 <input
-                  type="url"
-                  inputMode="url"
+                  type="text"
                   enterKeyHint="done"
                   value={newSnsUrl}
                   onChange={(e) => setNewSnsUrl(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddSns(); } }}
                   placeholder={
                     snsTypeOptions.find((o) => o.type === newSnsType)
                       ?.placeholder

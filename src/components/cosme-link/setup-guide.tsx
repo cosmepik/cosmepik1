@@ -51,8 +51,7 @@ export function SetupGuide() {
   const allDone = completedCount === steps.length;
 
   useEffect(() => {
-    if (ready && allDone && !dismissed && !showCompletePopup) {
-      setShowCompletePopup(true);
+    if (ready && allDone && !dismissed) {
       setDismissed(true);
       localStorage.setItem(DISMISSED_KEY, "true");
     }

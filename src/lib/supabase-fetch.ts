@@ -33,7 +33,7 @@ export async function fetchPublicPageData(username: string): Promise<PublicPageD
         Accept: "application/json",
       },
       body: JSON.stringify({ p_username: username }),
-      next: { revalidate: 60 },
+      next: { revalidate: 10 },
     });
 
     if (res.ok) {
@@ -68,6 +68,7 @@ function mapProfile(d: Record<string, unknown>): InfluencerProfile {
     fontId: (d.font_id as string) ?? undefined,
     cardDesignId: (d.card_design_id as string) ?? undefined,
     cardColor: (d.card_color as string) ?? undefined,
+    textColor: (d.text_color as string) ?? undefined,
     bio: (d.bio as string) ?? undefined,
     bioSub: (d.bio_sub as string) ?? undefined,
     skinType: (d.skin_type as string) ?? undefined,
@@ -88,7 +89,7 @@ async function fetchProfileRest(username: string): Promise<InfluencerProfile | n
         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
         Accept: "application/vnd.pgrst.object+json",
       },
-      next: { revalidate: 60 },
+      next: { revalidate: 10 },
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -107,7 +108,7 @@ async function fetchSectionsRest(username: string): Promise<Section[]> {
         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
         Accept: "application/json",
       },
-      next: { revalidate: 60 },
+      next: { revalidate: 10 },
     });
     if (!res.ok) return [];
     const rows = await res.json();

@@ -1080,11 +1080,10 @@ export function StylePicker() {
             role="dialog"
             aria-modal="true"
             aria-label="スタイル設定"
-            className="relative z-10 flex max-h-[85dvh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-card shadow-xl animate-in slide-in-from-bottom duration-300"
+            className="relative z-10 flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-card shadow-xl animate-in slide-in-from-bottom duration-300"
           >
             <div
-              className="flex shrink-0 items-center justify-between border-b border-border px-5 pb-3 pt-5"
-              style={{ paddingTop: "max(env(safe-area-inset-top, 0px), 2.75rem)" }}
+              className="flex shrink-0 items-center justify-between border-b border-border px-5 pb-2.5 pt-4"
             >
               <h3 className="text-base font-bold text-card-foreground">スタイル設定</h3>
               <button
@@ -1247,7 +1246,7 @@ export function StylePicker() {
                         username: slug,
                         textColor: color,
                         updatedAt: new Date().toISOString(),
-                      } as Parameters<typeof setProfile>[0]).catch(() => {});
+                      }).catch(() => {});
                     }}
                   />
                   <div>

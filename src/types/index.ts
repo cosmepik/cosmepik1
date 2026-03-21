@@ -50,6 +50,8 @@ export interface InfluencerProfile {
   cardDesignId?: string;
   /** カードカラー（空＝デフォルト、"transparent"＝透明、hex＝カスタム色） */
   cardColor?: string;
+  /** テキストカラー（空＝テーマデフォルト、hex＝カスタム色） */
+  textColor?: string;
   bio?: string;
   /** サブテキスト（ひとこと） */
   bioSub?: string;

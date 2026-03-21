@@ -196,7 +196,7 @@ export function AddItemModal({
         aria-hidden="true"
       />
       <div className="relative z-10 flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-card shadow-xl animate-in slide-in-from-bottom duration-300">
-        <div className="flex shrink-0 items-center justify-between border-b border-border px-5 pb-3 pt-5">
+        <div className="flex shrink-0 items-center justify-between border-b border-border px-5 pb-2.5 pt-4">
           <h3 className="text-base font-bold text-card-foreground">
             {getTitle()}
           </h3>
@@ -259,6 +259,8 @@ export function AddItemModal({
                   type="search"
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
+                  enterKeyHint="search"
                   placeholder="ファンデーション、SHISEIDO など"
                   className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                 />

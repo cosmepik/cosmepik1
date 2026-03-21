@@ -4,7 +4,7 @@ import { PublicPageSSR } from "@/components/public/PublicPageSSR";
 import { AffiliateClickHandler } from "@/components/public/AffiliateClickHandler";
 import { AnalyticsBeacon } from "@/components/public/AnalyticsBeacon";
 
-export const revalidate = 60;
+export const revalidate = 10;
 
 type Props = { params: Promise<{ username: string }> };
 
