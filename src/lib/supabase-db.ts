@@ -162,6 +162,7 @@ export async function fetchProfileLight(
     fontId: data.font_id as string | undefined,
     cardDesignId: data.card_design_id as string | undefined,
     cardColor: data.card_color as string | undefined,
+    textColor: data.text_color as string | undefined,
     bio: data.bio as string | undefined,
     bioSub: data.bio_sub as string | undefined,
     skinType: data.skin_type as string | undefined,
@@ -199,6 +200,7 @@ export async function fetchProfile(
     fontId: data.font_id as string | undefined,
     cardDesignId: data.card_design_id as string | undefined,
     cardColor: data.card_color as string | undefined,
+    textColor: data.text_color as string | undefined,
     bio: data.bio as string | undefined,
     bioSub: data.bio_sub as string | undefined,
     skinType: data.skin_type as string | undefined,
@@ -225,6 +227,7 @@ async function updateProfileStyle(
   if (profile.fontId !== undefined) updates.font_id = profile.fontId;
   if (profile.cardDesignId !== undefined) updates.card_design_id = profile.cardDesignId;
   if (profile.cardColor !== undefined) updates.card_color = profile.cardColor;
+  if (profile.textColor !== undefined) updates.text_color = profile.textColor;
 
   if (Object.keys(updates).length <= 1) return false;
 
@@ -286,7 +289,8 @@ async function saveProfileInner(
     profile.themeId !== undefined ||
     profile.fontId !== undefined ||
     profile.cardDesignId !== undefined ||
-    profile.cardColor !== undefined;
+    profile.cardColor !== undefined ||
+    profile.textColor !== undefined;
   const hasOtherFields =
     profile.displayName !== undefined ||
     profile.avatarUrl !== undefined ||
@@ -315,6 +319,7 @@ async function saveProfileInner(
     font_id: profile.fontId ?? existing?.fontId ?? null,
     card_design_id: profile.cardDesignId ?? existing?.cardDesignId ?? null,
     card_color: profile.cardColor ?? existing?.cardColor ?? null,
+    text_color: profile.textColor ?? existing?.textColor ?? null,
     bio: profile.bio ?? existing?.bio ?? null,
     bio_sub: profile.bioSub ?? existing?.bioSub ?? null,
     skin_type: profile.skinType ?? existing?.skinType ?? null,

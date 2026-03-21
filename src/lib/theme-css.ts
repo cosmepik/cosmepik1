@@ -92,6 +92,11 @@ export function generateThemeVars(profile: InfluencerProfile | null): Record<str
   const fontId = resolveFontId(profile);
   vars["--font-body"] = getFontFamily(fontId);
 
+  if (profile.textColor) {
+    vars["--foreground"] = profile.textColor;
+    vars["--card-foreground"] = profile.textColor;
+  }
+
   return vars;
 }
 

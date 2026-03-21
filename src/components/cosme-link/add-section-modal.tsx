@@ -99,8 +99,8 @@ export function AddSectionModal({ isOpen, onClose }: AddSectionModalProps) {
         onClick={handleClose}
         aria-hidden="true"
       />
-      <div className="relative z-10 flex max-h-[85dvh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-card shadow-xl animate-in slide-in-from-bottom duration-300">
-        <div className="flex shrink-0 items-center justify-between border-b border-border px-5 pb-3 pt-5">
+      <div className="relative z-10 flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-card shadow-xl animate-in slide-in-from-bottom duration-300">
+        <div className="flex shrink-0 items-center justify-between border-b border-border px-5 pb-2.5 pt-4">
           <h3 className="text-base font-bold text-card-foreground">
             グループを追加
           </h3>

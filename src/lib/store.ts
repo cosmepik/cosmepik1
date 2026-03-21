@@ -153,7 +153,7 @@ export async function setProfile(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: profile.username }),
-    }).catch(() => {});
+    }).catch((e) => console.warn("[revalidate] failed:", e));
   } catch (err) {
     console.error("[setProfile] DB保存失敗:", err);
     throw err;
@@ -247,5 +247,5 @@ export async function setSections(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username: s }),
-  }).catch(() => {});
+  }).catch((e) => console.warn("[revalidate] failed:", e));
 }

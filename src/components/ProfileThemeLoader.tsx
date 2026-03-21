@@ -28,7 +28,7 @@ function isValidBg(id: string | undefined): boolean {
  */
 export function ProfileThemeLoader({ slug }: { slug: string }) {
   const pathname = usePathname();
-  const { themeId, backgroundId, fontId, cardDesignId, setThemeId, setBackgroundId, setFontId, setCardDesignId, setCardColor } = useTheme();
+  const { themeId, backgroundId, fontId, cardDesignId, textColor, setThemeId, setBackgroundId, setFontId, setCardDesignId, setCardColor, setTextColor } = useTheme();
 
   const isEditPage = pathname?.startsWith("/dashboard/edit/");
 
@@ -53,6 +53,9 @@ export function ProfileThemeLoader({ slug }: { slug: string }) {
       if (p.cardColor !== undefined) {
         setCardColor(p.cardColor ?? "");
       }
+      if (p.textColor !== undefined) {
+        setTextColor(p.textColor ?? "");
+      }
 
       // DB に欠損しているスタイル設定を localStorage（ThemeContext）から復元
       const patch: Record<string, unknown> = {};
@@ -67,6 +70,9 @@ export function ProfileThemeLoader({ slug }: { slug: string }) {
       }
       if (!p.cardDesignId && cardDesignId && cardDesignId !== "default" && cardDesigns.some((c) => c.id === cardDesignId)) {
         patch.cardDesignId = cardDesignId;
+      }
+      if (!p.textColor && textColor) {
+        patch.textColor = textColor;
       }
 
       if (Object.keys(patch).length > 0) {
