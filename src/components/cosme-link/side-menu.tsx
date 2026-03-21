@@ -40,7 +40,7 @@ const menuItems = (
     icon: Settings,
     label: "アカウント設定",
     href: "/dashboard/settings",
-    description: "プロフィール・通知設定",
+    description: "アカウント各種設定",
   },
   {
     icon: Crown,

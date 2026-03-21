@@ -228,17 +228,50 @@ async function updateProfileStyle(
 
   if (Object.keys(updates).length <= 1) return false;
 
-  const { data, error } = await client
-    .from("profiles")
-    .update(updates)
-    .eq("username", username)
-    .select("username");
+  let current = { ...updates };
+  const optionalKeys = ["card_color", "text_color"];
+  for (let i = 0; i <= optionalKeys.length; i++) {
+    const { data, error } = await client
+      .from("profiles")
+      .update(current)
+      .eq("username", username)
+      .select("username");
 
-  return !error && (data?.length ?? 0) > 0;
+    if (!error) return (data?.length ?? 0) > 0;
+
+    const msg = error.message ?? "";
+    if (!msg.includes("column") && error.code !== "42703") return false;
+
+    const colMatch = msg.match(/column\s+\w+\.(\w+)/);
+    const colToRemove = colMatch?.[1] ?? optionalKeys[i];
+    if (colToRemove) delete current[colToRemove];
+    if (Object.keys(current).length <= 1) return false;
+  }
+  return false;
+}
+
+/** リトライ付きで非同期関数を実行 */
+async function withRetry<T>(fn: () => Promise<T>, retries = 2, delayMs = 500): Promise<T> {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      const isLockError = err instanceof Error && err.message.includes("LockManager");
+      if (i === retries || !isLockError) throw err;
+      await new Promise((r) => setTimeout(r, delayMs * (i + 1)));
+    }
+  }
+  throw new Error("unreachable");
 }
 
 /** プロフィール保存（認証ユーザー紐付け前提。現状は username で一意） */
 export async function saveProfile(
+  profile: Partial<InfluencerProfile> & { username: string }
+): Promise<void> {
+  return withRetry(() => saveProfileInner(profile));
+}
+
+async function saveProfileInner(
   profile: Partial<InfluencerProfile> & { username: string }
 ): Promise<void> {
   const client = getClient();
@@ -291,23 +324,28 @@ export async function saveProfile(
     updated_at: new Date().toISOString(),
   };
 
-  let result = await client
-    .from("profiles")
-    .upsert(rowWithUsePreset, { onConflict: "username" });
+  let row: Record<string, unknown> = { ...rowWithUsePreset };
 
-  if (result.error) {
+  // 存在しないカラムを段階的に除外してリトライ
+  const optionalCols = ["card_color", "text_color"];
+  for (let attempt = 0; attempt <= optionalCols.length; attempt++) {
+    const result = await client
+      .from("profiles")
+      .upsert(row, { onConflict: "username" });
+
+    if (!result.error) return;
+
     const msg = result.error.message ?? "";
-    if (msg.includes("column") || result.error.code === "42703") {
-      const { use_preset: _, theme_id: __, background_id: ___, font_id: ____, card_design_id: _____, card_color: ______, ...rowMinimal } = rowWithUsePreset;
-      result = await client
-        .from("profiles")
-        .upsert(rowMinimal, { onConflict: "username" });
+    const isColumnError = msg.includes("column") || result.error.code === "42703";
+    if (!isColumnError || attempt === optionalCols.length) {
+      console.error("[saveProfile] Supabase error:", result.error.message, result.error.code);
+      throw new Error(`プロフィール保存に失敗しました: ${result.error.message}`);
     }
-  }
 
-  if (result.error) {
-    console.error("[saveProfile] Supabase error:", result.error.message, result.error.code);
-    throw new Error(`プロフィール保存に失敗しました: ${result.error.message}`);
+    // エラーメッセージからカラム名を抽出して除外、できなければ順番に除外
+    const colMatch = msg.match(/column\s+\w+\.(\w+)/);
+    const colToRemove = colMatch?.[1] ?? optionalCols[attempt];
+    delete row[colToRemove];
   }
 }
 

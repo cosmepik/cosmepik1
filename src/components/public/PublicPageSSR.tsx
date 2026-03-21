@@ -150,12 +150,12 @@ function ProfileHeader({ username, profile }: { username: string; profile: Influ
           {profile!.snsLinks!.map((link) => {
             const Icon = getSnsIcon(link.type);
             return (
-              <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" aria-label={link.label} className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-green hover:text-white">
+              <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" aria-label={link.label} className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-green hover:text-white active:scale-95">
                 <Icon className="h-4 w-4" />
               </a>
             );
           })}
-          <button aria-label="シェア" className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-green hover:text-white">
+          <button aria-label="シェア" className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-green hover:text-white active:scale-95">
             <Share2Icon className="h-4 w-4" />
           </button>
         </div>
@@ -323,7 +323,6 @@ export function PublicPageSSR({ username, profile, sections, themeVars }: Public
     backgroundImage: "var(--page-bg-image, none)",
     backgroundSize: "cover",
     backgroundPosition: "center",
-    backgroundAttachment: "fixed",
   };
 
   return (

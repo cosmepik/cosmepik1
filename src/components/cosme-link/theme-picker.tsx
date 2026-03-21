@@ -83,7 +83,7 @@ export function ThemePicker() {
             role="dialog"
             aria-modal="true"
             aria-label="テーマを選択"
-            className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-2xl border-t border-border bg-background/95 shadow-xl backdrop-blur-md"
+            className="fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] overflow-y-auto rounded-t-2xl border-t border-border bg-background/95 shadow-xl backdrop-blur-md"
           >
             <div className="sticky top-0 flex items-center justify-between border-b border-border bg-background/95 px-4 py-4 backdrop-blur-md">
               <h2 className="text-lg font-semibold text-foreground">テーマカラー</h2>

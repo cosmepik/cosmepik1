@@ -32,7 +32,6 @@ export function LayoutBackground({ children }: { children: React.ReactNode }) {
               backgroundImage: "var(--page-bg-image, none)",
               backgroundSize: "cover",
               backgroundPosition: "center",
-              backgroundAttachment: "fixed",
             }
           : {
               backgroundColor: "var(--background)",

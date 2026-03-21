@@ -105,11 +105,28 @@ body {
   animation: page-enter 0.3s ease-out both;
 }
 
+/* 300ms タップ遅延を排除（ダブルタップズームを無効化） */
+html {
+  touch-action: manipulation;
+}
+
+/* iOS Safari: テキスト選択時のカラーハイライト */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* iOS Safari: 16px未満のinputフォーカス時にズームするのを防ぐ */
 input,
 select,
 textarea {
   font-size: 16px !important;
+}
+
+/* デスクトップのみ背景を固定（モバイルは scroll のまま = iOS Safari のパフォーマンス改善） */
+@media (hover: hover) and (pointer: fine) {
+  .min-h-screen[style*="--page-bg"] {
+    background-attachment: fixed;
+  }
 }
 
 /* スクロールバー非表示（横スクロール用） */

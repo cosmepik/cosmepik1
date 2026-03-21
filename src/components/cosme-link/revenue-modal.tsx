@@ -57,7 +57,7 @@ export function RevenueModal({ isOpen, onClose }: RevenueModalProps) {
         className="absolute inset-0 bg-foreground/20 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-md animate-in slide-in-from-bottom duration-300 rounded-t-3xl bg-card shadow-xl max-h-[90vh] flex flex-col">
+      <div className="relative z-10 w-full max-w-md animate-in slide-in-from-bottom duration-300 rounded-t-3xl bg-card shadow-xl max-h-[90dvh] flex flex-col">
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-border shrink-0">
           <h3 className="text-base font-bold text-card-foreground">収益化</h3>
           <div className="flex items-center gap-2">
@@ -70,7 +70,7 @@ export function RevenueModal({ isOpen, onClose }: RevenueModalProps) {
             </button>
             <button
               onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95"
             >
               <X className="h-4 w-4" />
             </button>

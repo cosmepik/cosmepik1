@@ -5,7 +5,7 @@ const isProtectedRoute = (pathname: string) =>
   pathname.startsWith("/influencer") || pathname.startsWith("/dashboard");
 
 const isPublicOnly = (pathname: string) => {
-  const pub = ["/", "/login", "/register", "/terms", "/privacy", "/faq", "/guide", "/contact", "/tokushoho"];
+  const pub = ["/", "/login", "/register", "/terms", "/privacy", "/faq", "/guide", "/contact", "/tokushoho", "/forgot-password", "/reset-password"];
   if (pub.includes(pathname)) return true;
   if (pathname.startsWith("/auth/")) return true;
   if (pathname.startsWith("/api/")) return true;

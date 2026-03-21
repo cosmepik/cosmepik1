@@ -40,7 +40,7 @@ export function CosmeCard({ item, onAdd, isInList, compact }: CosmeCardProps) {
           onClick={() => onAdd(item)}
           disabled={isInList}
           aria-label="リストに追加"
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:opacity-90 disabled:bg-muted disabled:text-muted-foreground"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:opacity-90 active:scale-95 disabled:bg-muted disabled:text-muted-foreground"
         >
           {isInList ? (
             <span className="text-[10px]">済</span>

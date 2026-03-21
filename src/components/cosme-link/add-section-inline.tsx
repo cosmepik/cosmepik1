@@ -80,7 +80,7 @@ export function AddSectionInline({ insertIndex }: AddSectionInlineProps) {
         <button
           type="button"
           onClick={() => setIsExpanded(true)}
-          className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-border bg-card text-muted-foreground shadow-sm transition-all hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-md active:scale-95"
+          className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-border bg-card text-muted-foreground shadow-sm transition-all hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-md active:scale-95"
           aria-label="グループを追加"
         >
           <Plus className="h-4 w-4" />
@@ -96,7 +96,7 @@ export function AddSectionInline({ insertIndex }: AddSectionInlineProps) {
       <button
         type="button"
         onClick={handleClose}
-        className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent"
+        className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95"
       >
         <X className="h-3 w-3" />
       </button>

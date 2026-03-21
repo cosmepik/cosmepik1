@@ -80,7 +80,7 @@ function mapProfile(d: Record<string, unknown>): InfluencerProfile {
 }
 
 async function fetchProfileRest(username: string): Promise<InfluencerProfile | null> {
-  const url = `${SUPABASE_URL}/rest/v1/profiles?username=eq.${encodeURIComponent(username)}&select=username,display_name,avatar_url,background_image_url,use_preset,theme_id,background_id,font_id,card_design_id,card_color,bio,bio_sub,skin_type,personal_color,sns_links,rakuten_affiliate_id,updated_at`;
+  const url = `${SUPABASE_URL}/rest/v1/profiles?username=eq.${encodeURIComponent(username)}&select=*`;
   try {
     const res = await fetch(url, {
       headers: {

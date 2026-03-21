@@ -19,7 +19,7 @@ export default function PublicPageLoading() {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-9 w-9 animate-pulse rounded-full bg-muted/30"
+              className="h-11 w-11 animate-pulse rounded-full bg-muted/30"
             />
           ))}
         </div>

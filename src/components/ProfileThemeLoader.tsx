@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { getProfile } from "@/lib/store";
+import { getProfile, setProfile } from "@/lib/store";
 import { useTheme } from "@/lib/theme-context";
 import { themes } from "@/lib/themes";
 import { backgrounds } from "@/lib/backgrounds";
@@ -15,12 +15,20 @@ import type { CardDesignId } from "@/lib/card-designs";
 const CUSTOM_COLOR_PREFIX = "custom-";
 const CUSTOM_GRADIENT_PREFIX = "custom-gradient-";
 
+function isValidBg(id: string | undefined): boolean {
+  if (!id) return false;
+  return id.startsWith(CUSTOM_COLOR_PREFIX) ||
+    id.startsWith(CUSTOM_GRADIENT_PREFIX) ||
+    backgrounds.some((b) => b.id === id);
+}
+
 /**
- * 編集ページでプロフィールのテーマ・壁紙・フォントをコンテキストに読み込む
+ * 編集ページでプロフィールのテーマ・壁紙・フォントをコンテキストに読み込む。
+ * DB に欠損がある場合は localStorage の値を DB に復元する。
  */
 export function ProfileThemeLoader({ slug }: { slug: string }) {
   const pathname = usePathname();
-  const { setThemeId, setBackgroundId, setFontId, setCardDesignId, setCardColor } = useTheme();
+  const { themeId, backgroundId, fontId, cardDesignId, setThemeId, setBackgroundId, setFontId, setCardDesignId, setCardColor } = useTheme();
 
   const isEditPage = pathname?.startsWith("/dashboard/edit/");
 
@@ -33,13 +41,8 @@ export function ProfileThemeLoader({ slug }: { slug: string }) {
       if (p.themeId && themes.some((t) => t.id === p.themeId)) {
         setThemeId(p.themeId as ThemeId);
       }
-      if (
-        p.backgroundId &&
-        (p.backgroundId.startsWith(CUSTOM_COLOR_PREFIX) ||
-          p.backgroundId.startsWith(CUSTOM_GRADIENT_PREFIX) ||
-          backgrounds.some((b) => b.id === p.backgroundId))
-      ) {
-        setBackgroundId(p.backgroundId);
+      if (isValidBg(p.backgroundId)) {
+        setBackgroundId(p.backgroundId!);
       }
       if (p.fontId && isValidFontId(p.fontId)) {
         setFontId(p.fontId as FontId);
@@ -50,8 +53,32 @@ export function ProfileThemeLoader({ slug }: { slug: string }) {
       if (p.cardColor !== undefined) {
         setCardColor(p.cardColor ?? "");
       }
+
+      // DB に欠損しているスタイル設定を localStorage（ThemeContext）から復元
+      const patch: Record<string, unknown> = {};
+      if (!p.themeId && themeId && themes.some((t) => t.id === themeId)) {
+        patch.themeId = themeId;
+      }
+      if (!p.backgroundId && isValidBg(backgroundId)) {
+        patch.backgroundId = backgroundId;
+      }
+      if (!p.fontId && fontId && isValidFontId(fontId)) {
+        patch.fontId = fontId;
+      }
+      if (!p.cardDesignId && cardDesignId && cardDesignId !== "default" && cardDesigns.some((c) => c.id === cardDesignId)) {
+        patch.cardDesignId = cardDesignId;
+      }
+
+      if (Object.keys(patch).length > 0) {
+        setProfile({
+          username: slug,
+          ...patch,
+          updatedAt: new Date().toISOString(),
+        } as Parameters<typeof setProfile>[0]).catch(() => {});
+      }
     });
-  }, [isEditPage, slug, setThemeId, setBackgroundId, setFontId, setCardDesignId, setCardColor]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditPage, slug]);
 
   return null;
 }

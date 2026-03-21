@@ -126,7 +126,7 @@ export function ProfileHeader() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={link.label}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+                  className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-primary hover:text-primary-foreground active:scale-95"
                 >
                   <Icon className="h-4 w-4" />
                 </a>
@@ -134,7 +134,7 @@ export function ProfileHeader() {
             })}
             <button
               aria-label="シェア"
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-primary hover:text-primary-foreground active:scale-95"
             >
               <Share2 className="h-4 w-4" />
             </button>
