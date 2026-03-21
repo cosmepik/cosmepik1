@@ -686,7 +686,7 @@ function BackgroundUploadSection({
               type="button"
               onClick={handleRemove}
               aria-label="背景画像を削除"
-              className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-white transition-colors hover:bg-black/70"
+              className="absolute right-2 top-2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white transition-colors hover:bg-black/70 active:scale-95"
             >
               <X className="h-4 w-4" />
             </button>
@@ -1090,7 +1090,7 @@ export function StylePicker() {
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95"
                 aria-label="閉じる"
               >
                 <X className="h-4 w-4" />

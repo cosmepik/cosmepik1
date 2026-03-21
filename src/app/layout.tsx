@@ -37,6 +37,8 @@ export default function RootLayout({
   return (
     <html lang="ja" className={`${notoSans.variable} light`} style={{ colorScheme: "light" }} suppressHydrationWarning>
       <head>
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <GoogleAnalytics />
       </head>
       <body className="min-h-screen bg-white antialiased">

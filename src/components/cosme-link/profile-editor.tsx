@@ -23,6 +23,30 @@ import type { SnsLink } from "@/types";
 import { setProfile as saveProfileToStore } from "@/lib/store";
 import { XIcon } from "@/components/icons/x-icon";
 
+function compressAvatar(file: File, maxSize = 400): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement("canvas");
+      let { width, height } = img;
+      if (width > maxSize || height > maxSize) {
+        if (width > height) { height = (height * maxSize) / width; width = maxSize; }
+        else { width = (width * maxSize) / height; height = maxSize; }
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { reject(new Error("Canvas not supported")); return; }
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", 0.8));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Image load failed")); };
+    img.src = url;
+  });
+}
+
 const snsTypeOptions = [
   {
     type: "instagram" as const,
@@ -162,7 +186,7 @@ export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
         className="absolute inset-0 bg-foreground/20 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-md animate-in slide-in-from-bottom duration-300 rounded-t-3xl bg-card shadow-xl max-h-[90vh] flex flex-col">
+      <div className="relative z-10 w-full max-w-md animate-in slide-in-from-bottom duration-300 rounded-t-3xl bg-card shadow-xl max-h-[90dvh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-border shrink-0">
           <h3 className="text-base font-bold text-card-foreground">
@@ -172,13 +196,13 @@ export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+              className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 active:scale-95 disabled:opacity-50"
             >
               {saving ? "保存中..." : "保存"}
             </button>
             <button
               onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95"
             >
               <X className="h-4 w-4" />
             </button>
@@ -225,17 +249,19 @@ export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const f = e.target.files?.[0];
-                      if (f) {
-                        setAvatarUploading(true);
+                      if (!f) return;
+                      setAvatarUploading(true);
+                      try {
+                        const compressed = await compressAvatar(f);
+                        updateProfile({ avatarUrl: compressed });
+                      } catch {
                         const r = new FileReader();
-                        r.onloadend = () => {
-                          updateProfile({ avatarUrl: r.result as string });
-                          setAvatarUploading(false);
-                        };
-                        r.onerror = () => setAvatarUploading(false);
+                        r.onloadend = () => updateProfile({ avatarUrl: r.result as string });
                         r.readAsDataURL(f);
+                      } finally {
+                        setAvatarUploading(false);
                       }
                     }}
                   />
@@ -378,6 +404,8 @@ export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
                       </span>
                       <input
                         type="url"
+                        inputMode="url"
+                        enterKeyHint="done"
                         value={link.url}
                         onChange={(e) =>
                           updateSnsLink(link.id, { url: e.target.value })
@@ -388,7 +416,7 @@ export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
                     </div>
                     <button
                       onClick={() => deleteSnsLink(link.id)}
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive active:scale-95"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -452,6 +480,8 @@ export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
 
                 <input
                   type="url"
+                  inputMode="url"
+                  enterKeyHint="done"
                   value={newSnsUrl}
                   onChange={(e) => setNewSnsUrl(e.target.value)}
                   placeholder={

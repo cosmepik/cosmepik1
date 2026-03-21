@@ -64,10 +64,14 @@ function AuthCallbackContent() {
         return;
       }
 
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
         if (session) {
           subscription.unsubscribe();
-          router.replace(next);
+          if (event === "PASSWORD_RECOVERY") {
+            router.replace("/reset-password");
+          } else {
+            router.replace(next);
+          }
         }
       });
       sub = subscription;

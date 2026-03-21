@@ -93,14 +93,17 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="email" className="mb-1 block text-sm font-medium text-card-foreground">メールアドレス</label>
-            <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full rounded-lg border border-input bg-white px-4 py-2.5 text-card-foreground" placeholder="you@example.com" />
+            <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" enterKeyHint="next" className="w-full rounded-lg border border-input bg-white px-4 py-2.5 text-card-foreground" placeholder="you@example.com" />
           </div>
           <div>
             <label htmlFor="password" className="mb-1 block text-sm font-medium text-card-foreground">パスワード</label>
-            <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="w-full rounded-lg border border-input bg-white px-4 py-2.5 text-card-foreground" placeholder="6文字以上" />
+            <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} autoComplete="current-password" enterKeyHint="go" className="w-full rounded-lg border border-input bg-white px-4 py-2.5 text-card-foreground" placeholder="6文字以上" />
           </div>
           {message && <p className={`text-sm ${message.type === "ok" ? "text-green-600" : "text-destructive"}`}>{message.text}</p>}
-          <button type="submit" disabled={loading} className="w-full rounded-lg bg-green py-3 font-medium text-white hover:opacity-90 disabled:opacity-50">
+          <div className="flex justify-end">
+            <Link href="/forgot-password" className="text-xs text-muted-foreground hover:text-green hover:underline">パスワードを忘れた場合</Link>
+          </div>
+          <button type="submit" disabled={loading} className="w-full rounded-lg bg-green py-3 font-medium text-white hover:opacity-90 active:scale-[0.98] disabled:opacity-50">
             {loading ? "処理中..." : "ログイン"}
           </button>
           <div className="relative flex items-center py-2">
@@ -113,7 +116,7 @@ export default function LoginPage() {
             type="button"
             onClick={() => { window.location.href = "/api/auth/line"; }}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-medium text-white hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
             style={{ backgroundColor: "#06C755" }}
           >
             <img src="/line-icon.png" alt="" className="h-6 w-6 shrink-0 object-contain align-middle" aria-hidden />
@@ -123,7 +126,7 @@ export default function LoginPage() {
             type="button"
             onClick={() => handleOAuth("google")}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 rounded-lg border border-border bg-white py-3 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 rounded-lg border border-border bg-white py-3 text-sm font-medium text-foreground hover:bg-accent active:scale-[0.98] disabled:opacity-50"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden>
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -137,7 +140,7 @@ export default function LoginPage() {
             type="button"
             onClick={() => handleOAuth("x")}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 rounded-lg border border-border bg-white py-3 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 rounded-lg border border-border bg-white py-3 text-sm font-medium text-foreground hover:bg-accent active:scale-[0.98] disabled:opacity-50"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden fill="currentColor">
               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />

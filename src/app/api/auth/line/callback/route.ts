@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { verifySignedState } from "../route";
+import { verifySignedState } from "../state";
 
 function getOrigin(request: NextRequest) {
   const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || request.nextUrl.host;
@@ -89,7 +90,7 @@ export async function GET(request: NextRequest) {
       user_metadata: metadata,
     });
 
-  /* ── マジックリンクを生成（token_hash で自前リダイレクト） ── */
+  /* ── マジックリンクを生成 ── */
   const { data: linkData, error: linkError } =
     await supabaseAdmin.auth.admin.generateLink({
       type: "magiclink",
@@ -101,7 +102,6 @@ export async function GET(request: NextRequest) {
     return loginError("session_failed");
   }
 
-  // 既存ユーザーの場合、LINE メタデータを追記
   if (createError && linkData.user) {
     const existing = linkData.user.user_metadata ?? {};
     if (!existing.line_id) {
@@ -113,11 +113,37 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // /auth/callback に token_hash を渡してリダイレクト（verifyOtp でセッション確立）
+  /* ── サーバー側で OTP 検証 → セッション cookie をセットして直接 /dashboard へ ── */
   const tokenHash = linkData.properties.hashed_token;
-  const callbackUrl = new URL(`${origin}/auth/callback`);
-  callbackUrl.searchParams.set("token_hash", tokenHash);
-  callbackUrl.searchParams.set("type", "magiclink");
-  callbackUrl.searchParams.set("next", "/dashboard");
-  return NextResponse.redirect(callbackUrl.toString());
+  const dashboardUrl = `${origin}/dashboard`;
+  const response = NextResponse.redirect(dashboardUrl);
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseAnonKey) return loginError("server_config_error");
+
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          response.cookies.set(name, value, options);
+        });
+      },
+    },
+  });
+
+  const { error: otpError } = await supabase.auth.verifyOtp({
+    token_hash: tokenHash,
+    type: "magiclink",
+  });
+
+  if (otpError) {
+    console.error("LINE OTP verify error:", otpError.message);
+    return loginError("session_failed");
+  }
+
+  return response;
 }

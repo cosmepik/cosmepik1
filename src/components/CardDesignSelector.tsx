@@ -62,7 +62,7 @@ export function CardDesignSelector() {
             role="dialog"
             aria-modal="true"
             aria-label="カード枠デザインを選択"
-            className="fixed inset-4 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[min(95vw,36rem)] md:max-h-[90vh] z-50 flex flex-col bg-white rounded-2xl shadow-2xl border border-cream-300 overflow-hidden"
+            className="fixed inset-4 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[min(95vw,36rem)] md:max-h-[90dvh] z-50 flex flex-col bg-white rounded-2xl shadow-2xl border border-cream-300 overflow-hidden"
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-cream-200">
               <h2 className="text-lg font-semibold text-stone-800">カード枠デザイン</h2>

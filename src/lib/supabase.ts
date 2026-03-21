@@ -8,5 +8,9 @@ export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
 /** ブラウザ用 Supabase クライアント（env が無いときは null） */
 export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        lock: async (_name, _acquireTimeout, fn) => fn(),
+      },
+    })
   : null;

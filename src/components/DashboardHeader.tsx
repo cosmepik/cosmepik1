@@ -47,7 +47,7 @@ export function ProfileIcon({ user, onClick, className }: { user: User; onClick?
         className={`flex items-center justify-center rounded-full overflow-hidden border-2 border-border bg-secondary hover:bg-accent transition-colors shrink-0 ${className ?? ""}`}
         aria-label="プロフィール"
         aria-expanded={open}
-        style={{ width: 36, height: 36 }}
+        style={{ width: 44, height: 44 }}
       >
         {avatarUrl ? (
           <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
@@ -106,7 +106,7 @@ export function DashboardHeader({ onMenuClick, rightContent }: DashboardHeaderPr
           <button
             type="button"
             onClick={onMenuClick}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-foreground shadow-sm transition-colors hover:bg-gray-50"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-foreground shadow-sm transition-colors hover:bg-gray-50 active:scale-95"
             aria-label="メニューを開く"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-5 w-5">

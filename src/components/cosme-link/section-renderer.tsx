@@ -177,9 +177,9 @@ function SortableRoutineItem({
               e.preventDefault();
               onDelete();
             }}
-            className="flex h-6 w-6 items-center justify-center rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 active:scale-95"
           >
-            <X className="h-3 w-3" />
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
       )}
@@ -659,7 +659,7 @@ export function SectionRenderer({ section }: SectionRendererProps) {
                   setEditingTitle(section.title);
                   setIsEditingTitle(true);
                 }}
-                className="ml-1 flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
+                className="ml-1 flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-accent active:scale-95"
                 aria-label="グループ名を編集"
               >
                 <Pencil className="h-3 w-3" />
@@ -672,7 +672,7 @@ export function SectionRenderer({ section }: SectionRendererProps) {
             type="button"
             onClick={() => moveSection(section.id, "up")}
             disabled={currentIndex === 0}
-            className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent disabled:opacity-40"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95 disabled:opacity-40"
           >
             <ChevronUp className="h-3 w-3" />
           </button>
@@ -680,14 +680,14 @@ export function SectionRenderer({ section }: SectionRendererProps) {
             type="button"
             onClick={() => moveSection(section.id, "down")}
             disabled={currentIndex === sections.length - 1}
-            className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent disabled:opacity-40"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95 disabled:opacity-40"
           >
             <ChevronDown className="h-3 w-3" />
           </button>
           <button
             type="button"
             onClick={() => deleteSection(section.id)}
-            className="flex h-6 w-6 items-center justify-center rounded-full bg-destructive/10 text-destructive transition-colors hover:bg-destructive/20"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 text-destructive transition-colors hover:bg-destructive/20 active:scale-95"
           >
             <Trash2 className="h-3 w-3" />
           </button>
