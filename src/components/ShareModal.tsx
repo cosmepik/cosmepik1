@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useCallback, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 interface ShareModalProps {
@@ -12,6 +13,9 @@ interface ShareModalProps {
 
 export function ShareModal({ open, onClose, url, title = "共有" }: ShareModalProps) {
   const [copied, setCopied] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   const handleCopy = useCallback(async () => {
     if (!url) return;
@@ -36,16 +40,21 @@ export function ShareModal({ open, onClose, url, title = "共有" }: ShareModalP
       setCopied(false);
       return;
     }
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKeyDown);
+    };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -87,6 +96,7 @@ export function ShareModal({ open, onClose, url, title = "共有" }: ShareModalP
           {copied ? "コピーしました！SNSに貼り付けてシェアしよう😎" : "SNSに貼り付けてシェアしよう😎"}
         </p>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

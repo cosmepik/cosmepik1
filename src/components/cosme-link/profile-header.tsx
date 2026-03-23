@@ -71,7 +71,7 @@ export function ProfileHeader() {
         )}
 
         <div className="relative">
-          <div className="h-20 w-20 overflow-hidden rounded-full border border-primary shadow-md">
+          <div className="h-20 w-20 overflow-hidden rounded-full shadow-md">
             {profile.avatarUrl ? (
               <img
                 src={profile.avatarUrl}

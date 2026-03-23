@@ -144,7 +144,7 @@ export default function OnboardingPage() {
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="例：たい、mina"
+                placeholder="あなたの名前を入力"
                 className="w-full rounded-xl border border-input bg-white px-4 py-3 text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 autoFocus
               />
@@ -155,16 +155,14 @@ export default function OnboardingPage() {
                 htmlFor="slug"
                 className="mb-1.5 block text-sm font-medium text-foreground"
               >
-                あなた専用のURL
+                コスメページのURLを決めましょう
               </label>
               <p className="mb-2 text-xs text-muted-foreground">
                 半角英数で入力してね（これがあなたのページのアドレスになるよ）
               </p>
               <div className="flex overflow-hidden rounded-xl border-2 border-input bg-white transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
-                <span className="flex items-center pl-4 text-sm font-medium text-muted-foreground shrink-0">
-                  {typeof window !== "undefined" && window.location?.origin
-                    ? `${new URL(window.location.origin).host}/p/`
-                    : "cosmepik.com/p/"}
+                <span className="flex items-center bg-muted/50 pl-4 pr-2 text-sm font-medium text-muted-foreground shrink-0 border-r border-input">
+                  cosmepik.me/p/
                 </span>
                 <input
                   id="slug"
@@ -174,8 +172,8 @@ export default function OnboardingPage() {
                   value={slug}
                   onChange={(e) => handleSlugChange(e.target.value)}
                   onCompositionEnd={handleCompositionEnd}
-                  placeholder="your-id"
-                  className="min-w-0 flex-1 border-0 bg-transparent py-3 pl-1 pr-3 text-foreground placeholder:text-muted-foreground focus:outline-none"
+                  placeholder=""
+                  className="min-w-0 flex-1 border-0 bg-transparent py-3 pl-3 pr-3 text-foreground placeholder:text-muted-foreground focus:outline-none"
                 />
               </div>
               {slugWarning && (
