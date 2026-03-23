@@ -130,11 +130,11 @@ export async function getProfile(slug?: string | null): Promise<InfluencerProfil
 export async function renameCosmeSet(
   oldSlug: string,
   newSlug: string,
-  userId?: string | null
 ): Promise<boolean> {
   if (!useSupabase()) return Promise.resolve(local.renameCosmeSet(oldSlug, newSlug));
-  // Supabase 時は未実装（複雑なため）
-  return false;
+  profileCache.delete(oldSlug);
+  profileCache.delete(newSlug);
+  return db.renameCosmeSetSlug(oldSlug, newSlug);
 }
 
 /** プロフィール保存（profile.username に slug を入れて渡す） */

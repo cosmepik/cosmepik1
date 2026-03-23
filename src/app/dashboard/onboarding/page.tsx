@@ -90,6 +90,7 @@ export default function OnboardingPage() {
         updatedAt: new Date().toISOString(),
       });
 
+      sessionStorage.setItem("cosmepik-show-welcome", "1");
       router.push("/dashboard");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "作成に失敗しました";

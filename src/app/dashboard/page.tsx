@@ -299,6 +299,14 @@ export default function DashboardHomePage() {
     [],
   );
 
+  const [showWelcome, setShowWelcome] = useState(false);
+  useEffect(() => {
+    if (!loading && sets.length > 0 && sessionStorage.getItem("cosmepik-show-welcome") === "1") {
+      sessionStorage.removeItem("cosmepik-show-welcome");
+      setShowWelcome(true);
+    }
+  }, [loading, sets.length]);
+
   const setCardGradients = [
     "from-pink-400/80 to-rose-400/80",
     "from-violet-400/80 to-purple-400/80",
@@ -401,7 +409,7 @@ export default function DashboardHomePage() {
                     ) : (
                       <Link
                         href={`/dashboard/edit/${set.slug}`}
-                        className="flex min-w-0 flex-1 items-center gap-4 rounded-2xl border border-border bg-white p-4 shadow-sm transition-all hover:shadow-md hover:border-rose-200/60"
+                        className={`flex min-w-0 flex-1 items-center gap-4 rounded-2xl border bg-white p-4 shadow-sm transition-all hover:shadow-md hover:border-rose-200/60 ${showWelcome && i === 0 ? "border-primary ring-2 ring-primary/30 ring-offset-2" : "border-border"}`}
                       >
                         <div
                           className={`flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br ${setCardGradients[i % setCardGradients.length]} shadow-sm`}
@@ -592,6 +600,43 @@ export default function DashboardHomePage() {
                   無料プランではコスメセットは1つまでです
                 </span>
               </Link>
+            )}
+
+            {/* Welcome Popup */}
+            {showWelcome && sets.length > 0 && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div
+                  className="absolute inset-0 bg-foreground/30 backdrop-blur-sm"
+                  onClick={() => setShowWelcome(false)}
+                  aria-hidden="true"
+                />
+                <div className="relative z-10 flex w-full max-w-sm flex-col items-center gap-4 rounded-2xl border border-border bg-white p-8 shadow-xl animate-in fade-in zoom-in-95 duration-300">
+                  <div className="text-4xl">🎉</div>
+                  <div className="flex flex-col items-center gap-1.5 text-center">
+                    <h2 className="text-lg font-bold text-foreground">ようこそ cosmepik へ！</h2>
+                    <p className="text-sm text-muted-foreground">
+                      まずはコスメセットを編集しましょう！
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowWelcome(false);
+                      router.push(`/dashboard/edit/${sets[0].slug}`);
+                    }}
+                    className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground shadow-md transition-all hover:bg-primary/90 active:scale-[0.98]"
+                  >
+                    編集する
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowWelcome(false)}
+                    className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    あとで
+                  </button>
+                </div>
+              </div>
             )}
 
             {/* Create Modal */}

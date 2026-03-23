@@ -484,6 +484,60 @@ export async function updateCosmeSetName(
   return !error;
 }
 
+/** コスメセットの slug（公開URL）を変更 — 旧データを読み→新slugで書き→旧データ削除 */
+export async function renameCosmeSetSlug(
+  oldSlug: string,
+  newSlug: string
+): Promise<boolean> {
+  const client = getClient();
+  if (!client) return false;
+
+  const { data: { session } } = await client.auth.getSession();
+  if (!session?.user?.id) return false;
+  const userId = session.user.id;
+
+  const { data: conflict } = await client
+    .from("cosme_sets")
+    .select("id")
+    .eq("slug", newSlug)
+    .maybeSingle();
+  if (conflict) return false;
+
+  const { error: csError } = await client
+    .from("cosme_sets")
+    .update({ slug: newSlug })
+    .eq("user_id", userId)
+    .eq("slug", oldSlug);
+  if (csError) {
+    console.error("[renameCosmeSet] cosme_sets:", csError.message);
+    return false;
+  }
+
+  const oldProfile = await fetchProfile(oldSlug);
+  if (oldProfile) {
+    const { list: _list, ...profileData } = oldProfile;
+    await saveProfileInner({
+      ...profileData,
+      username: newSlug,
+    } as Parameters<typeof saveProfileInner>[0]);
+    await client.from("profiles").delete().eq("username", oldSlug);
+  }
+
+  const oldSections = await fetchSections(oldSlug);
+  if (oldSections && oldSections.length > 0) {
+    await saveSections(newSlug, oldSections);
+    await client.from("sections").delete().eq("username", oldSlug);
+  }
+
+  const oldList = await fetchList(oldSlug);
+  if (oldList.length > 0) {
+    await saveList(newSlug, oldList);
+    await client.from("list_items").delete().eq("username", oldSlug);
+  }
+
+  return true;
+}
+
 /** コスメセット削除（cosme_sets, list_items, profiles を削除） */
 export async function deleteCosmeSet(userId: string, slug: string): Promise<boolean> {
   const client = getClient();

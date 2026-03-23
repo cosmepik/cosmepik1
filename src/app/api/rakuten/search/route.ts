@@ -34,13 +34,18 @@ function toImageUrl(val: unknown): string | undefined {
   return undefined;
 }
 
+function upgradeImageSize(url: string): string {
+  return url.replace(/_ex=\d+x\d+/, "_ex=400x400");
+}
+
 function mapToCosmeItem(item: RakutenItem, index: number): CosmeItem {
   const id = item.itemCode ?? `rakuten-${index}`;
   const imgUrls = item.mediumImageUrls ?? item.smallImageUrls ?? [];
   const first = imgUrls[0];
   const imgSingle = item.mediumImageUrl ?? item.smallImageUrl;
-  const imageUrl =
+  const rawUrl =
     toImageUrl(first) ?? (typeof imgSingle === "string" ? imgSingle : undefined) ?? "https://placehold.co/96x96/f2ebe3/c9a962?text=No+Image";
+  const imageUrl = upgradeImageSize(rawUrl);
 
   const rawName = item.itemName ?? "";
   const name = cleanseItemName(rawName) || rawName || "（商品名なし）";

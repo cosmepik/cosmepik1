@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
   lineAuthUrl.searchParams.set("redirect_uri", redirectUri);
   lineAuthUrl.searchParams.set("state", state);
   lineAuthUrl.searchParams.set("scope", "profile openid email");
+  lineAuthUrl.searchParams.set("bot_prompt", "normal");
 
   return NextResponse.redirect(lineAuthUrl.toString());
 }

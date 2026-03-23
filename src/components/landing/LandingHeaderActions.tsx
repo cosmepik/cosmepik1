@@ -1,22 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/use-user";
 import { createClient } from "@/lib/supabase/client";
 import { supabase as supabaseFallback } from "@/lib/supabase";
 
 /** トップページヘッダーのアクションボタン（ログイン状態で切り替え） */
 export function LandingHeaderActions() {
-  const { user, loading } = useUser();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!loading && user) {
-      router.replace("/dashboard");
-    }
-  }, [loading, user, router]);
+  const { user } = useUser();
 
   const handleSignOut = async () => {
     const supabase = createClient() ?? supabaseFallback;
@@ -43,7 +34,7 @@ export function LandingHeaderActions() {
           className="rounded-full px-4 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-medium transition-opacity hover:opacity-90"
           style={{ background: "#ffffff", color: "#0d4f4a", boxShadow: "0 2px 12px rgba(13,79,74,0.2)" }}
         >
-          サインアウト
+          ログアウト
         </button>
       </div>
     );
@@ -56,14 +47,14 @@ export function LandingHeaderActions() {
         className="text-xs md:text-sm tracking-[0.1em] px-3 py-1.5 md:px-4 md:py-2 hover:opacity-80 transition-opacity"
         style={{ color: "#0d4f4a" }}
       >
-        サインイン
+        ログイン
       </Link>
       <Link
         href="/register"
         className="rounded-full px-4 py-2 md:px-5 md:py-2.5 text-xs md:text-sm font-medium transition-opacity hover:opacity-90"
         style={{ background: "#ffffff", color: "#0d4f4a", boxShadow: "0 2px 12px rgba(13,79,74,0.2)" }}
       >
-        サインアップ
+        新規登録
       </Link>
     </div>
   );

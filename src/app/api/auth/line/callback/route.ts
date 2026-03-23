@@ -56,20 +56,8 @@ export async function GET(request: NextRequest) {
     pictureUrl?: string;
   } = await profileRes.json();
 
-  /* ── ID トークンからメールアドレスを取得（あれば） ── */
-  let email: string | null = null;
-  if (tokenData.id_token) {
-    try {
-      const payload = JSON.parse(
-        Buffer.from(tokenData.id_token.split(".")[1], "base64").toString(),
-      );
-      email = payload.email || null;
-    } catch {
-      /* ignore decode error */
-    }
-  }
-
-  const userEmail = email || `line_${lineProfile.userId}@line.cosmepik`;
+  /* ── LINE ユーザーは常に専用メールを使用（Google等と同じメールでも別ユーザーにする） ── */
+  const userEmail = `line_${lineProfile.userId}@line.cosmepik`;
 
   /* ── Supabase admin client ── */
   const supabaseAdmin = createAdminClient();

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useParams } from "next/navigation";
 import {
   X,
@@ -165,6 +166,21 @@ export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
     }
   }, [isOpen, profile.name, profile.bio, profile.skinType, profile.personalColor]);
 
+  /** スタイル設定モーダルと同様：背面スクロール防止・Escapeで閉じる（スマホでのずれ防止） */
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    if (isOpen) {
+      document.addEventListener("keydown", handleEscape);
+      document.body.style.overflow = "hidden";
+    }
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "";
+    };
+  }, [isOpen, onClose]);
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -209,29 +225,37 @@ export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div
         className="absolute inset-0 bg-foreground/20 backdrop-blur-sm"
+        aria-hidden="true"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-md animate-in slide-in-from-bottom duration-300 rounded-t-3xl bg-card shadow-xl max-h-[92dvh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-2.5 border-b border-border shrink-0">
-          <h3 className="text-base font-bold text-card-foreground">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="プロフィール編集"
+        className="relative z-10 flex h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-card shadow-xl animate-in slide-in-from-bottom duration-300"
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-border px-5 pb-2.5 pt-4">
+          <h3 className="min-w-0 flex-1 truncate pr-2 text-base font-bold text-card-foreground">
             プロフィール編集
           </h3>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <button
+              type="button"
               onClick={handleSave}
               disabled={saving}
-              className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 active:scale-95 disabled:opacity-50"
+              className="inline-flex h-10 shrink-0 items-center justify-center rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 active:scale-95 disabled:opacity-50"
             >
               {saving ? "保存中..." : "保存"}
             </button>
             <button
+              type="button"
               onClick={onClose}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95"
+              aria-label="閉じる"
             >
               <X className="h-4 w-4" />
             </button>
@@ -239,7 +263,7 @@ export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-y-contain px-5 py-4 touch-pan-y">
           {/* Basic info */}
           <div className="flex flex-col gap-3">
             <h4 className="text-sm font-bold text-card-foreground">基本情報</h4>
@@ -534,6 +558,7 @@ export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

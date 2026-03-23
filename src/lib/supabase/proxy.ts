@@ -9,6 +9,8 @@ const isPublicOnly = (pathname: string) => {
   if (pub.includes(pathname)) return true;
   if (pathname.startsWith("/auth/")) return true;
   if (pathname.startsWith("/api/")) return true;
+  if (pathname.startsWith("/p/")) return true;
+  if (/^\/[a-zA-Z0-9_-]+$/.test(pathname) && !pathname.startsWith("/dashboard") && !pathname.startsWith("/influencer")) return true;
   return false;
 };
 

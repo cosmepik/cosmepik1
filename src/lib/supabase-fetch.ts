@@ -14,39 +14,12 @@ interface PublicPageData {
 }
 
 /**
- * プロフィール + セクションを 1 回の RPC 呼び出しで取得。
- * RPC が未作成の場合は自動的に 2 並列 REST フォールバック。
+ * プロフィール + セクションを並列 REST で取得。
+ * Next.js の fetch キャッシュ (revalidate) と Netlify CDN で高速化。
  */
 export async function fetchPublicPageData(username: string): Promise<PublicPageData> {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     return { profile: null, sections: [] };
-  }
-
-  try {
-    const rpcUrl = `${SUPABASE_URL}/rest/v1/rpc/get_public_page`;
-    const res = await fetch(rpcUrl, {
-      method: "POST",
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({ p_username: username }),
-      next: { revalidate: 10 },
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      if (data?.profile?.username) {
-        return {
-          profile: mapProfile(data.profile),
-          sections: Array.isArray(data.sections) ? (data.sections as Section[]) : [],
-        };
-      }
-    }
-  } catch {
-    // RPC fallback below
   }
 
   const [profile, sections] = await Promise.all([

@@ -34,6 +34,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
+  ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin
+  : null;
+
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <>
+      {supabaseHost && <link rel="preconnect" href={supabaseHost} />}
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      {children}
+    </>
+  );
 }
