@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { X, Globe, Home, BarChart2, Settings, LogOut, ChevronRight, DollarSign, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -99,8 +100,10 @@ export function SideMenu({ isOpen, onClose }: SideMenuProps) {
   }, [isOpen]);
 
   const items = menuItems(username);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
-  return (
+  const content = (
     <>
       {/* Backdrop */}
       <div
@@ -229,7 +232,9 @@ export function SideMenu({ isOpen, onClose }: SideMenuProps) {
           </p>
         </div>
       </aside>
-
     </>
   );
+
+  if (!mounted) return null;
+  return createPortal(content, document.body);
 }

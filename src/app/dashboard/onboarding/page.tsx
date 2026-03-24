@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { CosmepikLogo } from "@/components/cosmepik-logo";
 import { createCosmeSet, setProfile } from "@/lib/store";
 import { Sparkles } from "lucide-react";
+import type { CosmeSetMode } from "@/types";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function OnboardingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [mode, setMode] = useState<CosmeSetMode>("simple");
 
   useEffect(() => {
     fetch("/api/dashboard")
@@ -77,7 +79,7 @@ export default function OnboardingPage() {
 
     setSubmitting(true);
     try {
-      const newSet = await createCosmeSet(userId, name, normalizedSlug);
+      const newSet = await createCosmeSet(userId, name, normalizedSlug, mode);
       if (!newSet) {
         setError("作成に失敗しました。もう一度お試しください。");
         setSubmitting(false);
@@ -129,6 +131,34 @@ export default function OnboardingPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5 px-6 pb-6 pt-5">
+            {/* Mode Selection */}
+            <div>
+              <p className="mb-2 text-sm font-medium text-foreground">表示モード</p>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setMode("simple")}
+                  className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 transition-all ${mode === "simple" ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/40"}`}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className={`h-7 w-7 ${mode === "simple" ? "text-primary" : "text-muted-foreground"}`}>
+                    <line x1="8" x2="21" y1="6" y2="6" /><line x1="8" x2="21" y1="12" y2="12" /><line x1="8" x2="21" y1="18" y2="18" /><line x1="3" x2="3.01" y1="6" y2="6" /><line x1="3" x2="3.01" y1="12" y2="12" /><line x1="3" x2="3.01" y1="18" y2="18" />
+                  </svg>
+                  <span className={`text-xs font-medium ${mode === "simple" ? "text-primary" : "text-muted-foreground"}`}>シンプル</span>
+                  <span className="text-[10px] text-muted-foreground">コスメをリスト表示</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode("recipe")}
+                  className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 transition-all ${mode === "recipe" ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/40"}`}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className={`h-7 w-7 ${mode === "recipe" ? "text-primary" : "text-muted-foreground"}`}>
+                    <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" />
+                  </svg>
+                  <span className={`text-xs font-medium ${mode === "recipe" ? "text-primary" : "text-muted-foreground"}`}>メイクレシピ</span>
+                  <span className="text-[10px] text-muted-foreground">顔写真にコスメ配置</span>
+                </button>
+              </div>
+            </div>
             <div>
               <label
                 htmlFor="display-name"

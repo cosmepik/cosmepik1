@@ -67,6 +67,8 @@ export interface InfluencerProfile {
   updatedAt: string;
 }
 
+export type CosmeSetMode = "simple" | "recipe";
+
 /** コスメセット（1ユーザーが複数持てる） */
 export interface CosmeSet {
   id: string;
@@ -77,4 +79,6 @@ export interface CosmeSet {
   avatarUrl?: string;
   /** プロフィール表示名（APIから返る） */
   displayName?: string;
+  /** セットのモード（simple=従来リスト, recipe=メイクレシピ） */
+  mode?: CosmeSetMode;
 }

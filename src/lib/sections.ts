@@ -1,4 +1,4 @@
-export type SectionType = "routine" | "products" | "heading" | "text" | "link";
+export type SectionType = "routine" | "products" | "heading" | "text" | "link" | "recipe";
 
 export interface SectionItem {
   id: string;
@@ -13,6 +13,30 @@ export interface SectionItem {
   badge?: "NEW" | "BEST" | "SALE";
 }
 
+export type PlacementType = "product" | "comment";
+
+export interface RecipePlacement {
+  id: string;
+  /** "product" (default) or "comment" */
+  type?: PlacementType;
+  product?: string;
+  brand?: string;
+  image?: string;
+  link?: string;
+  /** 0–100 (%) horizontal position on background */
+  x: number;
+  /** 0–100 (%) vertical position on background */
+  y: number;
+  /** display scale multiplier (default 1) */
+  scale?: number;
+  /** comment text (type=comment only) */
+  comment?: string;
+  /** comment text color (default "#333") */
+  color?: string;
+  /** comment rotation in degrees */
+  rotation?: number;
+}
+
 export interface Section {
   id: string;
   type: SectionType;
@@ -22,6 +46,10 @@ export interface Section {
   items: SectionItem[];
   showSteps?: boolean;
   columns?: 1 | 2;
+  /** recipe mode: background face image URL */
+  backgroundImage?: string;
+  /** recipe mode: positioned cosmetic items */
+  placements?: RecipePlacement[];
 }
 
 const PLACEHOLDER_IMG = "/cosme-placeholder.svg";
@@ -133,12 +161,25 @@ export function createDefaultRoutineSection(): Section {
   };
 }
 
+/** 初期状態用：空のレシピセクションを生成 */
+export function createDefaultRecipeSection(): Section {
+  return {
+    id: `recipe-${Date.now()}`,
+    type: "recipe",
+    title: "メイクレシピ",
+    items: [],
+    backgroundImage: "",
+    placements: [],
+  };
+}
+
 export const sectionTypeLabels: Record<SectionType, string> = {
   routine: "コレクション",
   products: "グリッド表示",
   heading: "見出し",
   text: "テキスト",
   link: "リンク",
+  recipe: "メイクレシピ",
 };
 
 export const sectionTypeIcons: Record<SectionType, string> = {
@@ -147,4 +188,5 @@ export const sectionTypeIcons: Record<SectionType, string> = {
   heading: "Type",
   text: "AlignLeft",
   link: "Link",
+  recipe: "Camera",
 };

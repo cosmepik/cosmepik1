@@ -22,6 +22,7 @@ import { cardDesigns, type CardDesignId } from "@/lib/card-designs";
 import { fonts, getFontFamily, type FontId } from "@/lib/fonts";
 import { Palette, X, Check, Paintbrush, Upload, Plus, Type, LayoutTemplate, LayoutGrid } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSections } from "@/lib/section-context";
 
 // Deduplicate backgrounds by id to prevent React key conflicts
 const deduped = new Set<string>();
@@ -1052,6 +1053,8 @@ export function StylePicker() {
   const setOpen = ctx?.setOpen ?? (() => {});
   const activeTab = ctx?.openTab ?? "color";
   const setActiveTab = ctx?.setOpenTab ?? (() => {});
+  const { sections } = useSections();
+  const isRecipeMode = sections.some((s) => s.type === "recipe");
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -1136,19 +1139,21 @@ export function StylePicker() {
                 <Paintbrush className="h-3.5 w-3.5 shrink-0" />
                 背景
               </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("card")}
-                className={cn(
-                  "flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors",
-                  activeTab === "card"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-secondary-foreground hover:bg-accent"
-                )}
-              >
-                <LayoutGrid className="h-3.5 w-3.5 shrink-0" />
-                カード
-              </button>
+              {!isRecipeMode && (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("card")}
+                  className={cn(
+                    "flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors",
+                    activeTab === "card"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-secondary-foreground hover:bg-accent"
+                  )}
+                >
+                  <LayoutGrid className="h-3.5 w-3.5 shrink-0" />
+                  カード
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setActiveTab("font")}

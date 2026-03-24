@@ -24,27 +24,40 @@ export async function GET() {
     const user = session.user;
     const userId = user.id;
     const admin = createAdminClient();
+    const sb = supabase;
 
-    const setsPromise = supabase
-      .from("cosme_sets")
-      .select("id, name, slug")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: true });
+    async function fetchSets() {
+      const full = await sb
+        .from("cosme_sets")
+        .select("id, name, slug, mode, item_count")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: true });
+      if (!full.error) return full.data ?? [];
+      const fallback = await sb
+        .from("cosme_sets")
+        .select("id, name, slug, mode")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: true });
+      if (!fallback.error) return fallback.data ?? [];
+      const minimal = await sb
+        .from("cosme_sets")
+        .select("id, name, slug")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: true });
+      return minimal.data ?? [];
+    }
 
-    const premiumPromise = admin
-      ? admin
-          .from("user_subscriptions")
-          .select("stripe_subscription_status")
-          .eq("user_id", userId)
-          .single()
-      : Promise.resolve({ data: null });
-
-    const [setsResult, premiumResult] = await Promise.all([
-      setsPromise,
-      premiumPromise,
+    const [setsData, premiumResult] = await Promise.all([
+      fetchSets(),
+      admin
+        ? admin
+            .from("user_subscriptions")
+            .select("stripe_subscription_status")
+            .eq("user_id", userId)
+            .single()
+        : Promise.resolve({ data: null }),
     ]);
 
-    const setsData = setsResult.data ?? [];
     const premium =
       (premiumResult.data as { stripe_subscription_status?: string } | null)
         ?.stripe_subscription_status === "active";
@@ -61,32 +74,14 @@ export async function GET() {
       (row: Record<string, unknown>) => row.slug as string,
     );
 
-    const [profilesResult, sectionsResult] = await Promise.all([
-      supabase
-        .from("profiles")
-        .select("username, display_name, avatar_url, bio, bio_sub, skin_type, personal_color, sns_links, background_image_url, use_preset, theme_id, background_id, font_id, card_design_id, rakuten_affiliate_id, updated_at")
-        .in("username", slugs),
-      supabase
-        .from("sections")
-        .select("username, sections_json")
-        .in("username", slugs),
-    ]);
+    const profilesResult = await sb
+      .from("profiles")
+      .select("username, display_name, avatar_url, bio, bio_sub, skin_type, personal_color, sns_links, background_image_url, use_preset, theme_id, background_id, font_id, card_design_id, rakuten_affiliate_id, updated_at")
+      .in("username", slugs);
 
     const profileMap = new Map<string, Record<string, unknown>>();
     for (const row of profilesResult.data ?? []) {
       profileMap.set(row.username as string, row as Record<string, unknown>);
-    }
-
-    const itemCountMap = new Map<string, number>();
-    for (const row of sectionsResult.data ?? []) {
-      const arr = row.sections_json as unknown;
-      if (Array.isArray(arr)) {
-        const count = (arr as { items?: unknown[] }[]).reduce(
-          (sum, sec) => sum + (sec.items?.length ?? 0),
-          0,
-        );
-        itemCountMap.set(row.username as string, count);
-      }
     }
 
     const sets = setsData.map((row: Record<string, unknown>) => {
@@ -96,9 +91,10 @@ export async function GET() {
         id: row.id as string,
         name: (row.name as string) ?? "マイコスメ",
         slug,
-        itemCount: itemCountMap.get(slug) ?? 0,
+        itemCount: (row.item_count as number) ?? 0,
         avatarUrl: (p?.avatar_url as string) || undefined,
         displayName: (p?.display_name as string) || undefined,
+        mode: (row.mode as string) || undefined,
       };
     });
 

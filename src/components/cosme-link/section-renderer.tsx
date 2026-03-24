@@ -38,6 +38,7 @@ import { useAffiliateClick } from "@/hooks/use-affiliate-click";
 import { useState } from "react";
 import { CosmeImage } from "@/components/CosmeImage";
 import { AddItemModal } from "./add-item-modal";
+import { RecipeCanvas } from "./recipe-canvas";
 
 interface SectionRendererProps {
   section: Section;
@@ -605,13 +606,23 @@ export function SectionRenderer({ section }: SectionRendererProps) {
             onAddItem={canAddItems ? handleAddItem : undefined}
           />
         );
+      case "recipe":
+        return (
+          <RecipeCanvas
+            backgroundImage={section.backgroundImage}
+            placements={section.placements ?? []}
+          />
+        );
       default:
         return null;
     }
   };
 
   if (!isEditMode) {
-    const showReadOnlyTitle = !["heading", "text"].includes(section.type);
+    if (section.type === "recipe" && !section.backgroundImage && !(section.placements?.length)) {
+      return null;
+    }
+    const showReadOnlyTitle = !["heading", "text", "recipe"].includes(section.type);
     return (
       <section className="relative">
         {showReadOnlyTitle && section.title && (

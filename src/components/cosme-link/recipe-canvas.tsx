@@ -1,0 +1,274 @@
+"use client";
+
+import { useEffect } from "react";
+import type { RecipePlacement } from "@/lib/sections";
+
+const HANDWRITING_FONT = "Yomogi, cursive";
+const FONT_LINK = "https://fonts.googleapis.com/css2?family=Yomogi&display=swap";
+
+function useHandwritingFont() {
+  useEffect(() => {
+    if (document.querySelector(`link[href="${FONT_LINK}"]`)) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = FONT_LINK;
+    document.head.appendChild(link);
+  }, []);
+}
+
+interface RecipeCanvasProps {
+  backgroundImage?: string;
+  placements: RecipePlacement[];
+  editable?: boolean;
+  selectedId?: string | null;
+  onSelect?: (id: string | null) => void;
+  onMove?: (id: string, x: number, y: number) => void;
+  onBackgroundClick?: () => void;
+}
+
+export function RecipeCanvas({
+  backgroundImage,
+  placements,
+  editable = false,
+  selectedId,
+  onSelect,
+  onMove,
+  onBackgroundClick,
+}: RecipeCanvasProps) {
+  useHandwritingFont();
+
+  if (!editable && !backgroundImage && placements.length === 0) return null;
+
+  return (
+    <div
+      className="relative w-full overflow-hidden rounded-2xl bg-muted/30"
+      style={{ aspectRatio: "3 / 4" }}
+    >
+      {backgroundImage ? (
+        <img
+          src={backgroundImage}
+          alt="メイクレシピ背景"
+          className="absolute inset-0 h-full w-full object-cover"
+          draggable={false}
+          onClick={() => {
+            if (editable) {
+              onSelect?.(null);
+              onBackgroundClick?.();
+            }
+          }}
+        />
+      ) : editable ? (
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-muted-foreground"
+          onClick={() => onBackgroundClick?.()}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-12 w-12 opacity-40">
+            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" />
+          </svg>
+          <p className="text-sm">顔写真をタップしてアップロード</p>
+        </div>
+      ) : null}
+
+      {placements.map((p) =>
+        p.type === "comment" ? (
+          <CommentItem
+            key={p.id}
+            placement={p}
+            editable={editable}
+            isSelected={selectedId === p.id}
+            onSelect={() => onSelect?.(p.id)}
+            onMove={(x, y) => onMove?.(p.id, x, y)}
+          />
+        ) : (
+          <PlacementItem
+            key={p.id}
+            placement={p}
+            editable={editable}
+            isSelected={selectedId === p.id}
+            onSelect={() => onSelect?.(p.id)}
+            onMove={(x, y) => onMove?.(p.id, x, y)}
+          />
+        ),
+      )}
+    </div>
+  );
+}
+
+function useDrag(
+  editable: boolean,
+  onSelect: () => void,
+  onMove: (x: number, y: number) => void,
+) {
+  return (startEvt: React.TouchEvent | React.MouseEvent) => {
+    if (!editable) return;
+    startEvt.preventDefault();
+    startEvt.stopPropagation();
+    onSelect();
+
+    const canvas = (startEvt.currentTarget as HTMLElement).parentElement!;
+    const rect = canvas.getBoundingClientRect();
+
+    const getClientPos = (e: TouchEvent | MouseEvent) => {
+      if ("touches" in e && e.touches.length > 0)
+        return { cx: e.touches[0].clientX, cy: e.touches[0].clientY };
+      if ("clientX" in e) return { cx: e.clientX, cy: e.clientY };
+      return null;
+    };
+
+    const onDragMove = (e: TouchEvent | MouseEvent) => {
+      e.preventDefault();
+      const pos = getClientPos(e);
+      if (!pos) return;
+      const x = Math.max(0, Math.min(100, ((pos.cx - rect.left) / rect.width) * 100));
+      const y = Math.max(0, Math.min(100, ((pos.cy - rect.top) / rect.height) * 100));
+      onMove(x, y);
+    };
+
+    const onDragEnd = () => {
+      document.removeEventListener("touchmove", onDragMove);
+      document.removeEventListener("touchend", onDragEnd);
+      document.removeEventListener("mousemove", onDragMove);
+      document.removeEventListener("mouseup", onDragEnd);
+    };
+
+    document.addEventListener("touchmove", onDragMove, { passive: false });
+    document.addEventListener("touchend", onDragEnd);
+    document.addEventListener("mousemove", onDragMove);
+    document.addEventListener("mouseup", onDragEnd);
+  };
+}
+
+function CommentItem({
+  placement,
+  editable,
+  isSelected,
+  onSelect,
+  onMove,
+}: {
+  placement: RecipePlacement;
+  editable: boolean;
+  isSelected: boolean;
+  onSelect: () => void;
+  onMove: (x: number, y: number) => void;
+}) {
+  const scale = placement.scale ?? 1;
+  const color = placement.color || "#333";
+  const rotation = placement.rotation ?? 0;
+  const handleDrag = useDrag(editable, onSelect, onMove);
+
+  const textStyle: React.CSSProperties = {
+    fontFamily: HANDWRITING_FONT,
+    color,
+    fontSize: `${Math.round(13 * scale)}px`,
+    lineHeight: 1.4,
+    transform: rotation ? `rotate(${rotation}deg)` : undefined,
+    textShadow: "0 1px 3px rgba(255,255,255,0.8), 0 0 1px rgba(255,255,255,0.6)",
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-word",
+  };
+
+  return (
+    <div
+      className={`absolute z-10 max-w-[60%] ${editable ? "cursor-grab active:cursor-grabbing" : ""} ${isSelected ? "z-20" : ""}`}
+      style={{
+        left: `${placement.x}%`,
+        top: `${placement.y}%`,
+        transform: "translate(-50%, -50%)",
+      }}
+      onTouchStart={handleDrag}
+      onMouseDown={handleDrag}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (editable) onSelect();
+      }}
+    >
+      {isSelected && editable && (
+        <div className="absolute -inset-1.5 rounded-lg border-2 border-primary/60 bg-primary/5" />
+      )}
+      <p className="relative select-none" style={textStyle}>
+        {placement.comment || "コメント"}
+      </p>
+    </div>
+  );
+}
+
+function PlacementItem({
+  placement,
+  editable,
+  isSelected,
+  onSelect,
+  onMove,
+}: {
+  placement: RecipePlacement;
+  editable: boolean;
+  isSelected: boolean;
+  onSelect: () => void;
+  onMove: (x: number, y: number) => void;
+}) {
+  const scale = placement.scale ?? 1;
+  const handleDrag = useDrag(editable, onSelect, onMove);
+
+  const imageElement = placement.image && (
+    <div className="relative h-14 w-14 overflow-hidden rounded-lg border-2 border-white/80 bg-white shadow-lg">
+      <img
+        src={placement.image}
+        alt={placement.product || ""}
+        className="h-full w-full object-cover"
+        draggable={false}
+      />
+    </div>
+  );
+
+  const labelElement = (placement.brand || placement.product) ? (
+    <div className="max-w-[100px] bg-black/40 px-1.5 py-0.5 text-center backdrop-blur-[2px]">
+      {placement.brand && (
+        <p className="truncate text-[9px] font-bold text-white">{placement.brand}</p>
+      )}
+      {placement.product && (
+        <p className="line-clamp-2 text-[8px] font-medium leading-tight text-white">{placement.product}</p>
+      )}
+    </div>
+  ) : null;
+
+  if (!editable && placement.link) {
+    return (
+      <a
+        href={placement.link}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="absolute z-10 flex flex-col items-center gap-0.5"
+        style={{
+          left: `${placement.x}%`,
+          top: `${placement.y}%`,
+          transform: `translate(-50%, -50%) scale(${scale})`,
+        }}
+      >
+        {imageElement}
+        {labelElement}
+      </a>
+    );
+  }
+
+  return (
+    <div
+      className={`absolute flex flex-col items-center gap-0.5 ${editable ? "cursor-grab active:cursor-grabbing" : ""} ${isSelected ? "z-20" : "z-10"}`}
+      style={{
+        left: `${placement.x}%`,
+        top: `${placement.y}%`,
+        transform: `translate(-50%, -50%) scale(${scale})`,
+      }}
+      onTouchStart={handleDrag}
+      onMouseDown={handleDrag}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (editable) onSelect();
+      }}
+    >
+      {isSelected && editable && (
+        <div className="absolute -inset-2 rounded-xl border-2 border-primary/60 bg-primary/5" />
+      )}
+      {imageElement}
+      {labelElement}
+    </div>
+  );
+}

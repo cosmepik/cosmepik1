@@ -385,6 +385,16 @@ export async function saveSections(username: string, sections: Section[]): Promi
     },
     { onConflict: "username" }
   );
+
+  const count = sections.reduce((sum, sec) => {
+    if (sec.type === "recipe") return sum + (sec.placements?.length ?? 0);
+    return sum + (sec.items?.length ?? 0);
+  }, 0);
+  await client
+    .from("cosme_sets")
+    .update({ item_count: count })
+    .eq("slug", username)
+    .then(() => {}, () => {});
 }
 
 /** コスメセット一覧取得（user_id 指定）。未登録時は空配列を返す */
@@ -392,45 +402,58 @@ export async function fetchCosmeSets(userId: string): Promise<CosmeSet[]> {
   const client = getClient();
   if (!client) return [];
 
-  const { data, error } = await client
-    .from("cosme_sets")
-    .select("id, name, slug")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: true });
+  let data: Record<string, unknown>[] | null = null;
+  {
+    const res = await client
+      .from("cosme_sets")
+      .select("id, name, slug, mode, item_count")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true });
+    if (!res.error) {
+      data = res.data as Record<string, unknown>[] | null;
+    } else {
+      const fb1 = await client
+        .from("cosme_sets")
+        .select("id, name, slug, mode")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: true });
+      if (!fb1.error) {
+        data = fb1.data as Record<string, unknown>[] | null;
+      } else {
+        const fb2 = await client
+          .from("cosme_sets")
+          .select("id, name, slug")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: true });
+        if (fb2.error) return [];
+        data = fb2.data as Record<string, unknown>[] | null;
+      }
+    }
+  }
 
-  if (error || !data?.length) return [];
+  if (!data?.length) return [];
 
-  const slugs = data.map((row: Record<string, unknown>) => row.slug as string);
+  const slugs = data.map((row) => row.slug as string);
 
-  const [profilesResult, sectionsResult] = await Promise.all([
-    client.from("profiles").select("username, avatar_url").in("username", slugs),
-    client.from("sections").select("username, sections_json").in("username", slugs),
-  ]);
+  const profilesResult = await client
+    .from("profiles")
+    .select("username, avatar_url")
+    .in("username", slugs);
 
   const avatarMap = new Map<string, string>();
   for (const row of profilesResult.data ?? []) {
     if (row.avatar_url) avatarMap.set(row.username as string, row.avatar_url as string);
   }
 
-  const itemCountMap = new Map<string, number>();
-  for (const row of sectionsResult.data ?? []) {
-    const arr = row.sections_json as unknown;
-    if (Array.isArray(arr)) {
-      const count = (arr as { items?: unknown[] }[]).reduce(
-        (sum, sec) => sum + (sec.items?.length ?? 0), 0,
-      );
-      itemCountMap.set(row.username as string, count);
-    }
-  }
-
-  return data.map((row: Record<string, unknown>) => {
+  return data.map((row) => {
     const slug = row.slug as string;
     return {
       id: row.id as string,
       name: (row.name as string) ?? "マイコスメ",
       slug,
-      itemCount: itemCountMap.get(slug) ?? 0,
+      itemCount: (row.item_count as number) ?? 0,
       avatarUrl: avatarMap.get(slug),
+      mode: (row.mode as CosmeSet["mode"]) ?? undefined,
     };
   });
 }
@@ -439,7 +462,8 @@ export async function fetchCosmeSets(userId: string): Promise<CosmeSet[]> {
 export async function createCosmeSet(
   userId: string,
   name: string,
-  slug: string
+  slug: string,
+  mode: "simple" | "recipe" = "simple",
 ): Promise<CosmeSet | null> {
   const client = getClient();
   if (!client) return null;
@@ -448,9 +472,25 @@ export async function createCosmeSet(
     user_id: userId,
     name,
     slug,
-  }).select("id, name, slug").single();
+    mode,
+  }).select("id, name, slug, mode").single();
 
   if (error) {
+    if (error.message?.includes("mode")) {
+      const { data: d2, error: e2 } = await client.from("cosme_sets").insert({
+        user_id: userId,
+        name,
+        slug,
+      }).select("id, name, slug").single();
+      if (e2) throw new Error(`Supabase: ${e2.message}`);
+      if (!d2) return null;
+      await ensureProfileExists(slug);
+      if (mode === "recipe") {
+        const { createDefaultRecipeSection } = await import("@/lib/sections");
+        await saveSections(slug, [createDefaultRecipeSection()]);
+      }
+      return { id: d2.id as string, name: d2.name as string, slug: d2.slug as string, itemCount: 0, mode };
+    }
     const msg = `Supabase: ${error.message} (code: ${error.code ?? "—"})`;
     console.warn("[createCosmeSet]", msg);
     throw new Error(msg);
@@ -458,11 +498,16 @@ export async function createCosmeSet(
   if (!data) return null;
 
   await ensureProfileExists(slug);
+  if (mode === "recipe") {
+    const { createDefaultRecipeSection } = await import("@/lib/sections");
+    await saveSections(slug, [createDefaultRecipeSection()]);
+  }
   return {
     id: data.id as string,
     name: data.name as string,
     slug: data.slug as string,
     itemCount: 0,
+    mode: (data as Record<string, unknown>).mode as string | undefined as CosmeSet["mode"] ?? mode,
   };
 }
 

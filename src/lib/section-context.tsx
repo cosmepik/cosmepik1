@@ -8,7 +8,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { type Section, type SectionItem, createDefaultRoutineSection } from "./sections";
+import { type Section, type SectionItem, createDefaultRoutineSection, createDefaultRecipeSection } from "./sections";
 import * as store from "./store";
 
 interface SectionContextType {
@@ -91,16 +91,19 @@ export function SectionProvider({
       return;
     }
 
+    let cancelled = false;
     store.getSections(slug).then((saved) => {
+      if (cancelled) return;
       if (saved && saved.length > 0) {
         setSectionsState(saved);
-      } else {
+      } else if (defaultEditMode) {
         const defaultSection = createDefaultRoutineSection();
         setSectionsState([defaultSection]);
         store.setSections([defaultSection], slug);
       }
     });
-  }, [slug, initialSections]);
+    return () => { cancelled = true; };
+  }, [slug, initialSections, defaultEditMode]);
 
   const persistSections = useCallback(
     (next: Section[]) => {

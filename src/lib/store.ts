@@ -6,7 +6,7 @@
 import { isSupabaseConfigured } from "@/lib/supabase";
 import * as db from "@/lib/supabase-db";
 import * as local from "@/lib/local-storage";
-import type { ListedCosmeItem, InfluencerProfile, CosmeSet } from "@/types";
+import type { ListedCosmeItem, InfluencerProfile, CosmeSet, CosmeSetMode } from "@/types";
 
 const FALLBACK_USER_ID = "demo";
 
@@ -73,10 +73,11 @@ export async function updateCosmeSetName(
 export async function createCosmeSet(
   userId: string | null | undefined,
   name: string,
-  slug: string
+  slug: string,
+  mode: CosmeSetMode = "simple",
 ): Promise<CosmeSet | null> {
   if (!useSupabase()) return Promise.resolve(local.createCosmeSet(name, slug));
-  return db.createCosmeSet(uid(userId), name, slug);
+  return db.createCosmeSet(uid(userId), name, slug, mode);
 }
 
 /** 自分のリストを取得（slug = コスメセット識別子） */
@@ -232,6 +233,8 @@ export async function addItemToSection(
   return true;
 }
 
+let _pendingSave: Promise<void> | null = null;
+
 /** セクション一覧保存（slug ごと） */
 export async function setSections(
   sections: import("@/lib/sections").Section[],
@@ -242,10 +245,19 @@ export async function setSections(
     local.setSections(s, sections);
     return;
   }
-  await db.saveSections(s, sections);
-  fetch("/api/revalidate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username: s }),
-  }).catch((e) => console.warn("[revalidate] failed:", e));
+  const p = db.saveSections(s, sections).then(() => {
+    fetch("/api/revalidate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: s }),
+    }).catch((e) => console.warn("[revalidate] failed:", e));
+  });
+  _pendingSave = p;
+  await p;
+  if (_pendingSave === p) _pendingSave = null;
+}
+
+/** 保存中のセクションデータがあれば完了を待つ */
+export function waitForPendingSave(): Promise<void> {
+  return _pendingSave ?? Promise.resolve();
 }

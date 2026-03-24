@@ -6,6 +6,7 @@
  */
 import { cn } from "@/lib/utils";
 import { getCardDesign } from "@/lib/card-designs";
+import { AdBanner } from "@/components/AdSense";
 import type { InfluencerProfile, SnsLink } from "@/types";
 import type { Section, SectionItem } from "@/lib/sections";
 
@@ -119,7 +120,7 @@ function ProfileHeader({ username, profile }: { username: string; profile: Influ
   return (
     <header className="flex flex-col items-center gap-4 pb-3">
       <div className="relative">
-        <div className="h-20 w-20 overflow-hidden rounded-full border border-green shadow-md">
+        <div className="h-20 w-20 overflow-hidden rounded-full shadow-md">
           {profile?.avatarUrl ? (
             <img src={profile.avatarUrl} alt="" className="h-full w-full object-cover" loading="eager" />
           ) : (
@@ -246,7 +247,84 @@ function cardBgStyle(cardColor: string | undefined): React.CSSProperties | undef
   return { backgroundColor: cardColor };
 }
 
+function RecipeSectionBlock({ section }: { section: Section }) {
+  const placements = section.placements ?? [];
+  if (!section.backgroundImage && placements.length === 0) return null;
+  const hasComments = placements.some((p) => p.type === "comment");
+  return (
+    <section className="relative">
+      {hasComments && (
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Yomogi&display=swap" />
+      )}
+      <div className="relative w-full overflow-hidden rounded-2xl" style={{ aspectRatio: "3 / 4" }}>
+        {section.backgroundImage && (
+          <img src={section.backgroundImage} alt="" className="absolute inset-0 h-full w-full object-cover" loading="eager" />
+        )}
+        {placements.map((p) => {
+          if (p.type === "comment") {
+            const scale = p.scale ?? 1;
+            const rotation = p.rotation ?? 0;
+            return (
+              <div
+                key={p.id}
+                className="absolute z-10 max-w-[60%]"
+                style={{ left: `${p.x}%`, top: `${p.y}%`, transform: "translate(-50%, -50%)" }}
+              >
+                <p
+                  style={{
+                    fontFamily: "Yomogi, cursive",
+                    color: p.color || "#333",
+                    fontSize: `${Math.round(13 * scale)}px`,
+                    lineHeight: 1.4,
+                    transform: rotation ? `rotate(${rotation}deg)` : undefined,
+                    textShadow: "0 1px 3px rgba(255,255,255,0.8), 0 0 1px rgba(255,255,255,0.6)",
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {p.comment}
+                </p>
+              </div>
+            );
+          }
+          const scale = p.scale ?? 1;
+          return (
+            <div
+              key={p.id}
+              className="absolute z-10 flex flex-col items-center gap-0.5"
+              style={{
+                left: `${p.x}%`,
+                top: `${p.y}%`,
+                transform: `translate(-50%, -50%) scale(${scale})`,
+              }}
+            >
+              {p.image && (
+                <a
+                  href={p.link || "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-afl={p.link || undefined}
+                  className="block h-14 w-14 overflow-hidden rounded-lg border-2 border-white/80 bg-white shadow-lg"
+                >
+                  <SafeImage src={p.image} alt={p.product || ""} className="h-full w-full object-cover" />
+                </a>
+              )}
+              {(p.brand || p.product) && (
+                <div className="max-w-[100px] bg-black/40 px-1.5 py-0.5 text-center" style={{ backdropFilter: "blur(2px)" }}>
+                  {p.brand && <p className="truncate text-[9px] font-bold text-white">{p.brand}</p>}
+                  {p.product && <p className="line-clamp-2 text-[8px] font-medium leading-tight text-white">{p.product}</p>}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function SectionBlock({ section, cardDesignId, cardColor }: { section: Section; cardDesignId?: string; cardColor?: string }) {
+  if (section.type === "recipe") return <RecipeSectionBlock section={section} />;
   const design = getCardDesign(cardDesignId);
   const { listClassName, productClassName, listImageClassName, productImageClassName } = design;
   const colorStyle = cardBgStyle(cardColor);
@@ -349,6 +427,8 @@ export function PublicPageSSR({ username, profile, sections, themeVars }: Public
           {sections.map((section) => (
             <SectionBlock key={section.id} section={section} cardDesignId={profile?.cardDesignId} cardColor={profile?.cardColor} />
           ))}
+
+          <AdBanner className="w-full" />
 
           <footer className="flex flex-col items-center gap-2 pb-8 pt-4">
             <div className="flex items-center justify-center gap-1.5 text-muted-foreground">

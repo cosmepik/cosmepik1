@@ -12,13 +12,14 @@ import { SectionProvider } from "@/lib/section-context";
 import { SectionRenderer } from "@/components/cosme-link/section-renderer";
 import { AddSectionInline } from "@/components/cosme-link/add-section-inline";
 import { useSections } from "@/lib/section-context";
-import { getProfile, renameCosmeSet } from "@/lib/store";
+import { getProfile, renameCosmeSet, waitForPendingSave } from "@/lib/store";
 import { ProfileProvider, toProfile, useProfile } from "@/lib/profile-context";
 import { ProfileThemeLoader } from "@/components/ProfileThemeLoader";
 import { ShareModal } from "@/components/ShareModal";
 import { SetupGuide } from "@/components/cosme-link/setup-guide";
 import { useStylePickerOpen } from "@/components/cosme-link/style-picker";
 import { CosmepikLogo } from "@/components/cosmepik-logo";
+import { RecipeEditor } from "@/components/cosme-link/recipe-editor";
 
 const WELCOME_DISMISSED_KEY = "cosmepik-welcome-dismissed";
 
@@ -170,12 +171,16 @@ function EditPageContent({ slug }: { slug: string }) {
         onMenuClick={() => setSidebarOpen(true)}
         rightContent={
           <div className="flex items-center gap-2">
-            <Link
-              href={`/dashboard/preview?slug=${encodeURIComponent(slug)}`}
+            <button
+              type="button"
+              onClick={async () => {
+                await waitForPendingSave();
+                router.push(`/dashboard/preview?slug=${encodeURIComponent(slug)}`);
+              }}
               className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-md transition-all hover:bg-primary/90 active:scale-95"
             >
               プレビュー
-            </Link>
+            </button>
             <button
               type="button"
               onClick={() => setShareOpen(true)}
@@ -276,17 +281,23 @@ function EditPageContent({ slug }: { slug: string }) {
         <ProfileHeader />
 
         <div className="mx-auto mt-3 flex max-w-[400px] flex-col gap-2">
-          {isEditMode && sections.length === 0 && (
-            <AddSectionInline insertIndex={0} />
-          )}
-          {sections.map((section, index) => (
-            <div key={section.id} className="flex flex-col gap-2">
-              <SectionRenderer section={section} />
-              {isEditMode && (
-                <AddSectionInline insertIndex={index + 1} />
+          {sections.some((s) => s.type === "recipe") ? (
+            <RecipeEditor />
+          ) : (
+            <>
+              {isEditMode && sections.length === 0 && (
+                <AddSectionInline insertIndex={0} />
               )}
-            </div>
-          ))}
+              {sections.map((section, index) => (
+                <div key={section.id} className="flex flex-col gap-2">
+                  <SectionRenderer section={section} />
+                  {isEditMode && (
+                    <AddSectionInline insertIndex={index + 1} />
+                  )}
+                </div>
+              ))}
+            </>
+          )}
         </div>
       </div>
       </div>

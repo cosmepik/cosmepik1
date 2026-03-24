@@ -46,7 +46,7 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
-  const { data } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
   const hasDemoCookie = request.cookies.get("cosmepik_demo")?.value === "1";
 
   // LIFF 経由のアクセスはクライアント側で自動ログインするため許可
@@ -55,7 +55,7 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.searchParams.has("liff.state");
 
   if (
-    !data.user &&
+    !session?.user &&
     !hasDemoCookie &&
     !isLiffAccess &&
     isProtectedRoute(pathname)

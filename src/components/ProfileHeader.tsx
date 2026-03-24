@@ -49,7 +49,7 @@ export function ProfileHeaderView({ username, profile }: ProfileHeaderViewProps)
   return (
     <header className="flex flex-col items-center gap-4 pb-3">
       <div className="relative">
-        <div className="h-20 w-20 overflow-hidden rounded-full border border-green shadow-md">
+        <div className="h-20 w-20 overflow-hidden rounded-full shadow-md">
           {profile?.avatarUrl ? (
             <img src={profile.avatarUrl} alt="" className="h-full w-full object-cover" />
           ) : (
@@ -155,7 +155,7 @@ export function ProfileHeaderEdit({
   return (
     <header className="flex flex-col items-center gap-4 pb-3">
       <label htmlFor="avatar-upload" className="relative block cursor-pointer">
-        <div className="h-20 w-20 overflow-hidden rounded-full border border-green shadow-md">
+        <div className="h-20 w-20 overflow-hidden rounded-full shadow-md">
           {avatarUrl ? (
             <img src={avatarUrl} alt="" className="h-full w-full object-cover" onError={(e) => ((e.target as HTMLImageElement).style.display = "none")} />
           ) : (

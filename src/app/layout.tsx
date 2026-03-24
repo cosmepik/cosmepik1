@@ -5,6 +5,7 @@ import { LayoutBackground } from "@/components/LayoutBackground";
 import { LazyFonts } from "@/components/LazyFonts";
 import { Toaster } from "sonner";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { AdSenseHead } from "@/components/AdSense";
 import { isProduction } from "@/lib/env";
 import "./globals.css";
 
@@ -44,6 +45,7 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <GoogleAnalytics />
+        <AdSenseHead />
       </head>
       <body className="min-h-screen bg-white antialiased">
         <LazyFonts />
