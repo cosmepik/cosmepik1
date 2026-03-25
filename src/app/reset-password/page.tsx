@@ -21,8 +21,8 @@ export default function ResetPasswordPage() {
       setHasSession(false);
       return;
     }
-    supabase.auth.getSession().then(({ data }) => {
-      setHasSession(!!data.session);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setHasSession(!!session);
     });
   }, []);
 
