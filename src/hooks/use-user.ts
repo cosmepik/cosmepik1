@@ -15,17 +15,16 @@ export function useUser(): { user: User | null; loading: boolean } {
       setLoading(false);
       return;
     }
-    supabase.auth
-      .getSession()
-      .then(({ data: { session } }) => {
-        setUser(session?.user ?? null);
-      })
-      .catch(() => {
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        setUser(data.session?.user ?? null);
+      } catch {
         setUser(null);
-      })
-      .finally(() => {
+      } finally {
         setLoading(false);
-      });
+      }
+    })();
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
