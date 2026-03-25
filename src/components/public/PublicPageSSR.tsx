@@ -247,9 +247,10 @@ function cardBgStyle(cardColor: string | undefined): React.CSSProperties | undef
   return { backgroundColor: cardColor };
 }
 
-function RecipeSectionBlock({ section }: { section: Section }) {
+function RecipeSectionBlock({ section, slug }: { section: Section; slug?: string }) {
   const placements = section.placements ?? [];
   if (!section.backgroundImage && placements.length === 0) return null;
+  const bgSrc = slug ? `/api/recipe-bg/${encodeURIComponent(slug)}` : section.backgroundImage;
   const hasComments = placements.some((p) => p.type === "comment");
   return (
     <section className="relative">
@@ -258,7 +259,7 @@ function RecipeSectionBlock({ section }: { section: Section }) {
       )}
       <div className="relative w-full overflow-hidden rounded-2xl" style={{ aspectRatio: "3 / 4" }}>
         {section.backgroundImage && (
-          <img src={section.backgroundImage} alt="" className="absolute inset-0 h-full w-full object-cover" loading="eager" />
+          <img src={bgSrc} alt="" className="absolute inset-0 h-full w-full object-cover" loading="eager" />
         )}
         {placements.map((p) => {
           if (p.type === "comment") {
@@ -323,8 +324,8 @@ function RecipeSectionBlock({ section }: { section: Section }) {
   );
 }
 
-function SectionBlock({ section, cardDesignId, cardColor }: { section: Section; cardDesignId?: string; cardColor?: string }) {
-  if (section.type === "recipe") return <RecipeSectionBlock section={section} />;
+function SectionBlock({ section, cardDesignId, cardColor, slug }: { section: Section; cardDesignId?: string; cardColor?: string; slug?: string }) {
+  if (section.type === "recipe") return <RecipeSectionBlock section={section} slug={slug} />;
   const design = getCardDesign(cardDesignId);
   const { listClassName, productClassName, listImageClassName, productImageClassName } = design;
   const colorStyle = cardBgStyle(cardColor);
@@ -425,7 +426,7 @@ export function PublicPageSSR({ username, profile, sections, themeVars }: Public
           <ProfileHeader username={username} profile={profile} />
 
           {sections.map((section) => (
-            <SectionBlock key={section.id} section={section} cardDesignId={profile?.cardDesignId} cardColor={profile?.cardColor} />
+            <SectionBlock key={section.id} section={section} cardDesignId={profile?.cardDesignId} cardColor={profile?.cardColor} slug={username} />
           ))}
 
           <AdBanner className="w-full" />

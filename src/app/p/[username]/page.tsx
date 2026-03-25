@@ -14,6 +14,12 @@ export default async function PublicPageByUsername({ params }: Props) {
   const themeVars = generateThemeVars(profile);
   const fontUrl = getFontLinkUrl(profile);
 
+  const lightSections = sections.map((s) =>
+    s.type === "recipe" && s.backgroundImage
+      ? { ...s, backgroundImage: "API" }
+      : s
+  );
+
   return (
     <>
       {fontUrl && <link rel="stylesheet" href={fontUrl} />}
@@ -22,7 +28,7 @@ export default async function PublicPageByUsername({ params }: Props) {
       <PublicPageSSR
         username={username}
         profile={profile}
-        sections={sections}
+        sections={lightSections}
         themeVars={themeVars}
       />
     </>

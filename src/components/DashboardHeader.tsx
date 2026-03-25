@@ -17,9 +17,10 @@ export function ProfileIcon({ user, onClick, className }: { user: User; onClick?
   const containerRef = useRef<HTMLDivElement>(null);
 
   const meta = user.user_metadata ?? {};
-  const provider = user.app_metadata?.provider as string | undefined;
-  const isEmailLogin = provider === "email";
-  const avatarUrl = !isEmailLogin ? (meta.avatar_url ?? meta.picture ?? undefined) : undefined;
+  const appProvider = user.app_metadata?.provider as string | undefined;
+  const metaProvider = meta.provider as string | undefined;
+  const isPlainEmail = appProvider === "email" && !metaProvider;
+  const avatarUrl = !isPlainEmail ? (meta.avatar_url ?? meta.picture ?? undefined) : undefined;
   const initial = (user.email?.[0] ?? meta.name?.[0] ?? meta.full_name?.[0] ?? "?").toUpperCase();
 
   // Google: full_name, name, email | X: user_name, name, email

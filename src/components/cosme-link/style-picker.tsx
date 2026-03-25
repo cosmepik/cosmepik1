@@ -22,7 +22,7 @@ import { cardDesigns, type CardDesignId } from "@/lib/card-designs";
 import { fonts, getFontFamily, type FontId } from "@/lib/fonts";
 import { Palette, X, Check, Paintbrush, Upload, Plus, Type, LayoutTemplate, LayoutGrid } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useSections } from "@/lib/section-context";
+
 
 // Deduplicate backgrounds by id to prevent React key conflicts
 const deduped = new Set<string>();
@@ -90,6 +90,8 @@ type StylePickerContextValue = {
   openTab: TabType;
   setOpenTab: (tab: TabType) => void;
   openWithTab: (tab: TabType) => void;
+  isRecipeMode: boolean;
+  setIsRecipeMode: (v: boolean) => void;
 };
 
 const StylePickerContext = createContext<StylePickerContextValue | null>(null);
@@ -97,12 +99,13 @@ const StylePickerContext = createContext<StylePickerContextValue | null>(null);
 export function StylePickerProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [openTab, setOpenTab] = useState<TabType>("theme");
+  const [isRecipeMode, setIsRecipeMode] = useState(false);
   const openWithTab = (tab: TabType) => {
     setOpenTab(tab);
     setOpen(true);
   };
   return (
-    <StylePickerContext.Provider value={{ open, setOpen, openTab, setOpenTab, openWithTab }}>
+    <StylePickerContext.Provider value={{ open, setOpen, openTab, setOpenTab, openWithTab, isRecipeMode, setIsRecipeMode }}>
       {children}
     </StylePickerContext.Provider>
   );
@@ -117,6 +120,7 @@ export function useStylePickerOpen() {
         openTab: ctx.openTab,
         setOpenTab: ctx.setOpenTab,
         openWithTab: ctx.openWithTab,
+        setIsRecipeMode: ctx.setIsRecipeMode,
       }
     : {
         open: false,
@@ -124,6 +128,7 @@ export function useStylePickerOpen() {
         openTab: "color" as TabType,
         setOpenTab: () => {},
         openWithTab: () => {},
+        setIsRecipeMode: () => {},
       };
 }
 
@@ -1053,8 +1058,7 @@ export function StylePicker() {
   const setOpen = ctx?.setOpen ?? (() => {});
   const activeTab = ctx?.openTab ?? "color";
   const setActiveTab = ctx?.setOpenTab ?? (() => {});
-  const { sections } = useSections();
-  const isRecipeMode = sections.some((s) => s.type === "recipe");
+  const isRecipeMode = ctx?.isRecipeMode ?? false;
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {

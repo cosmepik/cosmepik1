@@ -12,7 +12,7 @@ import { SectionProvider } from "@/lib/section-context";
 import { SectionRenderer } from "@/components/cosme-link/section-renderer";
 import { AddSectionInline } from "@/components/cosme-link/add-section-inline";
 import { useSections } from "@/lib/section-context";
-import { getProfile, renameCosmeSet, waitForPendingSave } from "@/lib/store";
+import { getProfile, renameCosmeSet, flushSections } from "@/lib/store";
 import { ProfileProvider, toProfile, useProfile } from "@/lib/profile-context";
 import { ProfileThemeLoader } from "@/components/ProfileThemeLoader";
 import { ShareModal } from "@/components/ShareModal";
@@ -79,7 +79,13 @@ function WelcomePopup() {
 
 function EditPageContent({ slug }: { slug: string }) {
   const router = useRouter();
-  const { sections, isEditMode } = useSections();
+  const { sections, isEditMode, isLoading } = useSections();
+  const { setIsRecipeMode } = useStylePickerOpen();
+
+  const isRecipe = sections.some((s) => s.type === "recipe");
+  useEffect(() => {
+    setIsRecipeMode(isRecipe);
+  }, [isRecipe, setIsRecipeMode]);
 
   const [backgroundImageUrl, setBackgroundImageUrl] = useState("");
   const [usePreset, setUsePreset] = useState(false);
@@ -173,8 +179,8 @@ function EditPageContent({ slug }: { slug: string }) {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={async () => {
-                await waitForPendingSave();
+              onClick={() => {
+                flushSections(slug);
                 router.push(`/dashboard/preview?slug=${encodeURIComponent(slug)}`);
               }}
               className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-md transition-all hover:bg-primary/90 active:scale-95"
@@ -278,27 +284,36 @@ function EditPageContent({ slug }: { slug: string }) {
           )}
         </div>
 
-        <ProfileHeader />
+        {isLoading ? (
+          <div className="mx-auto mt-16 flex max-w-[400px] flex-col items-center gap-4">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-muted border-t-primary" />
+            <p className="text-sm text-muted-foreground animate-pulse">読み込み中...</p>
+          </div>
+        ) : (
+          <>
+            <ProfileHeader />
 
-        <div className="mx-auto mt-3 flex max-w-[400px] flex-col gap-2">
-          {sections.some((s) => s.type === "recipe") ? (
-            <RecipeEditor />
-          ) : (
-            <>
-              {isEditMode && sections.length === 0 && (
-                <AddSectionInline insertIndex={0} />
-              )}
-              {sections.map((section, index) => (
-                <div key={section.id} className="flex flex-col gap-2">
-                  <SectionRenderer section={section} />
-                  {isEditMode && (
-                    <AddSectionInline insertIndex={index + 1} />
+            <div className="mx-auto mt-3 flex max-w-[400px] flex-col gap-2">
+              {sections.some((s) => s.type === "recipe") ? (
+                <RecipeEditor />
+              ) : (
+                <>
+                  {isEditMode && sections.length === 0 && (
+                    <AddSectionInline insertIndex={0} />
                   )}
-                </div>
-              ))}
-            </>
-          )}
-        </div>
+                  {sections.map((section, index) => (
+                    <div key={section.id} className="flex flex-col gap-2">
+                      <SectionRenderer section={section} />
+                      {isEditMode && (
+                        <AddSectionInline insertIndex={index + 1} />
+                      )}
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          </>
+        )}
       </div>
       </div>
     </main>

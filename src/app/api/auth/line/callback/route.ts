@@ -133,5 +133,44 @@ export async function GET(request: NextRequest) {
     return loginError("session_failed");
   }
 
+  /* ── profiles テーブルにアバター・名前を同期（fire-and-forget） ── */
+  if (lineProfile.pictureUrl || lineProfile.displayName) {
+    const uid = linkData.user?.id;
+    if (uid) {
+      supabaseAdmin
+        .from("cosme_sets")
+        .select("slug")
+        .eq("user_id", uid)
+        .then(({ data: sets }) => {
+          if (!sets || sets.length === 0) return;
+          const slugs = sets.map((s) => s.slug as string);
+          return supabaseAdmin
+            .from("profiles")
+            .select("username, avatar_url, display_name")
+            .in("username", slugs);
+        })
+        .then((result) => {
+          if (!result || !result.data) return;
+          for (const row of result.data) {
+            const updates: Record<string, string> = {};
+            if (!row.avatar_url && lineProfile.pictureUrl) {
+              updates.avatar_url = lineProfile.pictureUrl;
+            }
+            if (!row.display_name && lineProfile.displayName) {
+              updates.display_name = lineProfile.displayName;
+            }
+            if (Object.keys(updates).length > 0) {
+              supabaseAdmin
+                .from("profiles")
+                .update(updates)
+                .eq("username", row.username)
+                .then(() => {}, () => {});
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  }
+
   return response;
 }

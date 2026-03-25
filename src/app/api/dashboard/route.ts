@@ -98,6 +98,27 @@ export async function GET() {
       };
     });
 
+    const meta = user.user_metadata as Record<string, unknown> | undefined;
+    const lineAvatar = (meta?.avatar_url as string) || undefined;
+    const lineName = (meta?.full_name as string) || undefined;
+    if (lineAvatar && profileMap.size > 0) {
+      for (const [slug, p] of profileMap) {
+        const hasAvatar = !!(p.avatar_url as string);
+        const hasName = !!(p.display_name as string);
+        if (!hasAvatar || !hasName) {
+          const updates: Record<string, string> = {};
+          if (!hasAvatar) updates.avatar_url = lineAvatar;
+          if (!hasName && lineName) updates.display_name = lineName;
+          sb.from("profiles")
+            .update(updates)
+            .eq("username", slug)
+            .then(() => {}, () => {});
+          if (!hasAvatar) p.avatar_url = lineAvatar;
+          if (!hasName && lineName) p.display_name = lineName;
+        }
+      }
+    }
+
     const profiles: Record<string, Record<string, unknown>> = {};
     for (const [slug, p] of profileMap) {
       profiles[slug] = p;

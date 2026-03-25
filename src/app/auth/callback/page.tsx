@@ -79,8 +79,8 @@ function AuthCallbackContent() {
       setTimeout(() => {
         subscription.unsubscribe();
         setStatus("error");
-        setMessage("ログインに失敗しました。もう一度お試しください。");
-      }, 15000);
+        setMessage("ログインに失敗しました。確認メールを登録時と異なるブラウザで開いた場合、ログイン画面からメールアドレスとパスワードで直接ログインしてください。");
+      }, 10000);
     };
 
     run();

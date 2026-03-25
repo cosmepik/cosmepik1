@@ -7,7 +7,7 @@ import type { Section, RecipePlacement } from "@/lib/sections";
 import { RecipeCanvas } from "./recipe-canvas";
 import { AddItemModal } from "./add-item-modal";
 
-function compressImage(file: File, maxWidth = 1200): Promise<string> {
+function compressImage(file: File, maxWidth = 800, quality = 0.65): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -28,7 +28,7 @@ function compressImage(file: File, maxWidth = 1200): Promise<string> {
       canvas.height = height;
       const ctx = canvas.getContext("2d")!;
       ctx.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL("image/jpeg", 0.85));
+      resolve(canvas.toDataURL("image/jpeg", quality));
     };
     img.onerror = reject;
     img.src = url;

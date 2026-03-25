@@ -42,7 +42,7 @@ export function RecipeCanvas({
   return (
     <div
       className="relative w-full overflow-hidden rounded-2xl bg-muted/30"
-      style={{ aspectRatio: "3 / 4" }}
+      style={{ aspectRatio: "3 / 4", touchAction: editable ? "none" : undefined }}
     >
       {backgroundImage ? (
         <img

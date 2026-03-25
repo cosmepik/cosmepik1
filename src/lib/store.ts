@@ -17,6 +17,9 @@ function useSupabase() {
 const profileCache = new Map<string, { data: InfluencerProfile | null; ts: number }>();
 const PROFILE_CACHE_TTL = 30_000;
 
+const sectionsCache = new Map<string, { data: import("@/lib/sections").Section[]; ts: number }>();
+const SECTIONS_CACHE_TTL = 30_000;
+
 /** ダッシュボード等で取得済みのプロフィールデータでキャッシュを事前セット */
 export function seedProfileCache(slug: string, profile: InfluencerProfile): void {
   profileCache.set(slug, { data: profile, ts: Date.now() });
@@ -117,7 +120,11 @@ export async function getProfile(slug?: string | null): Promise<InfluencerProfil
     if (res.ok) {
       const json = await res.json();
       const data = (json.profile as InfluencerProfile) ?? null;
-      profileCache.set(s, { data, ts: Date.now() });
+      const now = Date.now();
+      profileCache.set(s, { data, ts: now });
+      if (Array.isArray(json.sections)) {
+        sectionsCache.set(s, { data: json.sections, ts: now });
+      }
       return data;
     }
   } catch {}
@@ -135,6 +142,8 @@ export async function renameCosmeSet(
   if (!useSupabase()) return Promise.resolve(local.renameCosmeSet(oldSlug, newSlug));
   profileCache.delete(oldSlug);
   profileCache.delete(newSlug);
+  sectionsCache.delete(oldSlug);
+  sectionsCache.delete(newSlug);
   return db.renameCosmeSetSlug(oldSlug, newSlug);
 }
 
@@ -200,11 +209,21 @@ export async function getListByUsername(username: string): Promise<ListedCosmeIt
   return db.fetchList(username);
 }
 
-/** セクション一覧取得（slug ごと） */
+/** セクション一覧取得（slug ごと）— インメモリキャッシュ付き */
 export async function getSections(slug?: string | null): Promise<import("@/lib/sections").Section[] | null> {
   const s = slug ?? FALLBACK_USER_ID;
   if (!useSupabase()) return Promise.resolve(local.getSections(s));
-  return db.fetchSections(s);
+
+  const cached = sectionsCache.get(s);
+  if (cached && Date.now() - cached.ts < SECTIONS_CACHE_TTL) {
+    return cached.data;
+  }
+
+  const data = await db.fetchSections(s);
+  if (data) {
+    sectionsCache.set(s, { data, ts: Date.now() });
+  }
+  return data;
 }
 
 /** セクションにアイテムを追加（検索ページ用） */
@@ -234,27 +253,56 @@ export async function addItemToSection(
 }
 
 let _pendingSave: Promise<void> | null = null;
+const _debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const _pendingData = new Map<string, import("@/lib/sections").Section[]>();
 
-/** セクション一覧保存（slug ごと） */
-export async function setSections(
-  sections: import("@/lib/sections").Section[],
-  slug?: string | null
-): Promise<void> {
-  const s = slug ?? FALLBACK_USER_ID;
-  if (!useSupabase()) {
-    local.setSections(s, sections);
-    return;
-  }
+function doSave(s: string, sections: import("@/lib/sections").Section[]): Promise<void> {
   const p = db.saveSections(s, sections).then(() => {
     fetch("/api/revalidate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: s }),
-    }).catch((e) => console.warn("[revalidate] failed:", e));
+    }).catch(() => {});
   });
   _pendingSave = p;
-  await p;
-  if (_pendingSave === p) _pendingSave = null;
+  p.finally(() => { if (_pendingSave === p) _pendingSave = null; });
+  return p;
+}
+
+/** セクション一覧保存（slug ごと）— 800ms デバウンス付き */
+export function setSections(
+  sections: import("@/lib/sections").Section[],
+  slug?: string | null
+): void {
+  const s = slug ?? FALLBACK_USER_ID;
+  if (!useSupabase()) {
+    local.setSections(s, sections);
+    return;
+  }
+  _pendingData.set(s, sections);
+  sectionsCache.set(s, { data: sections, ts: Date.now() });
+  const existing = _debounceTimers.get(s);
+  if (existing) clearTimeout(existing);
+  _debounceTimers.set(s, setTimeout(() => {
+    _debounceTimers.delete(s);
+    const data = _pendingData.get(s);
+    _pendingData.delete(s);
+    if (data) doSave(s, data);
+  }, 800));
+}
+
+/** デバウンス中のデータがあれば即座にflushして保存 */
+export function flushSections(slug?: string | null): Promise<void> {
+  const s = slug ?? FALLBACK_USER_ID;
+  const timer = _debounceTimers.get(s);
+  if (timer) {
+    clearTimeout(timer);
+    _debounceTimers.delete(s);
+  }
+  const data = _pendingData.get(s);
+  _pendingData.delete(s);
+  if (data) return doSave(s, data);
+  return _pendingSave ?? Promise.resolve();
 }
 
 /** 保存中のセクションデータがあれば完了を待つ */

@@ -390,7 +390,7 @@ export async function saveSections(username: string, sections: Section[]): Promi
     if (sec.type === "recipe") return sum + (sec.placements?.length ?? 0);
     return sum + (sec.items?.length ?? 0);
   }, 0);
-  await client
+  client
     .from("cosme_sets")
     .update({ item_count: count })
     .eq("slug", username)

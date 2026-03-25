@@ -23,6 +23,7 @@ import {
   deleteCosmeSet,
   updateCosmeSetName,
   seedProfileCache,
+  getSections,
 } from "@/lib/store";
 import type { CosmeSet, CosmeSetMode, InfluencerProfile } from "@/types";
 
@@ -82,8 +83,10 @@ export default function DashboardHomePage() {
         if (data.user) setDashUser(data.user);
         setSets(data.sets ?? []);
         setIsPremium(!!data.premium);
+        const slugs: string[] = [];
         if (data.profiles) {
           for (const [slug, p] of Object.entries(data.profiles)) {
+            slugs.push(slug);
             const raw = p as Record<string, unknown>;
             seedProfileCache(slug, {
               username: raw.username as string,
@@ -106,6 +109,7 @@ export default function DashboardHomePage() {
             });
           }
         }
+        for (const s of slugs) getSections(s).catch(() => {});
       })
       .catch(() => setSets([]))
       .finally(() => {

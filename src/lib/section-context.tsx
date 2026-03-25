@@ -31,6 +31,7 @@ interface SectionContextType {
   setShowAddSectionModal: (value: boolean) => void;
   isEditMode: boolean;
   setIsEditMode: (value: boolean) => void;
+  isLoading: boolean;
 }
 
 const SectionContext = createContext<SectionContextType | null>(null);
@@ -57,6 +58,7 @@ export function useSections(): SectionContextType {
       setShowAddSectionModal: () => {},
       isEditMode: false,
       setIsEditMode: () => {},
+      isLoading: false,
     };
   }
   return ctx;
@@ -83,14 +85,17 @@ export function SectionProvider({
   const [sections, setSectionsState] = useState<Section[]>([]);
   const [isEditMode, setIsEditMode] = useState(defaultEditMode);
   const [showAddSectionModal, setShowAddSectionModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(!Array.isArray(initialSections));
 
   useEffect(() => {
     if (initialSections === null) return;
     if (Array.isArray(initialSections)) {
       setSectionsState(initialSections.length > 0 ? initialSections : [createDefaultRoutineSection()]);
+      setIsLoading(false);
       return;
     }
 
+    setIsLoading(true);
     let cancelled = false;
     store.getSections(slug).then((saved) => {
       if (cancelled) return;
@@ -101,6 +106,7 @@ export function SectionProvider({
         setSectionsState([defaultSection]);
         store.setSections([defaultSection], slug);
       }
+      setIsLoading(false);
     });
     return () => { cancelled = true; };
   }, [slug, initialSections, defaultEditMode]);
@@ -304,6 +310,7 @@ export function SectionProvider({
         setShowAddSectionModal,
         isEditMode,
         setIsEditMode,
+        isLoading,
       }}
     >
       {children}
