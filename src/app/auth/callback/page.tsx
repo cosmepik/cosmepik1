@@ -64,7 +64,7 @@ function AuthCallbackContent() {
         return;
       }
 
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string, session: unknown) => {
         if (session) {
           subscription.unsubscribe();
           if (event === "PASSWORD_RECOVERY") {
