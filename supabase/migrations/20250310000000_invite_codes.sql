@@ -1,5 +1,5 @@
 -- 招待コード（6桁数字）
--- 管理者が発行し、インフルエンサーが入力してコスメセットを受け取る
+-- 管理者が発行し、インフルエンサーが入力してメイクレシピを受け取る
 CREATE TABLE IF NOT EXISTS invite_codes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   claim_code TEXT NOT NULL UNIQUE,

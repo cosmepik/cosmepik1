@@ -69,7 +69,7 @@ export interface InfluencerProfile {
 
 export type CosmeSetMode = "simple" | "recipe";
 
-/** コスメセット（1ユーザーが複数持てる） */
+/** メイクレシピ（1ユーザーが複数持てる） */
 export interface CosmeSet {
   id: string;
   name: string;

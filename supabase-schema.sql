@@ -1,6 +1,6 @@
 -- Cosmetree Supabase テーブル（Supabase ダッシュボードの SQL Editor で実行）
 
--- コスメセット（1ユーザーが複数持てる）
+-- メイクレシピ（1ユーザーが複数持てる）
 CREATE TABLE IF NOT EXISTS cosme_sets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id TEXT NOT NULL,

@@ -8,7 +8,7 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { useUser } from "@/hooks/use-user";
 import { getCosmeSets, getProfile, setProfile } from "@/lib/store";
 
-/** 収益化ページ：楽天アフィリエイトID設定（全コスメセットに一括適用） */
+/** 収益化ページ：楽天アフィリエイトID設定（全メイクレシピに一括適用） */
 export default function RevenuePage() {
   const { user } = useUser();
   const userId = user?.id ?? "demo";
@@ -41,7 +41,7 @@ export default function RevenuePage() {
     const sets = await getCosmeSets(userId);
     const list = sets ?? [];
     if (list.length === 0) {
-      alert("コスメセットがありません。まずダッシュボードでコスメリンクを作成してください。");
+      alert("メイクレシピがありません。まずダッシュボードでコスメリンクを作成してください。");
       return;
     }
     setSaving(true);
@@ -111,7 +111,7 @@ export default function RevenuePage() {
                   className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                 />
                 <p className="text-[11px] text-muted-foreground">
-                  楽天アフィリエイトに登録済みの場合、IDを入力すると収益の一部が還元されます。設定はすべてのコスメセットに適用されます。
+                  楽天アフィリエイトに登録済みの場合、IDを入力すると収益の一部が還元されます。設定はすべてのメイクレシピに適用されます。
                 </p>
                 <Link
                   href="/guide/rakuten-affiliate"
@@ -141,7 +141,7 @@ export default function RevenuePage() {
         {!loading && !hasSets && (
           <div className="mt-8 rounded-xl border border-border bg-muted/30 px-4 py-4">
             <p className="text-xs text-muted-foreground">
-              コスメセットがまだない場合は、<Link href="/dashboard" className="font-medium text-primary hover:underline">ダッシュボード</Link>でコスメリンクを作成してください。
+              メイクレシピがまだない場合は、<Link href="/dashboard" className="font-medium text-primary hover:underline">ダッシュボード</Link>でコスメリンクを作成してください。
             </p>
           </div>
         )}

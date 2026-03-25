@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 
 const ADMIN_EMAIL = "cosmepik.team@gmail.com";
 
-/** 管理者のコスメセットに紐づく招待コード一覧を取得 */
+/** 管理者のメイクレシピに紐づく招待コード一覧を取得 */
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
   if (!supabase) {

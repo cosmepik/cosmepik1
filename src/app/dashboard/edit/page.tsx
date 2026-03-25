@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 /**
  * /dashboard/edit（slug なし）へのアクセス。
- * ユーザーの最初のコスメセットの編集ページに直接リダイレクトする。
+ * ユーザーの最初のメイクレシピの編集ページに直接リダイレクトする。
  * LIFF（LINE リッチメニュー）からのアクセスで特に有用。
  */
 export default function EditRedirect() {

@@ -338,7 +338,7 @@ export default function DashboardHomePage() {
         {/* Section Title */}
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-foreground">
-            マイコスメセット
+            マイメイクレシピ
           </h2>
           {!loading && sets.length > 0 && (
             <span className="text-xs text-muted-foreground">
@@ -350,7 +350,7 @@ export default function DashboardHomePage() {
         {loading ? (
           <div className="flex flex-col items-center justify-center gap-3 py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-primary/30 border-t-primary" />
-            <p className="text-sm text-muted-foreground">コスメセットを読み込み中...</p>
+            <p className="text-sm text-muted-foreground">メイクレシピを読み込み中...</p>
           </div>
         ) : (
           <>
@@ -361,7 +361,7 @@ export default function DashboardHomePage() {
                 <div className="absolute -bottom-4 -left-4 h-20 w-20 rounded-full bg-primary/10 blur-2xl" />
                 <div className="relative">
                   <p className="text-sm font-medium text-foreground">
-                    はじめてのコスメセットを作ろう
+                    はじめてのメイクレシピを作ろう
                   </p>
                   <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
                     お気に入りのコスメをまとめて
@@ -568,7 +568,7 @@ export default function DashboardHomePage() {
                             className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-rose-500 transition-colors hover:bg-rose-50"
                           >
                             <Trash2 className="h-4 w-4 shrink-0" />
-                            コスメセットを消去
+                            メイクレシピを消去
                           </button>
                         </div>
                       )}
@@ -589,7 +589,7 @@ export default function DashboardHomePage() {
                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-primary/40 bg-primary/5 py-5 text-sm font-medium text-muted-foreground transition-all hover:border-primary/60 hover:bg-primary/10 hover:text-foreground"
               >
                 <Plus className="h-4 w-4" />
-                新しいコスメセットを作成
+                新しいメイクレシピを作成
               </button>
             ) : (
               <Link
@@ -600,10 +600,10 @@ export default function DashboardHomePage() {
                   <Crown className="h-5 w-5" />
                 </div>
                 <span className="text-sm font-semibold text-foreground">
-                  プレミアムプランで複数のコスメセットを作成
+                  プレミアムプランで複数のメイクレシピを作成
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  無料プランではコスメセットは1つまでです
+                  無料プランではメイクレシピは1つまでです
                 </span>
               </Link>
             )}
@@ -621,7 +621,7 @@ export default function DashboardHomePage() {
                   <div className="flex flex-col items-center gap-1.5 text-center">
                     <h2 className="text-lg font-bold text-foreground">ようこそ cosmepik へ！</h2>
                     <p className="text-sm text-muted-foreground">
-                      まずはコスメセットを編集しましょう！
+                      まずはメイクレシピを編集しましょう！
                     </p>
                   </div>
                   <button
@@ -666,7 +666,7 @@ export default function DashboardHomePage() {
                         id="create-modal-title"
                         className="text-lg font-bold text-foreground"
                       >
-                        新しいコスメセットを作成
+                        新しいメイクレシピを作成
                       </h2>
                       <p className="mt-1 text-sm text-muted-foreground">
                         名前とあなた専用のURLを決めましょう
@@ -711,7 +711,7 @@ export default function DashboardHomePage() {
                         htmlFor="create-name"
                         className="mb-1.5 block text-sm font-medium text-foreground"
                       >
-                        コスメセットの名前
+                        メイクレシピの名前
                       </label>
                       <input
                         id="create-name"

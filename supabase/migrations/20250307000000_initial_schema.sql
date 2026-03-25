@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS sections (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- コスメセット（user_id = 認証ユーザーID）
+-- メイクレシピ（user_id = 認証ユーザーID）
 CREATE TABLE IF NOT EXISTS cosme_sets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id TEXT NOT NULL,

@@ -121,7 +121,7 @@ export default function AnalyticsPage() {
                 </div>
 
                 <p className="mt-3 text-xs text-white/60">
-                  すべてのコスメセットの公開ページ（/p/◯◯）へのアクセス合計
+                  すべてのメイクレシピの公開ページ（/p/◯◯）へのアクセス合計
                 </p>
               </div>
             </div>
@@ -166,7 +166,7 @@ export default function AnalyticsPage() {
                     まだデータがありません
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    コスメセットを公開するとアクセス数がここに表示されます
+                    メイクレシピを公開するとアクセス数がここに表示されます
                   </p>
                 </div>
               ) : (

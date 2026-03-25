@@ -107,4 +107,4 @@ CREATE POLICY "click_logs_select_admin" ON click_logs FOR SELECT USING (true);
 ## 補足
 
 - **Supabase 未設定時**: 従来通り localStorage を使用
-- **Supabase 設定後**: すべてのデータ（プロフィール・セクション・コスメセット・リスト）が DB に保存され、他端末で同期されます
+- **Supabase 設定後**: すべてのデータ（プロフィール・セクション・メイクレシピ・リスト）が DB に保存され、他端末で同期されます

@@ -102,7 +102,7 @@ export default function SettingsPage() {
             招待コード
           </h2>
           <p className="mb-3 text-sm text-muted-foreground">
-            招待コード（数字6桁）を入力して、コスメセットを受け取ります。
+            招待コード（数字6桁）を入力して、メイクレシピを受け取ります。
           </p>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <input
@@ -140,7 +140,7 @@ export default function SettingsPage() {
                     return;
                   }
                   setInviteCode("");
-                  toast.success("コスメセットが反映されました！");
+                  toast.success("メイクレシピが反映されました！");
                   router.refresh();
                 } catch {
                   setClaimError("適用に失敗しました");

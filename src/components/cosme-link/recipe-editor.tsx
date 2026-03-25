@@ -132,15 +132,6 @@ export function RecipeEditor() {
     [selectedId, placements, updateRecipe],
   );
 
-  const [isDesktop, setIsDesktop] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(pointer: fine)");
-    setIsDesktop(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-
   const updatePlacement = useCallback(
     (id: string, updates: Partial<RecipePlacement>) => {
       const next = placements.map((p) => (p.id === id ? { ...p, ...updates } : p));
@@ -222,6 +213,7 @@ export function RecipeEditor() {
         onSelect={setSelectedId}
         onMove={handleMove}
         onBackgroundClick={() => fileInputRef.current?.click()}
+        onPinchScale={handleScale}
       />
 
       {/* Toolbar */}
@@ -290,16 +282,12 @@ export function RecipeEditor() {
                 <button type="button" onClick={startEditLabel} className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95" aria-label="編集">
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
-                {isDesktop && (
-                  <>
-                    <button type="button" onClick={() => handleScale(-0.15)} className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95" aria-label="縮小">
-                      <ZoomOut className="h-3.5 w-3.5" />
-                    </button>
-                    <button type="button" onClick={() => handleScale(0.15)} className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95" aria-label="拡大">
-                      <ZoomIn className="h-3.5 w-3.5" />
-                    </button>
-                  </>
-                )}
+                <button type="button" onClick={() => handleScale(-0.15)} className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95" aria-label="縮小">
+                  <ZoomOut className="h-3.5 w-3.5" />
+                </button>
+                <button type="button" onClick={() => handleScale(0.15)} className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95" aria-label="拡大">
+                  <ZoomIn className="h-3.5 w-3.5" />
+                </button>
                 <button type="button" onClick={handleDelete} className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 text-destructive transition-colors hover:bg-destructive/20 active:scale-95" aria-label="削除">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -358,16 +346,12 @@ export function RecipeEditor() {
                   <button type="button" onClick={startEditLabel} className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95" aria-label="名前を編集">
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
-                  {isDesktop && (
-                    <>
-                      <button type="button" onClick={() => handleScale(-0.15)} className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95" aria-label="縮小">
-                        <ZoomOut className="h-3.5 w-3.5" />
-                      </button>
-                      <button type="button" onClick={() => handleScale(0.15)} className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95" aria-label="拡大">
-                        <ZoomIn className="h-3.5 w-3.5" />
-                      </button>
-                    </>
-                  )}
+                  <button type="button" onClick={() => handleScale(-0.15)} className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95" aria-label="縮小">
+                    <ZoomOut className="h-3.5 w-3.5" />
+                  </button>
+                  <button type="button" onClick={() => handleScale(0.15)} className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95" aria-label="拡大">
+                    <ZoomIn className="h-3.5 w-3.5" />
+                  </button>
                 </>
               )}
               <button type="button" onClick={handleDelete} className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 text-destructive transition-colors hover:bg-destructive/20 active:scale-95" aria-label="削除">

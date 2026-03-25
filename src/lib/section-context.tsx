@@ -32,6 +32,8 @@ interface SectionContextType {
   isEditMode: boolean;
   setIsEditMode: (value: boolean) => void;
   isLoading: boolean;
+  loadError: boolean;
+  retryLoad: () => void;
 }
 
 const SectionContext = createContext<SectionContextType | null>(null);
@@ -59,6 +61,8 @@ export function useSections(): SectionContextType {
       isEditMode: false,
       setIsEditMode: () => {},
       isLoading: false,
+      loadError: false,
+      retryLoad: () => {},
     };
   }
   return ctx;
@@ -87,6 +91,13 @@ export function SectionProvider({
   const [showAddSectionModal, setShowAddSectionModal] = useState(false);
   const [isLoading, setIsLoading] = useState(!Array.isArray(initialSections));
 
+  const [loadError, setLoadError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
+  const retryLoad = useCallback(() => {
+    store.clearSectionsCache(slug);
+    setRetryKey((k) => k + 1);
+  }, [slug]);
+
   useEffect(() => {
     if (initialSections === null) return;
     if (Array.isArray(initialSections)) {
@@ -96,20 +107,24 @@ export function SectionProvider({
     }
 
     setIsLoading(true);
+    setLoadError(false);
     let cancelled = false;
-    store.getSections(slug).then((saved) => {
+    store.getSections(slug).then((result) => {
       if (cancelled) return;
-      if (saved && saved.length > 0) {
-        setSectionsState(saved);
+      if (result === "error") {
+        setLoadError(true);
+        setIsLoading(false);
+        return;
+      }
+      if (result && result.length > 0) {
+        setSectionsState(result);
       } else if (defaultEditMode) {
-        const defaultSection = createDefaultRoutineSection();
-        setSectionsState([defaultSection]);
-        store.setSections([defaultSection], slug);
+        setSectionsState([createDefaultRoutineSection()]);
       }
       setIsLoading(false);
     });
     return () => { cancelled = true; };
-  }, [slug, initialSections, defaultEditMode]);
+  }, [slug, initialSections, defaultEditMode, retryKey]);
 
   const persistSections = useCallback(
     (next: Section[]) => {
@@ -311,6 +326,8 @@ export function SectionProvider({
         isEditMode,
         setIsEditMode,
         isLoading,
+        loadError,
+        retryLoad,
       }}
     >
       {children}

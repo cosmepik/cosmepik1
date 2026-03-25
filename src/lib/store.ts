@@ -1,7 +1,7 @@
 /**
  * データの読み書きはここを通す。
  * .env.local に Supabase の URL/Key があれば Supabase、なければ localStorage を使用。
- * Supabase 設定時はすべて DB に保存（プロフィール・セクション・コスメセット・リスト）。
+ * Supabase 設定時はすべて DB に保存（プロフィール・セクション・メイクレシピ・リスト）。
  */
 import { isSupabaseConfigured } from "@/lib/supabase";
 import * as db from "@/lib/supabase-db";
@@ -50,19 +50,19 @@ function uid(userId?: string | null) {
   return userId ?? FALLBACK_USER_ID;
 }
 
-/** コスメセット一覧取得（Supabase 設定時は DB、未設定時は localStorage） */
+/** メイクレシピ一覧取得（Supabase 設定時は DB、未設定時は localStorage） */
 export async function getCosmeSets(userId?: string | null): Promise<CosmeSet[]> {
   if (!useSupabase()) return Promise.resolve(local.getCosmeSets());
   return db.fetchCosmeSets(uid(userId));
 }
 
-/** コスメセット削除 */
+/** メイクレシピ削除 */
 export async function deleteCosmeSet(userId: string | null | undefined, slug: string): Promise<boolean> {
   if (!useSupabase()) return Promise.resolve(local.deleteCosmeSet(slug));
   return db.deleteCosmeSet(uid(userId), slug);
 }
 
-/** コスメセットの名前を更新 */
+/** メイクレシピの名前を更新 */
 export async function updateCosmeSetName(
   userId: string | null | undefined,
   slug: string,
@@ -72,7 +72,7 @@ export async function updateCosmeSetName(
   return db.updateCosmeSetName(uid(userId), slug, name);
 }
 
-/** コスメセット作成 */
+/** メイクレシピ作成 */
 export async function createCosmeSet(
   userId: string | null | undefined,
   name: string,
@@ -83,7 +83,7 @@ export async function createCosmeSet(
   return db.createCosmeSet(uid(userId), name, slug, mode);
 }
 
-/** 自分のリストを取得（slug = コスメセット識別子） */
+/** 自分のリストを取得（slug = メイクレシピ識別子） */
 export async function getMyList(slug?: string | null): Promise<ListedCosmeItem[]> {
   const s = slug ?? FALLBACK_USER_ID;
   if (!useSupabase()) return Promise.resolve(local.getMyList(s));
@@ -209,8 +209,9 @@ export async function getListByUsername(username: string): Promise<ListedCosmeIt
   return db.fetchList(username);
 }
 
-/** セクション一覧取得（slug ごと）— インメモリキャッシュ付き */
-export async function getSections(slug?: string | null): Promise<import("@/lib/sections").Section[] | null> {
+/** セクション一覧取得（slug ごと）— インメモリキャッシュ付き
+ *  エラー時は stale キャッシュを返すか、"error" を返す */
+export async function getSections(slug?: string | null): Promise<import("@/lib/sections").Section[] | null | "error"> {
   const s = slug ?? FALLBACK_USER_ID;
   if (!useSupabase()) return Promise.resolve(local.getSections(s));
 
@@ -219,11 +220,23 @@ export async function getSections(slug?: string | null): Promise<import("@/lib/s
     return cached.data;
   }
 
-  const data = await db.fetchSections(s);
-  if (data) {
-    sectionsCache.set(s, { data, ts: Date.now() });
+  try {
+    const data = await db.fetchSections(s);
+    if (data) {
+      sectionsCache.set(s, { data, ts: Date.now() });
+    }
+    return data;
+  } catch (err) {
+    console.error("[getSections] fetch failed, returning stale cache:", err);
+    if (cached) return cached.data;
+    return "error";
   }
-  return data;
+}
+
+/** キャッシュクリア（リトライ前に使用） */
+export function clearSectionsCache(slug?: string | null): void {
+  const s = slug ?? FALLBACK_USER_ID;
+  sectionsCache.delete(s);
 }
 
 /** セクションにアイテムを追加（検索ページ用） */
@@ -233,7 +246,7 @@ export async function addItemToSection(
   item: { product: string; brand?: string; image?: string; link?: string; label?: string }
 ): Promise<boolean> {
   const sections = await getSections(slug);
-  if (!sections || sections.length === 0) return false;
+  if (!sections || sections === "error" || sections.length === 0) return false;
   const section = sections.find((s) => s.id === sectionId);
   if (!section || !["routine", "products"].includes(section.type)) return false;
 

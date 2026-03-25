@@ -9,8 +9,8 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 const benefits = [
   {
     icon: LayoutGrid,
-    title: "複数コスメセット作成",
-    description: "コスメセットを複数作成可能に。ルーティン別・季節別など、テーマごとにコスメをまとめられます。",
+    title: "複数メイクレシピ作成",
+    description: "メイクレシピを複数作成可能に。ルーティン別・季節別など、テーマごとにコスメをまとめられます。",
   },
   {
     icon: X,

@@ -25,7 +25,7 @@ export async function POST() {
   const userId = user.id;
 
   try {
-    // 1. このユーザーのコスメセット一覧を取得
+    // 1. このユーザーのメイクレシピ一覧を取得
     const { data: sets } = await supabase
       .from("cosme_sets")
       .select("slug")

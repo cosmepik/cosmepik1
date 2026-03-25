@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
  * ダッシュボード用統合 API
- * 認証チェック + コスメセット + プレミアム状態を 1 リクエストで返す。
+ * 認証チェック + メイクレシピ + プレミアム状態を 1 リクエストで返す。
  * サーバー→Supabase 間は同一リージョンなので高速。
  */
 export async function GET() {

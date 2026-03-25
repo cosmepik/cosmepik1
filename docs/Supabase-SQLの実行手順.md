@@ -87,7 +87,7 @@ CREATE POLICY "profile_views updatable by anon"
 
 ---
 
-## 本番でコスメセット作成が失敗する場合
+## 本番でメイクレシピ作成が失敗する場合
 
 ログイン済みユーザー（authenticated）が Supabase に INSERT するには、RLS ポリシーに `authenticated` 用の設定が必要です。
 

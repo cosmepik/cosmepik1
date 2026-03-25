@@ -29,7 +29,7 @@ export async function POST(request: Request) {
   const slug = String(body?.slug ?? "").trim();
   if (!slug) {
     return NextResponse.json(
-      { error: "コスメセットを選択してください" },
+      { error: "メイクレシピを選択してください" },
       { status: 400 }
     );
   }
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
 
   if (fetchError || !cosmeSet) {
     return NextResponse.json(
-      { error: "指定したコスメセットが見つかりません" },
+      { error: "指定したメイクレシピが見つかりません" },
       { status: 404 }
     );
   }
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
 
   if (existingCode) {
     return NextResponse.json(
-      { error: "このコスメセットには既に招待コードが発行されています" },
+      { error: "このメイクレシピには既に招待コードが発行されています" },
       { status: 400 }
     );
   }

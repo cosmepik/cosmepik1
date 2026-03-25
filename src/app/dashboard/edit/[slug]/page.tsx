@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { ExternalLink, Upload } from "lucide-react";
+import { ExternalLink, Upload, ArrowLeft, Eye } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { SideMenu } from "@/components/cosme-link/side-menu";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -12,14 +12,15 @@ import { SectionProvider } from "@/lib/section-context";
 import { SectionRenderer } from "@/components/cosme-link/section-renderer";
 import { AddSectionInline } from "@/components/cosme-link/add-section-inline";
 import { useSections } from "@/lib/section-context";
-import { getProfile, renameCosmeSet, flushSections } from "@/lib/store";
-import { ProfileProvider, toProfile, useProfile } from "@/lib/profile-context";
+import { getProfile, renameCosmeSet } from "@/lib/store";
+import { ProfileProvider, toProfile, useProfile, toInfluencerProfile } from "@/lib/profile-context";
 import { ProfileThemeLoader } from "@/components/ProfileThemeLoader";
 import { ShareModal } from "@/components/ShareModal";
-import { SetupGuide } from "@/components/cosme-link/setup-guide";
 import { useStylePickerOpen } from "@/components/cosme-link/style-picker";
 import { CosmepikLogo } from "@/components/cosmepik-logo";
 import { RecipeEditor } from "@/components/cosme-link/recipe-editor";
+import { PublicProfileContent } from "@/components/PublicProfileContent";
+import type { InfluencerProfile } from "@/types";
 
 const WELCOME_DISMISSED_KEY = "cosmepik-welcome-dismissed";
 
@@ -77,9 +78,59 @@ function WelcomePopup() {
   );
 }
 
+function InlinePreview({ slug, onBack }: { slug: string; onBack: () => void }) {
+  const { profile: ctxProfile } = useProfile();
+  const [shareOpen, setShareOpen] = useState(false);
+
+  const profileUrl =
+    typeof window !== "undefined" ? `${window.location.origin}/p/${slug}` : "";
+
+  const influencer: InfluencerProfile = {
+    ...toInfluencerProfile(ctxProfile),
+    list: [],
+    updatedAt: new Date().toISOString(),
+  } as InfluencerProfile;
+
+  return (
+    <>
+      <div className="sticky top-0 z-20 mx-auto flex max-w-[400px] items-center justify-between px-4 pb-2 pt-3">
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white/90 px-3 py-1.5 text-sm font-medium text-muted-foreground shadow-sm backdrop-blur-sm transition-all hover:bg-white hover:text-foreground active:scale-95"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          編集に戻る
+        </button>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary backdrop-blur-sm">
+            <Eye className="h-3 w-3" />
+            プレビュー
+          </span>
+          <button
+            type="button"
+            onClick={() => setShareOpen(true)}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-white/90 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-white"
+            aria-label="リンクを共有"
+          >
+            <Upload className="h-5 w-5" strokeWidth={1.5} />
+          </button>
+        </div>
+      </div>
+      <PublicProfileContent username={slug} profile={influencer} />
+      <ShareModal
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        url={profileUrl}
+        title="共有"
+      />
+    </>
+  );
+}
+
 function EditPageContent({ slug }: { slug: string }) {
   const router = useRouter();
-  const { sections, isEditMode, isLoading } = useSections();
+  const { sections, isEditMode, setIsEditMode, isLoading, loadError, retryLoad } = useSections();
   const { setIsRecipeMode } = useStylePickerOpen();
 
   const isRecipe = sections.some((s) => s.type === "recipe");
@@ -109,6 +160,30 @@ function EditPageContent({ slug }: { slug: string }) {
     return () => window.removeEventListener("cosmepik-background-change", handler);
   }, [loadProfile]);
 
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const editScrollRef = useRef(0);
+
+  const enterPreview = useCallback(() => {
+    editScrollRef.current = window.scrollY;
+    setIsEditMode(false);
+    setIsAnimating(true);
+    setIsPreviewMode(true);
+    window.scrollTo(0, 0);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => setIsAnimating(false));
+    });
+  }, [setIsEditMode]);
+
+  const exitPreview = useCallback(() => {
+    setIsEditMode(true);
+    setIsAnimating(true);
+    setIsPreviewMode(false);
+    requestAnimationFrame(() => {
+      window.scrollTo(0, editScrollRef.current);
+      requestAnimationFrame(() => setIsAnimating(false));
+    });
+  }, [setIsEditMode]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [profileUrl, setProfileUrl] = useState("");
@@ -159,6 +234,34 @@ function EditPageContent({ slug }: { slug: string }) {
 
   return (
     <>
+    {/* Preview layer */}
+    <div
+      className="fixed inset-0 z-30"
+      aria-hidden={!isPreviewMode}
+      style={{
+        transform: isPreviewMode === isAnimating ? "translateX(100%)" : "translateX(0)",
+        transition: isAnimating ? "none" : "transform 300ms cubic-bezier(0.4, 0, 0.2, 1)",
+        willChange: "transform",
+        overflow: "auto",
+        backgroundColor: "var(--page-bg, var(--background, #fff))",
+        backgroundImage: "var(--page-bg-image, none)",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        visibility: !isPreviewMode && !isAnimating ? "hidden" : "visible",
+      }}
+    >
+      <InlinePreview slug={slug} onBack={exitPreview} />
+    </div>
+
+    {/* Edit layer */}
+    <div
+      style={{
+        transform: isPreviewMode !== isAnimating ? "translateX(-30%)" : "translateX(0)",
+        transition: isAnimating ? "none" : "transform 300ms cubic-bezier(0.4, 0, 0.2, 1)",
+        opacity: isPreviewMode !== isAnimating ? 0.5 : 1,
+        pointerEvents: isPreviewMode ? "none" : "auto",
+      }}
+    >
     <main className="relative min-h-screen">
       {backgroundImageUrl && !usePreset && (
         <div
@@ -179,12 +282,10 @@ function EditPageContent({ slug }: { slug: string }) {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => {
-                flushSections(slug);
-                router.push(`/dashboard/preview?slug=${encodeURIComponent(slug)}`);
-              }}
+              onClick={enterPreview}
               className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-md transition-all hover:bg-primary/90 active:scale-95"
             >
+              <Eye className="h-3.5 w-3.5" />
               プレビュー
             </button>
             <button
@@ -284,7 +385,18 @@ function EditPageContent({ slug }: { slug: string }) {
           )}
         </div>
 
-        {isLoading ? (
+        {loadError ? (
+          <div className="mx-auto mt-16 flex max-w-[400px] flex-col items-center gap-4">
+            <p className="text-sm text-destructive">データの読み込みに失敗しました</p>
+            <button
+              type="button"
+              onClick={retryLoad}
+              className="rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground shadow-md transition-all hover:bg-primary/90 active:scale-95"
+            >
+              再読み込み
+            </button>
+          </div>
+        ) : isLoading ? (
           <div className="mx-auto mt-16 flex max-w-[400px] flex-col items-center gap-4">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-muted border-t-primary" />
             <p className="text-sm text-muted-foreground animate-pulse">読み込み中...</p>
@@ -324,6 +436,7 @@ function EditPageContent({ slug }: { slug: string }) {
       title="共有"
     />
     <WelcomePopup />
+    </div>
     </>
   );
 }

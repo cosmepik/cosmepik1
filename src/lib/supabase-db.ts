@@ -354,7 +354,9 @@ async function saveProfileInner(
   }
 }
 
-/** セクション一覧取得（username = slug 指定） */
+/** セクション一覧取得（username = slug 指定）
+ *  - データなし → null を返す
+ *  - 通信エラー等 → throw してcaller側でハンドリング */
 export async function fetchSections(username: string): Promise<Section[] | null> {
   const client = getClient();
   if (!client) return null;
@@ -365,7 +367,11 @@ export async function fetchSections(username: string): Promise<Section[] | null>
     .eq("username", username)
     .single();
 
-  if (error || !data) return null;
+  if (error) {
+    if (error.code === "PGRST116") return null;
+    throw new Error(`fetchSections failed: ${error.message} (${error.code})`);
+  }
+  if (!data) return null;
   const arr = data.sections_json as unknown;
   if (!Array.isArray(arr)) return null;
   return arr as Section[];
@@ -397,7 +403,7 @@ export async function saveSections(username: string, sections: Section[]): Promi
     .then(() => {}, () => {});
 }
 
-/** コスメセット一覧取得（user_id 指定）。未登録時は空配列を返す */
+/** メイクレシピ一覧取得（user_id 指定）。未登録時は空配列を返す */
 export async function fetchCosmeSets(userId: string): Promise<CosmeSet[]> {
   const client = getClient();
   if (!client) return [];
@@ -458,7 +464,7 @@ export async function fetchCosmeSets(userId: string): Promise<CosmeSet[]> {
   });
 }
 
-/** コスメセット作成 */
+/** メイクレシピ作成 */
 export async function createCosmeSet(
   userId: string,
   name: string,
@@ -511,7 +517,7 @@ export async function createCosmeSet(
   };
 }
 
-/** コスメセットの名前を更新 */
+/** メイクレシピの名前を更新 */
 export async function updateCosmeSetName(
   userId: string,
   slug: string,
@@ -529,7 +535,7 @@ export async function updateCosmeSetName(
   return !error;
 }
 
-/** コスメセットの slug（公開URL）を変更 — 旧データを読み→新slugで書き→旧データ削除 */
+/** メイクレシピの slug（公開URL）を変更 — 旧データを読み→新slugで書き→旧データ削除 */
 export async function renameCosmeSetSlug(
   oldSlug: string,
   newSlug: string
@@ -583,7 +589,7 @@ export async function renameCosmeSetSlug(
   return true;
 }
 
-/** コスメセット削除（cosme_sets, list_items, profiles を削除） */
+/** メイクレシピ削除（cosme_sets, list_items, profiles を削除） */
 export async function deleteCosmeSet(userId: string, slug: string): Promise<boolean> {
   const client = getClient();
   if (!client) return false;

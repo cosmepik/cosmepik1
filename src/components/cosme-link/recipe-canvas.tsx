@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import type { RecipePlacement } from "@/lib/sections";
 
 const HANDWRITING_FONT = "Yomogi, cursive";
@@ -24,6 +24,7 @@ interface RecipeCanvasProps {
   onSelect?: (id: string | null) => void;
   onMove?: (id: string, x: number, y: number) => void;
   onBackgroundClick?: () => void;
+  onPinchScale?: (delta: number) => void;
 }
 
 export function RecipeCanvas({
@@ -34,13 +35,58 @@ export function RecipeCanvas({
   onSelect,
   onMove,
   onBackgroundClick,
+  onPinchScale,
 }: RecipeCanvasProps) {
   useHandwritingFont();
+  const canvasRef = useRef<HTMLDivElement>(null);
+
+  const onPinchScaleRef = useRef(onPinchScale);
+  onPinchScaleRef.current = onPinchScale;
+
+  useEffect(() => {
+    if (!editable) return;
+    const el = canvasRef.current;
+    if (!el) return;
+
+    let initialDistance = 0;
+
+    const getDistance = (t1: Touch, t2: Touch) =>
+      Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length >= 2) {
+        e.preventDefault();
+        initialDistance = getDistance(e.touches[0], e.touches[1]);
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length >= 2) {
+        e.preventDefault();
+        const dist = getDistance(e.touches[0], e.touches[1]);
+        const ratio = dist / initialDistance;
+        const delta = (ratio - 1) * 0.3;
+        initialDistance = dist;
+        if (Math.abs(delta) > 0.005) {
+          onPinchScaleRef.current?.(delta);
+        }
+      }
+    };
+
+    el.addEventListener("touchstart", onTouchStart, { passive: false });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+    };
+  }, [editable]);
 
   if (!editable && !backgroundImage && placements.length === 0) return null;
 
   return (
     <div
+      ref={canvasRef}
       className="relative w-full overflow-hidden rounded-2xl bg-muted/30"
       style={{ aspectRatio: "3 / 4", touchAction: editable ? "none" : undefined }}
     >

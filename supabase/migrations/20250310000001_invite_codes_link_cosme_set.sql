@@ -1,10 +1,10 @@
--- 招待コードとコスメセットを紐付ける
--- 運営が作成したコスメセットを、招待コード経由でインフルエンサーに引き継ぐ
+-- 招待コードとメイクレシピを紐付ける
+-- 運営が作成したメイクレシピを、招待コード経由でインフルエンサーに引き継ぐ
 
 -- cosme_set_id を追加（既存テーブルがある場合）
 ALTER TABLE invite_codes ADD COLUMN IF NOT EXISTS cosme_set_id UUID REFERENCES cosme_sets(id) ON DELETE CASCADE;
 
--- 1つのコスメセットに1つの未使用コードのみ（重複防止）
+-- 1つのメイクレシピに1つの未使用コードのみ（重複防止）
 CREATE UNIQUE INDEX IF NOT EXISTS idx_invite_codes_cosme_set_unclaimed
   ON invite_codes(cosme_set_id) WHERE is_claimed = false;
 
@@ -48,7 +48,7 @@ BEGIN
 
   SELECT cosme_sets.slug INTO v_slug FROM cosme_sets WHERE id = v_cosme_set_id;
   IF v_slug IS NULL THEN
-    RETURN QUERY SELECT NULL::TEXT, false, 'コスメセットが見つかりません'::TEXT;
+    RETURN QUERY SELECT NULL::TEXT, false, 'メイクレシピが見つかりません'::TEXT;
     RETURN;
   END IF;
 

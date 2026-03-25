@@ -75,7 +75,7 @@ function saveStoredSets(sets: StoredSet[]): void {
   safeLocalStorage()?.setItem(STORAGE_KEY_SETS, JSON.stringify(sets));
 }
 
-/** コスメセット一覧取得 */
+/** メイクレシピ一覧取得 */
 export function getCosmeSets(): CosmeSet[] {
   const sets = getStoredSets();
   return sets.map((s) => {
@@ -93,7 +93,7 @@ export function getCosmeSets(): CosmeSet[] {
   });
 }
 
-/** コスメセット作成 */
+/** メイクレシピ作成 */
 export function createCosmeSet(name: string, slug: string): CosmeSet {
   const sets = getStoredSets();
   const id = `local-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -215,7 +215,7 @@ export function removeFromList(slug: string, id: string): ListedCosmeItem[] {
 }
 
 /**
- * コスメセットを削除
+ * メイクレシピを削除
  */
 export function deleteCosmeSet(slug: string): boolean {
   const sets = getStoredSets();
@@ -226,7 +226,7 @@ export function deleteCosmeSet(slug: string): boolean {
 }
 
 /**
- * コスメセットの名前を変更
+ * メイクレシピの名前を変更
  */
 export function updateCosmeSetName(slug: string, name: string): boolean {
   const sets = getStoredSets();

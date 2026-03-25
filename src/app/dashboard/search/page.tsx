@@ -18,7 +18,7 @@ function SearchContent() {
   const slug = searchParams.get("slug") ?? "demo";
 
   const [keyword, setKeyword] = useState("");
-  const [sections, setSections] = useState<Awaited<ReturnType<typeof getSections>>>(null);
+  const [sections, setSections] = useState<import("@/lib/sections").Section[] | null>(null);
   const [searchResults, setSearchResults] = useState<CosmeItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isPending, setIsPending] = useState(false);
@@ -28,7 +28,9 @@ function SearchContent() {
   const [sectionPicker, setSectionPicker] = useState<CosmeItem | null>(null);
 
   useEffect(() => {
-    getSections(slug).then(setSections);
+    getSections(slug).then((r) => {
+      if (r !== "error") setSections(r);
+    });
   }, [slug]);
 
   useEffect(() => {
