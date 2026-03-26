@@ -5,7 +5,7 @@ import { cleanseItemName } from "@/lib/search-normalize";
 const PRODUCT_API_URL =
   "https://app.rakuten.co.jp/services/api/Product/Search/20170426";
 const ICHIBA_API_URL =
-  "https://app.rakuten.co.jp/services/api/IchibaItem/Search/20220601";
+  "https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20170706";
 
 /* ─── 楽天 Product/Search レスポンス型 ─── */
 
@@ -141,13 +141,17 @@ async function fetchProducts(
     const res = await fetch(`${PRODUCT_API_URL}?${params}`, {
       headers: buildHeaders(),
     });
-    if (!res.ok) return [];
+    if (!res.ok) {
+      console.warn("[Product/Search] HTTP", res.status, await res.text().catch(() => ""));
+      return [];
+    }
     const data = await res.json().catch(() => ({}));
     const products: RakutenProduct[] = Array.isArray(data?.Products)
       ? data.Products.map((p: { Product?: RakutenProduct }) => p.Product).filter(Boolean)
       : [];
     return products.map(mapProduct);
-  } catch {
+  } catch (e) {
+    console.error("[Product/Search] error:", e);
     return [];
   }
 }
@@ -172,7 +176,10 @@ async function fetchIchibaItems(
     const res = await fetch(`${ICHIBA_API_URL}?${params}`, {
       headers: buildHeaders(),
     });
-    if (!res.ok) return [];
+    if (!res.ok) {
+      console.warn("[IchibaItem/Search] HTTP", res.status, await res.text().catch(() => ""));
+      return [];
+    }
     const data = await res.json().catch(() => ({}));
 
     const rawItems: RakutenItem[] = [];
@@ -183,7 +190,8 @@ async function fetchIchibaItems(
       }
     }
     return rawItems.map(mapIchibaItem);
-  } catch {
+  } catch (e) {
+    console.error("[IchibaItem/Search] error:", e);
     return [];
   }
 }
@@ -226,6 +234,8 @@ export async function GET(request: NextRequest) {
       fetchProducts(appId, keyword, hits),
       fetchIchibaItems(appId, accessKey, keyword, hits),
     ]);
+
+    console.log(`[Search] keyword="${keyword}" products=${products.length} ichiba=${ichibaItems.length}`);
 
     let merged: (CosmeItem & { _jan?: string })[];
     if (products.length >= 3) {
