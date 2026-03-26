@@ -164,12 +164,20 @@ function EditPageContent({ slug }: { slug: string }) {
   const [isAnimating, setIsAnimating] = useState(false);
   const editScrollRef = useRef(0);
 
+  useEffect(() => {
+    if (isPreviewMode) {
+      document.documentElement.style.overflow = "hidden";
+    } else {
+      document.documentElement.style.overflow = "";
+    }
+    return () => { document.documentElement.style.overflow = ""; };
+  }, [isPreviewMode]);
+
   const enterPreview = useCallback(() => {
     editScrollRef.current = window.scrollY;
     setIsEditMode(false);
     setIsAnimating(true);
     setIsPreviewMode(true);
-    window.scrollTo(0, 0);
     requestAnimationFrame(() => {
       requestAnimationFrame(() => setIsAnimating(false));
     });

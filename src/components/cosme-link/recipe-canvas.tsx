@@ -88,7 +88,7 @@ export function RecipeCanvas({
     <div
       ref={canvasRef}
       className="relative w-full overflow-hidden rounded-2xl bg-muted/30"
-      style={{ aspectRatio: "3 / 4", touchAction: editable ? "none" : undefined }}
+      style={{ aspectRatio: "3 / 4", touchAction: editable ? "pan-y" : undefined }}
     >
       {backgroundImage ? (
         <img
@@ -98,8 +98,11 @@ export function RecipeCanvas({
           draggable={false}
           onClick={() => {
             if (editable) {
-              onSelect?.(null);
-              onBackgroundClick?.();
+              if (selectedId) {
+                onSelect?.(null);
+              } else {
+                onBackgroundClick?.();
+              }
             }
           }}
         />
@@ -220,6 +223,7 @@ function CommentItem({
         left: `${placement.x}%`,
         top: `${placement.y}%`,
         transform: "translate(-50%, -50%)",
+        touchAction: editable ? "none" : undefined,
       }}
       onTouchStart={handleDrag}
       onMouseDown={handleDrag}
@@ -302,6 +306,7 @@ function PlacementItem({
         left: `${placement.x}%`,
         top: `${placement.y}%`,
         transform: `translate(-50%, -50%) scale(${scale})`,
+        touchAction: editable ? "none" : undefined,
       }}
       onTouchStart={handleDrag}
       onMouseDown={handleDrag}
