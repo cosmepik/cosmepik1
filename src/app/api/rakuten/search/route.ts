@@ -65,13 +65,14 @@ const PLACEHOLDER_IMG =
 /* ─── マッパー ─── */
 
 function mapProduct(p: RakutenProduct, idx: number): CosmeItem & { _jan?: string } {
-  const raw = p.mediumImageUrl ?? p.smallImageUrl ?? PLACEHOLDER_IMG;
+  const raw = (p.mediumImageUrl ?? p.smallImageUrl ?? PLACEHOLDER_IMG)
+    .replace(/^http:\/\//, "https://");
   return {
     id: p.productId ?? `product-${idx}`,
     name: cleanseItemName(p.productName ?? "") || p.productName || "（商品名なし）",
     brand: p.brandName ?? "",
     category: p.genreName ?? "",
-    imageUrl: upgradeImageSize(raw),
+    imageUrl: raw,
     rakutenUrl: p.affiliateUrl ?? p.productUrlPC ?? undefined,
     _jan: p.productCode ?? p.janCode ?? undefined,
   };
