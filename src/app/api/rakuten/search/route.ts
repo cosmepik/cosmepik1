@@ -160,6 +160,14 @@ async function fetchProducts(
           "productName" in p ? p : (p as { Product?: RakutenProduct }).Product,
       ).filter(Boolean);
     }
+    if (products.length > 0) {
+      const p = products[0];
+      console.log("[Product/Search] sample:", JSON.stringify({
+        name: p.productName,
+        medium: p.mediumImageUrl,
+        small: p.smallImageUrl,
+      }));
+    }
     return products.map(mapProduct);
   } catch (e) {
     console.error("[Product/Search] error:", e);
