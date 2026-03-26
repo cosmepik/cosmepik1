@@ -3,13 +3,77 @@
 import { Suspense, useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { searchMockCosme } from "@/lib/mock-data";
 import { getSections, addItemToSection } from "@/lib/store";
-import { CosmeCard } from "@/components/CosmeCard";
 import { ProfileIcon } from "@/components/DashboardHeader";
 import { useUser } from "@/hooks/use-user";
 import type { CosmeItem } from "@/types";
+
+/* ── スケルトンUI ── */
+
+function SkeletonCard() {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-sm animate-pulse">
+      <div className="h-16 w-16 shrink-0 rounded-xl bg-muted" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="h-3 w-16 rounded bg-muted" />
+        <div className="h-4 w-3/4 rounded bg-muted" />
+        <div className="h-3 w-1/2 rounded bg-muted" />
+      </div>
+      <div className="h-9 w-9 shrink-0 rounded-full bg-muted" />
+    </div>
+  );
+}
+
+/* ── 検索結果カード ── */
+
+function ResultCard({
+  item,
+  onAdd,
+}: {
+  item: CosmeItem;
+  onAdd: (item: CosmeItem) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-sm transition-shadow hover:shadow-md">
+      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-muted">
+        <img
+          src={item.imageUrl}
+          alt={item.name}
+          loading="lazy"
+          className="h-full w-full object-cover"
+          style={{ transform: "scale(1.08)" }}
+        />
+      </div>
+      <div className="min-w-0 flex-1">
+        {item.brand && (
+          <p className="truncate text-[10px] font-semibold tracking-wide text-primary">
+            {item.brand}
+          </p>
+        )}
+        <h3 className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
+          {item.name}
+        </h3>
+        {item.category && (
+          <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
+            {item.category}
+          </p>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={() => onAdd(item)}
+        aria-label="リストに追加"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-90"
+      >
+        <Plus className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
+/* ── メインコンテンツ ── */
 
 function SearchContent() {
   const router = useRouter();
@@ -23,7 +87,6 @@ function SearchContent() {
   const [isSearching, setIsSearching] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [searchDebug, setSearchDebug] = useState<object | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
   const [sectionPicker, setSectionPicker] = useState<CosmeItem | null>(null);
 
@@ -38,7 +101,6 @@ function SearchContent() {
     if (!k) {
       setSearchResults([]);
       setSearchError(null);
-      setSearchDebug(null);
       setIsSearching(false);
       setIsPending(false);
       return;
@@ -52,7 +114,6 @@ function SearchContent() {
     if (!isProduction) {
       setSearchResults(searchMockCosme(k));
       setSearchError(null);
-      setSearchDebug(null);
       setIsSearching(false);
       setIsPending(false);
       return;
@@ -61,13 +122,13 @@ function SearchContent() {
     const timer = setTimeout(async () => {
       setIsSearching(true);
       setSearchError(null);
-      setSearchDebug(null);
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
-        const res = await fetch(`/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=20`, {
-          signal: controller.signal,
-        });
+        const timeoutId = setTimeout(() => controller.abort(), 12000);
+        const res = await fetch(
+          `/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=10`,
+          { signal: controller.signal },
+        );
         clearTimeout(timeoutId);
         const data = await res.json().catch(() => ({}));
         const items = Array.isArray(data?.items) ? data.items : [];
@@ -76,38 +137,35 @@ function SearchContent() {
         if (res.ok && items.length > 0) {
           setSearchResults(items);
           setSearchError(null);
-          setSearchDebug(null);
         } else if (!res.ok || errMsg) {
-          const msg =
+          setSearchError(
             errMsg ??
-            (res.status === 403
-              ? "楽天APIのドメイン制限のため、許可されたウェブサイトに本番URLを追加してください"
-              : `APIエラー (${res.status})`);
-          setSearchError(msg);
-          setSearchDebug(data?._debug ?? null);
+              (res.status === 403
+                ? "楽天APIのドメイン制限のため、許可されたウェブサイトに本番URLを追加してください"
+                : `APIエラー (${res.status})`),
+          );
           setSearchResults([]);
-        } else if (res.ok && items.length === 0) {
-          setSearchError("該当する商品がありません（楽天API）");
-          setSearchDebug(data?._debug ?? null);
+        } else {
+          setSearchError("該当する商品がありません");
           setSearchResults([]);
         }
       } catch (e) {
-        const msg = e instanceof Error && e.name === "AbortError"
-          ? "検索がタイムアウトしました。もう一度お試しください。"
-          : (e instanceof Error ? e.message : "楽天APIへの接続に失敗しました");
-        setSearchError(msg);
-        setSearchDebug(null);
+        setSearchError(
+          e instanceof Error && e.name === "AbortError"
+            ? "検索がタイムアウトしました。もう一度お試しください。"
+            : "楽天APIへの接続に失敗しました",
+        );
         setSearchResults([]);
       } finally {
         setIsSearching(false);
         setIsPending(false);
       }
-    }, 300);
+    }, 350);
     return () => clearTimeout(timer);
   }, [keyword]);
 
   const addableSections = (sections ?? []).filter((s) =>
-    ["routine", "products"].includes(s.type)
+    ["routine", "products"].includes(s.type),
   );
 
   const handleAddItem = useCallback(
@@ -130,12 +188,14 @@ function SearchContent() {
               setAddError("追加に失敗しました。もう一度お試しください。");
             }
           })
-          .catch(() => setAddError("追加に失敗しました。もう一度お試しください。"));
+          .catch(() =>
+            setAddError("追加に失敗しました。もう一度お試しください。"),
+          );
         return;
       }
       setSectionPicker(item);
     },
-    [router, slug, addableSections]
+    [router, slug, addableSections],
   );
 
   const handlePickSection = useCallback(
@@ -155,80 +215,108 @@ function SearchContent() {
             setAddError("追加に失敗しました。もう一度お試しください。");
           }
         })
-        .catch(() => setAddError("追加に失敗しました。もう一度お試しください。"));
+        .catch(() =>
+          setAddError("追加に失敗しました。もう一度お試しください。"),
+        );
     },
-    [router, slug, sectionPicker]
+    [router, slug, sectionPicker],
   );
 
-  const totalItems = (sections ?? []).reduce((sum, s) => sum + s.items.length, 0);
+  const totalItems = (sections ?? []).reduce(
+    (sum, s) => sum + s.items.length,
+    0,
+  );
+  const showSkeleton = (isSearching || isPending) && searchResults.length === 0;
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 border-b border-border bg-white/90 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-4">
-          <Link href={`/dashboard/edit/${slug}`} className="text-sm font-medium text-green hover:underline">
-            ← 編集画面に戻る
+        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
+          <Link
+            href={`/dashboard/edit/${slug}`}
+            className="text-sm font-medium text-primary hover:underline"
+          >
+            ← 編集に戻る
           </Link>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">{totalItems} 件</span>
+            <span className="text-xs text-muted-foreground">
+              {totalItems} 件
+            </span>
             {user && <ProfileIcon user={user} />}
           </div>
         </div>
       </header>
 
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <h1 className="text-xl font-medium tracking-wide text-foreground">コスメを検索して追加</h1>
-        <p className="mt-1 text-sm text-muted-foreground">「ファンデーション」「SHISEIDO」などで検索</p>
+      <div className="mx-auto max-w-2xl px-4 pb-10 pt-6">
+        <h1 className="text-lg font-semibold text-foreground">
+          コスメを検索して追加
+        </h1>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          「ファンデーション」「SHISEIDO」などで検索
+        </p>
 
-        <div className="mt-6">
+        <div className="mt-5">
           <input
             type="search"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
-            placeholder="商品名・カテゴリで検索"
-            className="w-full rounded-xl border border-input bg-white px-4 py-3 text-card-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            placeholder="商品名・ブランドで検索"
+            className="w-full rounded-2xl border border-input bg-white px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
             autoFocus
           />
         </div>
 
-        <div className="mt-6 space-y-4">
-          {(isSearching || isPending) && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
-              <span>検索中</span>
-            </div>
-          )}
+        <div className="mt-5 space-y-3">
+          {/* スケルトンUI */}
+          {showSkeleton &&
+            Array.from({ length: 5 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+
+          {/* エラー */}
           {searchError && (
-            <div className="space-y-1">
-              <p className="text-sm text-destructive">{searchError}</p>
-              {searchDebug && (
-                <pre className="max-h-32 overflow-auto rounded bg-muted p-2 text-xs text-muted-foreground">
-                  {JSON.stringify(searchDebug, null, 2)}
-                </pre>
-              )}
-            </div>
+            <p className="text-center text-sm text-destructive">
+              {searchError}
+            </p>
           )}
-          {!isSearching && searchResults.length === 0 && keyword.trim() && !searchError && <p className="text-sm text-muted-foreground">該当する商品がありません</p>}
-          {!isSearching && searchResults.length === 0 && !keyword.trim() && <p className="text-sm text-muted-foreground">検索窓に文字を入れると候補が表示されます</p>}
+
+          {/* 空状態 */}
+          {!isSearching &&
+            !isPending &&
+            searchResults.length === 0 &&
+            !searchError && (
+              <p className="pt-6 text-center text-sm text-muted-foreground">
+                {keyword.trim()
+                  ? "該当する商品がありません"
+                  : "検索窓に文字を入れると候補が表示されます"}
+              </p>
+            )}
+
+          {/* 結果 */}
           {searchResults.map((item) => (
-            <CosmeCard key={item.id} item={item} onAdd={handleAddItem} isInList={false} />
+            <ResultCard key={item.id} item={item} onAdd={handleAddItem} />
           ))}
         </div>
       </div>
 
+      {/* 追加エラー */}
       {addError && (
-        <div className="mt-4 flex flex-col gap-2 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          <span>{addError}</span>
-          {addError.includes("グループを作成") && (
-            <Link
-              href={`/dashboard/edit/${slug}`}
-              className="font-medium text-green hover:underline"
-            >
-              編集画面へ →
-            </Link>
-          )}
+        <div className="mx-auto max-w-2xl px-4">
+          <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <span>{addError}</span>
+            {addError.includes("グループを作成") && (
+              <Link
+                href={`/dashboard/edit/${slug}`}
+                className="ml-2 font-medium text-primary hover:underline"
+              >
+                編集画面へ →
+              </Link>
+            )}
+          </div>
         </div>
       )}
+
+      {/* セクション選択モーダル */}
       {sectionPicker && (
         <div className="fixed inset-0 z-50 flex items-end justify-center">
           <div
@@ -248,7 +336,9 @@ function SearchContent() {
                   onClick={() => handlePickSection(section.id)}
                   className="flex items-center justify-between rounded-xl border-2 border-border p-4 text-left transition-all hover:border-primary/40 hover:bg-accent"
                 >
-                  <span className="font-medium text-card-foreground">{section.title}</span>
+                  <span className="font-medium text-card-foreground">
+                    {section.title}
+                  </span>
                   <span className="text-xs text-muted-foreground">
                     {section.items.length}件
                   </span>
@@ -258,7 +348,8 @@ function SearchContent() {
             <button
               type="button"
               onClick={() => setSectionPicker(null)}
-              className="mt-4 w-full rounded-xl border border-border py-2 text-sm text-muted-foreground">
+              className="mt-4 w-full rounded-xl border border-border py-2 text-sm text-muted-foreground"
+            >
               キャンセル
             </button>
           </div>
@@ -268,10 +359,15 @@ function SearchContent() {
   );
 }
 
-/** ブロック追加：コスメを検索して追加 */
 export default function SearchPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center text-muted-foreground">読み込み中...</div>}>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center text-muted-foreground">
+          読み込み中...
+        </div>
+      }
+    >
       <SearchContent />
     </Suspense>
   );

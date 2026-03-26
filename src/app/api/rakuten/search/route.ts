@@ -2,8 +2,26 @@ import { NextRequest, NextResponse } from "next/server";
 import type { CosmeItem } from "@/types";
 import { cleanseItemName } from "@/lib/search-normalize";
 
-const RAKUTEN_API_URL =
-  "https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20170706";
+const PRODUCT_API_URL =
+  "https://app.rakuten.co.jp/services/api/Product/Search/20170426";
+const ICHIBA_API_URL =
+  "https://app.rakuten.co.jp/services/api/IchibaItem/Search/20220601";
+
+/* ─── 楽天 Product/Search レスポンス型 ─── */
+
+interface RakutenProduct {
+  productId?: string;
+  productName?: string;
+  brandName?: string;
+  genreName?: string;
+  productUrlPC?: string;
+  mediumImageUrl?: string;
+  smallImageUrl?: string;
+  janCode?: string;
+  reviewAverage?: number;
+}
+
+/* ─── 楽天 IchibaItem/Search レスポンス型 ─── */
 
 interface RakutenItem {
   itemCode?: string;
@@ -18,17 +36,16 @@ interface RakutenItem {
   shopName?: string;
 }
 
-interface RakutenResponse {
-  Items?: { Item: RakutenItem }[];
-  items?: RakutenItem[];
-  error?: string;
-  error_description?: string;
-  errors?: { errorCode?: number; errorMessage?: string };
-}
+/* ─── ヘルパー ─── */
 
 function toImageUrl(val: unknown): string | undefined {
   if (typeof val === "string" && val.startsWith("http")) return val;
-  if (val && typeof val === "object" && "imageUrl" in val && typeof (val as { imageUrl: string }).imageUrl === "string") {
+  if (
+    val &&
+    typeof val === "object" &&
+    "imageUrl" in val &&
+    typeof (val as { imageUrl: string }).imageUrl === "string"
+  ) {
     return (val as { imageUrl: string }).imageUrl;
   }
   return undefined;
@@ -38,27 +55,140 @@ function upgradeImageSize(url: string): string {
   return url.replace(/_ex=\d+x\d+/, "_ex=400x400");
 }
 
-function mapToCosmeItem(item: RakutenItem, index: number): CosmeItem {
-  const id = item.itemCode ?? `rakuten-${index}`;
+const PLACEHOLDER_IMG =
+  "https://placehold.co/96x96/f2ebe3/c9a962?text=No+Image";
+
+/* ─── マッパー ─── */
+
+function mapProduct(p: RakutenProduct, idx: number): CosmeItem & { _jan?: string } {
+  const raw = p.mediumImageUrl ?? p.smallImageUrl ?? PLACEHOLDER_IMG;
+  return {
+    id: p.productId ?? `product-${idx}`,
+    name: cleanseItemName(p.productName ?? "") || p.productName || "（商品名なし）",
+    brand: p.brandName ?? "",
+    category: p.genreName ?? "",
+    imageUrl: upgradeImageSize(raw),
+    rakutenUrl: p.productUrlPC ?? undefined,
+    _jan: p.janCode ?? undefined,
+  };
+}
+
+function mapIchibaItem(item: RakutenItem, idx: number): CosmeItem & { _jan?: string } {
   const imgUrls = item.mediumImageUrls ?? item.smallImageUrls ?? [];
   const first = imgUrls[0];
   const imgSingle = item.mediumImageUrl ?? item.smallImageUrl;
   const rawUrl =
-    toImageUrl(first) ?? (typeof imgSingle === "string" ? imgSingle : undefined) ?? "https://placehold.co/96x96/f2ebe3/c9a962?text=No+Image";
-  const imageUrl = upgradeImageSize(rawUrl);
+    toImageUrl(first) ??
+    (typeof imgSingle === "string" ? imgSingle : undefined) ??
+    PLACEHOLDER_IMG;
 
   const rawName = item.itemName ?? "";
-  const name = cleanseItemName(rawName) || rawName || "（商品名なし）";
-
   return {
-    id,
-    name,
+    id: item.itemCode ?? `ichiba-${idx}`,
+    name: cleanseItemName(rawName) || rawName || "（商品名なし）",
     brand: "",
     category: item.genreName ?? "",
-    imageUrl,
+    imageUrl: upgradeImageSize(rawUrl),
     rakutenUrl: item.affiliateUrl ?? item.itemUrl ?? undefined,
+    _jan: undefined,
   };
 }
+
+/* ─── 重複排除 ─── */
+
+function dedup(items: (CosmeItem & { _jan?: string })[]): CosmeItem[] {
+  const seen = new Set<string>();
+  const result: CosmeItem[] = [];
+  for (const item of items) {
+    const janKey = item._jan ? `jan:${item._jan}` : null;
+    const nameKey = `name:${(item.brand + item.name).replace(/\s+/g, "").toLowerCase()}`;
+    if (janKey && seen.has(janKey)) continue;
+    if (seen.has(nameKey)) continue;
+    if (janKey) seen.add(janKey);
+    seen.add(nameKey);
+    const { _jan: _, ...clean } = item;
+    result.push(clean);
+  }
+  return result;
+}
+
+/* ─── API 呼び出し ─── */
+
+function buildHeaders(): HeadersInit {
+  const origin =
+    process.env.NEXT_PUBLIC_APP_URL?.trim() || "https://www.rakuten.co.jp";
+  return {
+    Accept: "application/json",
+    Origin: origin,
+    Referer: origin + "/",
+    "User-Agent": "Cosmetree/1.0",
+  };
+}
+
+async function fetchProducts(
+  appId: string,
+  keyword: string,
+  hits: number,
+): Promise<(CosmeItem & { _jan?: string })[]> {
+  try {
+    const params = new URLSearchParams({
+      applicationId: appId,
+      keyword,
+      genreId: "100939",
+      format: "json",
+      hits: String(hits),
+    });
+    const res = await fetch(`${PRODUCT_API_URL}?${params}`, {
+      headers: buildHeaders(),
+    });
+    if (!res.ok) return [];
+    const data = await res.json().catch(() => ({}));
+    const products: RakutenProduct[] = Array.isArray(data?.Products)
+      ? data.Products.map((p: { Product?: RakutenProduct }) => p.Product).filter(Boolean)
+      : [];
+    return products.map(mapProduct);
+  } catch {
+    return [];
+  }
+}
+
+async function fetchIchibaItems(
+  appId: string,
+  accessKey: string,
+  keyword: string,
+  hits: number,
+): Promise<(CosmeItem & { _jan?: string })[]> {
+  try {
+    const params = new URLSearchParams({
+      applicationId: appId,
+      accessKey,
+      keyword,
+      genreId: "100939",
+      format: "json",
+      hits: String(hits),
+    });
+    const affiliateId = process.env.RAKUTEN_AFFILIATE_ID?.trim();
+    if (affiliateId) params.set("affiliateId", affiliateId);
+    const res = await fetch(`${ICHIBA_API_URL}?${params}`, {
+      headers: buildHeaders(),
+    });
+    if (!res.ok) return [];
+    const data = await res.json().catch(() => ({}));
+
+    const rawItems: RakutenItem[] = [];
+    if (Array.isArray(data?.Items)) {
+      for (const x of data.Items) {
+        const item = x?.Item ?? x;
+        if (item) rawItems.push(item);
+      }
+    }
+    return rawItems.map(mapIchibaItem);
+  } catch {
+    return [];
+  }
+}
+
+/* ─── GET ハンドラ ─── */
 
 export async function GET(request: NextRequest) {
   const appId = process.env.RAKUTEN_APPLICATION_ID?.trim();
@@ -66,114 +196,53 @@ export async function GET(request: NextRequest) {
 
   if (!appId) {
     return NextResponse.json(
-      {
-        items: [],
-        error: "RAKUTEN_APPLICATION_ID が未設定です。",
-      },
-      { status: 503 }
+      { items: [], error: "RAKUTEN_APPLICATION_ID が未設定です。" },
+      { status: 503 },
     );
   }
-
   if (!accessKey) {
     return NextResponse.json(
-      {
-        items: [],
-        error: "RAKUTEN_ACCESS_KEY が未設定です。楽天デベロッパーズで Access Key を取得してください。",
-      },
-      { status: 503 }
+      { items: [], error: "RAKUTEN_ACCESS_KEY が未設定です。" },
+      { status: 503 },
     );
   }
 
   const { searchParams } = new URL(request.url);
   const keyword = searchParams.get("keyword")?.trim();
   const hits = Math.min(
-    Math.max(parseInt(searchParams.get("hits") ?? "20", 10), 1),
-    30
+    Math.max(parseInt(searchParams.get("hits") ?? "10", 10), 1),
+    30,
   );
 
   if (!keyword || keyword.length < 2) {
     return NextResponse.json(
       { error: "キーワードは2文字以上で入力してください" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  const params = new URLSearchParams({
-    applicationId: appId,
-    accessKey,
-    keyword,
-    genreId: "100939", // 美容・コスメ・香水
-    format: "json",
-    hits: String(hits),
-  });
-
-  const affiliateId = process.env.RAKUTEN_AFFILIATE_ID?.trim();
-  if (affiliateId) params.set("affiliateId", affiliateId);
-
-  const origin =
-    process.env.NEXT_PUBLIC_APP_URL?.trim() || "https://www.rakuten.co.jp";
-  const headers: HeadersInit = {
-    Accept: "application/json",
-    Origin: origin,
-    Referer: origin + "/",
-    "User-Agent": "Cosmetree/1.0",
-  };
-
   try {
-    const res = await fetch(`${RAKUTEN_API_URL}?${params}`, { headers });
+    const [products, ichibaItems] = await Promise.all([
+      fetchProducts(appId, keyword, hits),
+      fetchIchibaItems(appId, accessKey, keyword, hits),
+    ]);
 
-    const rawText = await res.text();
-    let data: RakutenResponse & { [key: string]: unknown };
-    try {
-      data = JSON.parse(rawText) as RakutenResponse & { [key: string]: unknown };
-    } catch {
-      data = {};
-      console.error("[Rakuten API] レスポンスがJSONではありません", res.status, rawText.slice(0, 500));
+    let merged: (CosmeItem & { _jan?: string })[];
+    if (products.length >= 3) {
+      merged = [...products, ...ichibaItems];
+    } else {
+      merged = [...ichibaItems, ...products];
     }
 
-    const errorsObj = data.errors as { errorCode?: number; errorMessage?: string } | undefined;
-    const errMsgFromErrors = errorsObj?.errorMessage;
-
-    if (!res.ok) {
-      const msg =
-        data.error_description ??
-        data.error ??
-        errMsgFromErrors ??
-        `楽天APIエラー (HTTP ${res.status})`;
-      console.error("[Rakuten API]", res.status, msg);
-      return NextResponse.json(
-        { items: [], error: String(msg) },
-        { status: res.status }
-      );
-    }
-
-    if (data.error) {
-      const errMsg = data.error_description ?? data.error ?? "";
-      return NextResponse.json(
-        { items: [], error: String(errMsg) },
-        { status: 400 }
-      );
-    }
-
-    const rawItems: RakutenItem[] = [];
-    if (Array.isArray(data.Items)) {
-      rawItems.push(...data.Items.map((x) => x.Item).filter(Boolean));
-    } else if (Array.isArray(data.items)) {
-      rawItems.push(
-        ...data.items.map((x: { item?: RakutenItem; itemName?: string }) =>
-          (x as { item?: RakutenItem }).item ?? (x as RakutenItem)
-        )
-      );
-    }
-
-    const items = rawItems.map(mapToCosmeItem);
+    const unique = dedup(merged);
+    const items = unique.slice(0, hits);
 
     return NextResponse.json({ items });
   } catch (e) {
     console.error("Rakuten API error:", e);
     return NextResponse.json(
       { items: [], error: "楽天APIへの接続に失敗しました" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

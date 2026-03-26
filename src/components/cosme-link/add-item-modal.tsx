@@ -121,7 +121,7 @@ export function AddItemModal({
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
-        const res = await fetch(`/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=20`, {
+        const res = await fetch(`/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=10`, {
           signal: controller.signal,
         });
         clearTimeout(timeoutId);

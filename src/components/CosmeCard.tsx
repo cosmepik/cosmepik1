@@ -60,6 +60,7 @@ export function CosmeCard({ item, onAdd, isInList, compact }: CosmeCardProps) {
           fill
           className="object-cover object-center"
           sizes="96px"
+          style={{ transform: "scale(1.08)" }}
         />
       </div>
       <div className="min-w-0 flex-1">
