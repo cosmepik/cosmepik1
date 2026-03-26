@@ -3,7 +3,7 @@ import type { CosmeItem } from "@/types";
 import { cleanseItemName } from "@/lib/search-normalize";
 
 const PRODUCT_API_URL =
-  "https://app.rakuten.co.jp/services/api/Product/Search/20170426";
+  "https://openapi.rakuten.co.jp/ichibaproduct/api/Product/Search/20250801";
 const ICHIBA_API_URL =
   "https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20170706";
 
@@ -15,9 +15,11 @@ interface RakutenProduct {
   brandName?: string;
   genreName?: string;
   productUrlPC?: string;
+  affiliateUrl?: string;
   mediumImageUrl?: string;
   smallImageUrl?: string;
   janCode?: string;
+  productCode?: string;
   reviewAverage?: number;
 }
 
@@ -68,8 +70,8 @@ function mapProduct(p: RakutenProduct, idx: number): CosmeItem & { _jan?: string
     brand: p.brandName ?? "",
     category: p.genreName ?? "",
     imageUrl: upgradeImageSize(raw),
-    rakutenUrl: p.productUrlPC ?? undefined,
-    _jan: p.janCode ?? undefined,
+    rakutenUrl: p.affiliateUrl ?? p.productUrlPC ?? undefined,
+    _jan: p.productCode ?? p.janCode ?? undefined,
   };
 }
 
@@ -127,14 +129,17 @@ function buildHeaders(): HeadersInit {
 
 async function fetchProducts(
   appId: string,
+  accessKey: string,
   keyword: string,
   hits: number,
 ): Promise<(CosmeItem & { _jan?: string })[]> {
   try {
     const params = new URLSearchParams({
       applicationId: appId,
+      accessKey,
       keyword,
       format: "json",
+      formatVersion: "2",
       hits: String(hits),
     });
     const res = await fetch(`${PRODUCT_API_URL}?${params}`, {
@@ -145,9 +150,13 @@ async function fetchProducts(
       return [];
     }
     const data = await res.json().catch(() => ({}));
-    const products: RakutenProduct[] = Array.isArray(data?.Products)
-      ? data.Products.map((p: { Product?: RakutenProduct }) => p.Product).filter(Boolean)
-      : [];
+    let products: RakutenProduct[] = [];
+    if (Array.isArray(data?.Products)) {
+      products = data.Products.map(
+        (p: RakutenProduct | { Product?: RakutenProduct }) =>
+          "productName" in p ? p : (p as { Product?: RakutenProduct }).Product,
+      ).filter(Boolean);
+    }
     return products.map(mapProduct);
   } catch (e) {
     console.error("[Product/Search] error:", e);
@@ -230,7 +239,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const [products, ichibaItems] = await Promise.all([
-      fetchProducts(appId, keyword, hits),
+      fetchProducts(appId, accessKey, keyword, hits),
       fetchIchibaItems(appId, accessKey, keyword, hits),
     ]);
 
