@@ -134,7 +134,6 @@ async function fetchProducts(
     const params = new URLSearchParams({
       applicationId: appId,
       keyword,
-      genreId: "100939",
       format: "json",
       hits: String(hits),
     });
