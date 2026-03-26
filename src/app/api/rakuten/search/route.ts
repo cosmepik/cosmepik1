@@ -141,7 +141,6 @@ async function fetchProducts(
       applicationId: appId,
       accessKey,
       keyword,
-      genreId: "100939",
       format: "json",
       formatVersion: "2",
       hits: String(hits),
@@ -165,11 +164,17 @@ async function fetchProducts(
       const p = products[0];
       console.log("[Product/Search] sample:", JSON.stringify({
         name: p.productName,
+        genre: p.genreName,
         medium: p.mediumImageUrl,
         small: p.smallImageUrl,
       }));
     }
-    return products.map(mapProduct);
+    const COSME_GENRES = /コスメ|美容|化粧|香水|スキンケア|ヘアケア|ボディケア|メイク|ネイル|日焼け|UV|シャンプー|トリートメント/;
+    const mapped = products.map(mapProduct);
+    const filtered = mapped.filter(
+      (item) => !item.category || COSME_GENRES.test(item.category),
+    );
+    return filtered.length > 0 ? filtered : mapped;
   } catch (e) {
     console.error("[Product/Search] error:", e);
     return [];
