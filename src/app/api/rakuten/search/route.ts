@@ -140,6 +140,7 @@ async function fetchProducts(
       applicationId: appId,
       accessKey,
       keyword,
+      genreId: "100939",
       format: "json",
       formatVersion: "2",
       hits: String(hits),
