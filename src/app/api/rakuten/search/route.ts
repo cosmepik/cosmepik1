@@ -5,7 +5,7 @@ import { cleanseItemName } from "@/lib/search-normalize";
 const PRODUCT_API_URL =
   "https://openapi.rakuten.co.jp/ichibaproduct/api/Product/Search/20250801";
 const ICHIBA_API_URL =
-  "https://openapi.rakuten.co.jp/ichiba/api/IchibaItem/Search/20220601";
+  "https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20220601";
 
 /* ─── 楽天 Product/Search レスポンス型 ─── */
 
@@ -55,7 +55,7 @@ function toImageUrl(val: unknown): string | undefined {
 
 function upgradeImageSize(url: string): string {
   let u = url.replace(/^http:\/\//, "https://");
-  u = u.replace(/_ex=\d+x\d+/, "_ex=400x400");
+  u = u.replace(/_ex=\d+x\d+/, "_ex=200x200");
   return u;
 }
 
