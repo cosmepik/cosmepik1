@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Crown, Sparkles, Image, Palette, X, LayoutGrid } from "lucide-react";
+import { Crown, Sparkles, Image, Palette, X, LayoutGrid, Settings, CheckCircle2 } from "lucide-react";
 import { SideMenu } from "@/components/cosme-link/side-menu";
 import { DashboardHeader } from "@/components/DashboardHeader";
 
@@ -33,6 +33,15 @@ export default function PremiumPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
+  const [isPremium, setIsPremium] = useState<boolean | null>(null);
+  const [openingPortal, setOpeningPortal] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/premium/me")
+      .then((r) => r.json())
+      .then((d) => setIsPremium(d.premium === true))
+      .catch(() => setIsPremium(false));
+  }, []);
 
   const handleUpgradeToPremium = async () => {
     setUpgradeError(null);
@@ -56,6 +65,28 @@ export default function PremiumPage() {
     setUpgrading(false);
   };
 
+  const handleOpenPortal = async () => {
+    setUpgradeError(null);
+    setOpeningPortal(true);
+    try {
+      const res = await fetch("/api/stripe/create-portal-session", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setUpgradeError(data.error ?? "エラーが発生しました。");
+        setOpeningPortal(false);
+        return;
+      }
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      setUpgradeError("ポータルURLを取得できませんでした。");
+    } catch {
+      setUpgradeError("エラーが発生しました。");
+    }
+    setOpeningPortal(false);
+  };
+
   return (
     <main className="min-h-screen">
       <SideMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -77,9 +108,16 @@ export default function PremiumPage() {
           <h1 className="mb-3 text-2xl font-bold text-foreground">
             プレミアムプラン
           </h1>
-          <p className="text-muted-foreground">
-            公開ページをより快適に。バナー広告消去・ロゴ消去・限定壁紙で、あなたのコスメページをワンランク上へ。
-          </p>
+          {isPremium ? (
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-4 py-1.5 text-sm font-medium text-emerald-600">
+              <CheckCircle2 className="h-4 w-4" />
+              プレミアム利用中
+            </div>
+          ) : (
+            <p className="text-muted-foreground">
+              公開ページをより快適に。バナー広告消去・ロゴ消去・限定壁紙で、あなたのコスメページをワンランク上へ。
+            </p>
+          )}
         </div>
 
         {/* Benefits */}
@@ -103,28 +141,54 @@ export default function PremiumPage() {
           })}
         </div>
 
-        {/* CTA */}
-        <div className="rounded-2xl border-2 border-amber-500/30 bg-amber-500/5 p-6 text-center">
-          <Sparkles className="mx-auto mb-3 h-8 w-8 text-amber-500" aria-hidden />
-          <h2 className="mb-2 text-lg font-semibold text-foreground">
-            プレミアムで公開ページをアップグレード
-          </h2>
-          <p className="mb-6 text-sm text-muted-foreground">
-            いつでも解約可能。まずはお試しください。
-          </p>
-          {upgradeError && (
-            <p className="mb-4 text-sm text-destructive">{upgradeError}</p>
-          )}
-          <button
-            type="button"
-            onClick={handleUpgradeToPremium}
-            disabled={upgrading}
-            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 py-4 px-8 font-medium text-white transition-colors hover:bg-amber-600 disabled:opacity-50"
-          >
-            <Crown className="h-5 w-5" aria-hidden />
-            {upgrading ? "処理中..." : "プレミアムにアップグレード"}
-          </button>
-        </div>
+        {/* CTA / プラン管理 */}
+        {isPremium ? (
+          <div className="space-y-4">
+            <div className="rounded-2xl border-2 border-emerald-500/30 bg-emerald-500/5 p-6 text-center">
+              <CheckCircle2 className="mx-auto mb-3 h-8 w-8 text-emerald-500" aria-hidden />
+              <h2 className="mb-2 text-lg font-semibold text-foreground">
+                プレミアム特典が有効です
+              </h2>
+              <p className="mb-6 text-sm text-muted-foreground">
+                プランの変更・お支払い方法の更新・解約はこちらから行えます。
+              </p>
+              {upgradeError && (
+                <p className="mb-4 text-sm text-destructive">{upgradeError}</p>
+              )}
+              <button
+                type="button"
+                onClick={handleOpenPortal}
+                disabled={openingPortal}
+                className="inline-flex items-center gap-2 rounded-xl bg-foreground py-4 px-8 font-medium text-background transition-colors hover:bg-foreground/90 disabled:opacity-50"
+              >
+                <Settings className="h-5 w-5" aria-hidden />
+                {openingPortal ? "読み込み中..." : "プランを管理する"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-2xl border-2 border-amber-500/30 bg-amber-500/5 p-6 text-center">
+            <Sparkles className="mx-auto mb-3 h-8 w-8 text-amber-500" aria-hidden />
+            <h2 className="mb-2 text-lg font-semibold text-foreground">
+              プレミアムで公開ページをアップグレード
+            </h2>
+            <p className="mb-6 text-sm text-muted-foreground">
+              いつでも解約可能。まずはお試しください。
+            </p>
+            {upgradeError && (
+              <p className="mb-4 text-sm text-destructive">{upgradeError}</p>
+            )}
+            <button
+              type="button"
+              onClick={handleUpgradeToPremium}
+              disabled={upgrading}
+              className="inline-flex items-center gap-2 rounded-xl bg-amber-500 py-4 px-8 font-medium text-white transition-colors hover:bg-amber-600 disabled:opacity-50"
+            >
+              <Crown className="h-5 w-5" aria-hidden />
+              {upgrading ? "処理中..." : "プレミアムにアップグレード"}
+            </button>
+          </div>
+        )}
       </div>
     </main>
   );

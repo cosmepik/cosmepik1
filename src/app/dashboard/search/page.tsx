@@ -14,14 +14,13 @@ import type { CosmeItem } from "@/types";
 
 function SkeletonCard() {
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-sm animate-pulse">
-      <div className="h-16 w-16 shrink-0 rounded-xl bg-muted" />
-      <div className="min-w-0 flex-1 space-y-2">
-        <div className="h-3 w-16 rounded bg-muted" />
-        <div className="h-4 w-3/4 rounded bg-muted" />
-        <div className="h-3 w-1/2 rounded bg-muted" />
+    <div className="flex flex-col rounded-2xl bg-white shadow-sm animate-pulse overflow-hidden">
+      <div className="aspect-square w-full bg-muted" />
+      <div className="p-2.5 space-y-1.5">
+        <div className="h-2.5 w-12 rounded bg-muted" />
+        <div className="h-3 w-full rounded bg-muted" />
+        <div className="h-3 w-2/3 rounded bg-muted" />
       </div>
-      <div className="h-9 w-9 shrink-0 rounded-full bg-muted" />
     </div>
   );
 }
@@ -36,39 +35,33 @@ function ResultCard({
   onAdd: (item: CosmeItem) => void;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-sm transition-shadow hover:shadow-md">
-      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-muted">
+    <div className="relative flex flex-col rounded-2xl bg-white shadow-sm transition-shadow hover:shadow-md overflow-hidden">
+      <div className="relative aspect-square w-full bg-muted">
         <img
           src={item.imageUrl}
           alt={item.name}
           loading="lazy"
-          className="h-full w-full object-cover"
-          style={{ transform: "scale(1.08)" }}
+          className="h-full w-full object-contain"
         />
+        <button
+          type="button"
+          onClick={() => onAdd(item)}
+          aria-label="リストに追加"
+          className="absolute bottom-1.5 right-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow transition-all hover:bg-primary/90 active:scale-90"
+        >
+          <Plus className="h-4 w-4" />
+        </button>
       </div>
-      <div className="min-w-0 flex-1">
+      <div className="px-2.5 py-2">
         {item.brand && (
           <p className="truncate text-[10px] font-semibold tracking-wide text-primary">
             {item.brand}
           </p>
         )}
-        <h3 className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
+        <h3 className="line-clamp-2 text-xs font-medium leading-snug text-foreground">
           {item.name}
         </h3>
-        {item.category && (
-          <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
-            {item.category}
-          </p>
-        )}
       </div>
-      <button
-        type="button"
-        onClick={() => onAdd(item)}
-        aria-label="リストに追加"
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-90"
-      >
-        <Plus className="h-4 w-4" />
-      </button>
     </div>
   );
 }
@@ -266,16 +259,16 @@ function SearchContent() {
           />
         </div>
 
-        <div className="mt-5 space-y-3">
+        <div className="mt-5 grid grid-cols-2 gap-3">
           {/* スケルトンUI */}
           {showSkeleton &&
-            Array.from({ length: 5 }).map((_, i) => (
+            Array.from({ length: 6 }).map((_, i) => (
               <SkeletonCard key={i} />
             ))}
 
           {/* エラー */}
           {searchError && (
-            <p className="text-center text-sm text-destructive">
+            <p className="col-span-2 text-center text-sm text-destructive">
               {searchError}
             </p>
           )}
@@ -285,7 +278,7 @@ function SearchContent() {
             !isPending &&
             searchResults.length === 0 &&
             !searchError && (
-              <p className="pt-6 text-center text-sm text-muted-foreground">
+              <p className="col-span-2 pt-6 text-center text-sm text-muted-foreground">
                 {keyword.trim()
                   ? "該当する商品がありません"
                   : "検索窓に文字を入れると候補が表示されます"}

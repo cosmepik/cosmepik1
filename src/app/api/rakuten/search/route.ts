@@ -73,7 +73,7 @@ function mapProduct(p: RakutenProduct, idx: number): CosmeItem & { _jan?: string
     brand: p.brandName ?? "",
     category: p.genreName ?? "",
     imageUrl: raw,
-    rakutenUrl: p.affiliateUrl ?? p.productUrlPC ?? undefined,
+    rakutenUrl: p.affiliateUrl ?? p.productUrlPC ?? `https://search.rakuten.co.jp/search/mall/${encodeURIComponent(p.productName ?? "")}/?l-id=cosmetree`,
     _jan: p.productCode ?? p.janCode ?? undefined,
   };
 }
@@ -94,7 +94,7 @@ function mapIchibaItem(item: RakutenItem, idx: number): CosmeItem & { _jan?: str
     brand: "",
     category: item.genreName ?? "",
     imageUrl: upgradeImageSize(rawUrl),
-    rakutenUrl: item.affiliateUrl ?? item.itemUrl ?? undefined,
+    rakutenUrl: item.affiliateUrl ?? item.itemUrl ?? `https://search.rakuten.co.jp/search/mall/${encodeURIComponent(item.itemName ?? "")}/?l-id=cosmetree`,
     _jan: undefined,
   };
 }
@@ -146,6 +146,8 @@ async function fetchProducts(
       formatVersion: "2",
       hits: String(hits),
     });
+    const affiliateId = process.env.RAKUTEN_AFFILIATE_ID?.trim();
+    if (affiliateId) params.set("affiliateId", affiliateId);
     const res = await fetch(`${PRODUCT_API_URL}?${params}`, {
       headers: buildHeaders(),
     });
@@ -165,12 +167,12 @@ async function fetchProducts(
           "productName" in p ? p : (p as { Product?: RakutenProduct }).Product,
       ).filter(Boolean);
     }
-    const COSME_GENRES = /コスメ|美容|化粧|香水|スキンケア|ヘアケア|ボディケア|メイク|ネイル|日焼け|UV|シャンプー|トリートメント|洗顔|クレンジング|美容液|乳液|化粧水/;
+    const COSME_GENRES = /コスメ|美容|化粧|香水|スキンケア|ヘアケア|ボディケア|メイク|ネイル|日焼け|UV|シャンプー|トリートメント|洗顔|クレンジング|美容液|乳液|化粧水|フェイスケア|リップ|アイ|ファンデ|下地|パウダー|チーク|マスカラ|コンシーラー|ハンドクリーム|ボディソープ|入浴剤|デオドラント|脱毛|除毛/;
     const mapped = products.map(mapProduct);
     const filtered = mapped.filter(
-      (item) => !item.category || COSME_GENRES.test(item.category),
+      (item) => item.category && COSME_GENRES.test(item.category),
     );
-    return filtered.length > 0 ? filtered : mapped;
+    return filtered;
   } catch (e) {
     console.error("[Product/Search] error:", e);
     return [];
