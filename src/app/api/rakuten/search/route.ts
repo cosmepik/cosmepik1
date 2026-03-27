@@ -222,6 +222,8 @@ async function fetchIchibaItems(
 export async function GET(request: NextRequest) {
   const appId = process.env.RAKUTEN_APPLICATION_ID?.trim();
   const accessKey = process.env.RAKUTEN_ACCESS_KEY?.trim();
+  const productAppId = process.env.RAKUTEN_APPLICATION_ID_2?.trim() || appId;
+  const productAccessKey = process.env.RAKUTEN_ACCESS_KEY_2?.trim() || accessKey;
 
   if (!appId) {
     return NextResponse.json(
@@ -252,7 +254,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const [products, ichibaItems] = await Promise.all([
-      fetchProducts(appId, accessKey, keyword, hits),
+      fetchProducts(productAppId!, productAccessKey!, keyword, hits),
       fetchIchibaItems(appId, accessKey, keyword, hits),
     ]);
 
