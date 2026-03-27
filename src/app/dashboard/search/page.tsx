@@ -160,7 +160,7 @@ function SearchContent() {
         setIsSearching(false);
         setIsPending(false);
       }
-    }, 350);
+    }, 500);
     return () => clearTimeout(timer);
   }, [keyword]);
 

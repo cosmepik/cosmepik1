@@ -135,6 +135,7 @@ async function fetchProducts(
   accessKey: string,
   keyword: string,
   hits: number,
+  retry = true,
 ): Promise<(CosmeItem & { _jan?: string })[]> {
   try {
     const params = new URLSearchParams({
@@ -148,8 +149,12 @@ async function fetchProducts(
     const res = await fetch(`${PRODUCT_API_URL}?${params}`, {
       headers: buildHeaders(),
     });
+    if (res.status === 429 && retry) {
+      await new Promise((r) => setTimeout(r, 1100));
+      return fetchProducts(appId, accessKey, keyword, hits, false);
+    }
     if (!res.ok) {
-      console.warn("[Product/Search] HTTP", res.status, await res.text().catch(() => ""));
+      console.warn("[Product/Search] HTTP", res.status);
       return [];
     }
     const data = await res.json().catch(() => ({}));
@@ -160,16 +165,7 @@ async function fetchProducts(
           "productName" in p ? p : (p as { Product?: RakutenProduct }).Product,
       ).filter(Boolean);
     }
-    if (products.length > 0) {
-      const p = products[0];
-      console.log("[Product/Search] sample:", JSON.stringify({
-        name: p.productName,
-        genre: p.genreName,
-        medium: p.mediumImageUrl,
-        small: p.smallImageUrl,
-      }));
-    }
-    const COSME_GENRES = /コスメ|美容|化粧|香水|スキンケア|ヘアケア|ボディケア|メイク|ネイル|日焼け|UV|シャンプー|トリートメント/;
+    const COSME_GENRES = /コスメ|美容|化粧|香水|スキンケア|ヘアケア|ボディケア|メイク|ネイル|日焼け|UV|シャンプー|トリートメント|洗顔|クレンジング|美容液|乳液|化粧水/;
     const mapped = products.map(mapProduct);
     const filtered = mapped.filter(
       (item) => !item.category || COSME_GENRES.test(item.category),

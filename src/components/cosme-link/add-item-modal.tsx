@@ -153,7 +153,7 @@ export function AddItemModal({
       } finally {
         setIsSearchPending(false);
       }
-    }, 300);
+    }, 500);
     return () => clearTimeout(timer);
   }, [searchKeyword]);
 
