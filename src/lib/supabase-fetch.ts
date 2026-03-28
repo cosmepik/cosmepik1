@@ -62,7 +62,7 @@ async function fetchProfileRest(username: string): Promise<InfluencerProfile | n
         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
         Accept: "application/vnd.pgrst.object+json",
       },
-      next: { revalidate: 10 },
+      next: { revalidate: 60 },
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -81,7 +81,7 @@ async function fetchSectionsRest(username: string): Promise<Section[]> {
         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
         Accept: "application/json",
       },
-      next: { revalidate: 10 },
+      next: { revalidate: 60 },
     });
     if (!res.ok) return [];
     const rows = await res.json();

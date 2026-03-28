@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
+import Script from "next/script";
 
 export function AnalyticsBeacon({ username }: { username: string }) {
-  useEffect(() => {
-    fetch(`/api/analytics/view?username=${encodeURIComponent(username)}`, {
-      method: "POST",
-    }).catch(() => {});
-  }, [username]);
-  return null;
+  return (
+    <Script
+      id="analytics-beacon"
+      strategy="lazyOnload"
+      dangerouslySetInnerHTML={{
+        __html: `fetch("/api/analytics/view?username=${encodeURIComponent(username)}",{method:"POST"}).catch(function(){})`,
+      }}
+    />
+  );
 }

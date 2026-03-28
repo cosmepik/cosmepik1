@@ -17,6 +17,7 @@ import type { ThemeId } from "@/lib/themes";
 import { backgroundGroups, backgrounds } from "@/lib/backgrounds";
 import type { Background } from "@/lib/backgrounds";
 import { setProfile, getProfile } from "@/lib/store";
+import { uploadImage } from "@/lib/storage";
 import { designPresets } from "@/lib/design-presets";
 import { cardDesigns, type CardDesignId } from "@/lib/card-designs";
 import { fonts, getFontFamily, type FontId } from "@/lib/fonts";
@@ -593,15 +594,18 @@ function BackgroundUploadSection({
     setIsUploading(true);
     try {
       const dataUrl = await compressImage(file);
+      const url = slug
+        ? await uploadImage(dataUrl, `wallpapers/${slug}`, `bg-${Date.now()}`)
+        : dataUrl;
       onClearPreset?.();
       await setProfile({
         username: slug,
-        backgroundImageUrl: dataUrl,
+        backgroundImageUrl: url,
         usePreset: false,
         updatedAt: new Date().toISOString(),
       });
-      window.dispatchEvent(new CustomEvent("cosmepik-background-change", { detail: { backgroundImageUrl: dataUrl } }));
-      onUpload(dataUrl);
+      window.dispatchEvent(new CustomEvent("cosmepik-background-change", { detail: { backgroundImageUrl: url } }));
+      onUpload(url);
     } catch {
       alert("画像の読み込みに失敗しました。別の画像をお試しください。");
     } finally {

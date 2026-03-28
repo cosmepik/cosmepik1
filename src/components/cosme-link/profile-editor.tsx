@@ -22,6 +22,7 @@ import {
 } from "@/lib/profile-context";
 import type { SnsLink } from "@/types";
 import { setProfile as saveProfileToStore } from "@/lib/store";
+import { uploadImage } from "@/lib/storage";
 import { XIcon } from "@/components/icons/x-icon";
 
 function compressAvatar(file: File, maxSize = 400): Promise<string> {
@@ -308,7 +309,10 @@ export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
                       setAvatarUploading(true);
                       try {
                         const compressed = await compressAvatar(f);
-                        updateProfile({ avatarUrl: compressed });
+                        const url = slugFromParams
+                          ? await uploadImage(compressed, `avatars/${slugFromParams}`, `avatar-${Date.now()}`)
+                          : compressed;
+                        updateProfile({ avatarUrl: url });
                       } catch {
                         const r = new FileReader();
                         r.onloadend = () => updateProfile({ avatarUrl: r.result as string });

@@ -54,14 +54,25 @@ type ThemeContextValue = {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 /** 公開ページでプロフィールのテーマを適用するためにエクスポート */
-export function applyTheme(themeId: ThemeId) {
+export function applyTheme(themeId: ThemeId, target?: HTMLElement) {
   const vars = themeVariables[themeId];
   if (!vars) return;
-  const root = document.documentElement;
+  const el = target ?? document.documentElement;
   for (const [key, value] of Object.entries(vars)) {
-    root.style.setProperty(`--${key}`, value);
+    el.style.setProperty(`--${key}`, value);
   }
-  root.style.setProperty("--green", vars.primary);
+  el.style.setProperty("--green", vars.primary);
+}
+
+/** :root のテーマ変数をリセット（CSSデフォルトに戻す） */
+export function resetTheme() {
+  const root = document.documentElement;
+  const vars = themeVariables["mint-sparkle"];
+  if (!vars) return;
+  for (const key of Object.keys(vars)) {
+    root.style.removeProperty(`--${key}`);
+  }
+  root.style.removeProperty("--green");
 }
 
 const CUSTOM_COLOR_PREFIX = "custom-";
@@ -162,17 +173,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [cardColor, setCardColorState] = useState<string>("");
 
   useEffect(() => {
-    // 公開プロフィールページでは SSR の inline style が正しいテーマを提供するため
-    // localStorage からの上書きをスキップ
+    // 公開プロフィールページでは SSR の inline style が正しいテーマを提供する
     if (isPublicProfilePage(pathname)) return;
+
+    // ダッシュボード等のアプリUIページでは :root を Mint Sparkle に固定。
+    // localStorageから状態を復元するが、:root の CSS変数は変更しない。
+    resetTheme();
 
     try {
       const storedTheme = localStorage.getItem(THEME_STORAGE_KEY) as ThemeId | null;
       if (storedTheme && themes.some((t) => t.id === storedTheme)) {
         setThemeIdState(storedTheme);
-        applyTheme(storedTheme);
-      } else {
-        applyTheme(DEFAULT_THEME_ID);
       }
 
       const storedBg = localStorage.getItem(BACKGROUND_STORAGE_KEY);
@@ -183,17 +194,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
           backgrounds.some((b) => b.id === storedBg))
       ) {
         setBackgroundIdState(storedBg);
-        applyBackground(storedBg);
-      } else {
-        applyBackground(DEFAULT_BACKGROUND_ID);
       }
 
       const storedFont = localStorage.getItem(FONT_STORAGE_KEY) as FontId | null;
       if (storedFont && isValidFontId(storedFont)) {
         setFontIdState(storedFont);
-        applyFont(storedFont);
-      } else {
-        applyFont(DEFAULT_FONT_ID);
       }
 
       const storedCard = localStorage.getItem(CARD_DESIGN_STORAGE_KEY) as CardDesignId | null;
@@ -204,36 +209,28 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       const storedTextColor = localStorage.getItem(TEXT_COLOR_STORAGE_KEY) ?? "";
       if (storedTextColor) {
         setTextColorState(storedTextColor);
-        applyTextColor(storedTextColor);
       }
 
       const storedCardColor = localStorage.getItem(CARD_COLOR_STORAGE_KEY) ?? "";
       if (storedCardColor) {
         setCardColorState(storedCardColor);
-        applyCardColor(storedCardColor);
       }
     } catch {
-      applyTheme(DEFAULT_THEME_ID);
-      applyBackground(DEFAULT_BACKGROUND_ID);
-      applyFont(DEFAULT_FONT_ID);
+      /* ignore */
     }
   }, [pathname]);
 
   const setThemeId = useCallback((id: ThemeId) => {
     setThemeIdState(id);
-    applyTheme(id);
-    const savedTextColor = textColor || (localStorage.getItem(TEXT_COLOR_STORAGE_KEY) ?? "");
-    if (savedTextColor) applyTextColor(savedTextColor);
     try {
       localStorage.setItem(THEME_STORAGE_KEY, id);
     } catch {
       /* ignore */
     }
-  }, [textColor]);
+  }, []);
 
   const setBackgroundId = useCallback((id: string) => {
     setBackgroundIdState(id);
-    applyBackground(id);
     try {
       localStorage.setItem(BACKGROUND_STORAGE_KEY, id);
     } catch {
@@ -243,7 +240,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const setFontId = useCallback((id: FontId) => {
     setFontIdState(id);
-    applyFont(id);
     try {
       localStorage.setItem(FONT_STORAGE_KEY, id);
     } catch {
@@ -262,7 +258,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const setTextColor = useCallback((color: string) => {
     setTextColorState(color);
-    applyTextColor(color);
     try {
       if (color) {
         localStorage.setItem(TEXT_COLOR_STORAGE_KEY, color);
@@ -276,7 +271,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const setCardColor = useCallback((color: string) => {
     setCardColorState(color);
-    applyCardColor(color);
     try {
       if (color) {
         localStorage.setItem(CARD_COLOR_STORAGE_KEY, color);

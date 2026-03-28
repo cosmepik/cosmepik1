@@ -122,7 +122,7 @@ function ProfileHeader({ username, profile }: { username: string; profile: Influ
       <div className="relative">
         <div className="h-20 w-20 overflow-hidden rounded-full shadow-md">
           {profile?.avatarUrl ? (
-            <img src={profile.avatarUrl} alt="" className="h-full w-full object-cover" loading="eager" />
+            <img src={profile.avatarUrl} alt="" className="h-full w-full object-cover" loading="eager" fetchPriority="high" />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-secondary text-green">
               <UserIcon className="h-10 w-10" />
@@ -247,19 +247,30 @@ function cardBgStyle(cardColor: string | undefined): React.CSSProperties | undef
   return { backgroundColor: cardColor };
 }
 
+function isExternalUrl(url: string): boolean {
+  return url.startsWith("http://") || url.startsWith("https://");
+}
+
 function RecipeSectionBlock({ section, slug }: { section: Section; slug?: string }) {
   const placements = section.placements ?? [];
   if (!section.backgroundImage && placements.length === 0) return null;
-  const bgSrc = slug ? `/api/recipe-bg/${encodeURIComponent(slug)}` : section.backgroundImage;
+  const bgSrc = isExternalUrl(section.backgroundImage ?? "")
+    ? section.backgroundImage
+    : slug
+      ? `/api/recipe-bg/${encodeURIComponent(slug)}`
+      : section.backgroundImage;
   const hasComments = placements.some((p) => p.type === "comment");
   return (
     <section className="relative">
       {hasComments && (
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Yomogi&display=swap" />
       )}
-      <div className="relative w-full overflow-hidden rounded-2xl" style={{ aspectRatio: "3 / 4" }}>
+      {section.backgroundImage && bgSrc && (
+        <link rel="preload" as="image" href={bgSrc} />
+      )}
+      <div className="relative w-full overflow-hidden" style={{ aspectRatio: "3 / 4" }}>
         {section.backgroundImage && (
-          <img src={bgSrc} alt="" className="absolute inset-0 h-full w-full object-cover" loading="eager" />
+          <img src={bgSrc} alt="" className="absolute inset-0 h-full w-full object-cover" loading="eager" fetchPriority="high" />
         )}
         {placements.map((p) => {
           if (p.type === "comment") {
@@ -313,12 +324,30 @@ function RecipeSectionBlock({ section, slug }: { section: Section; slug?: string
               {(p.brand || p.product) && (
                 <div className="max-w-[100px] bg-black/40 px-1.5 py-0.5 text-center" style={{ backdropFilter: "blur(2px)" }}>
                   {p.brand && <p className="truncate text-[9px] font-bold text-white">{p.brand}</p>}
-                  {p.product && <p className="line-clamp-2 text-[8px] font-medium leading-tight text-white">{p.product}</p>}
+                  {p.product && <p className="line-clamp-3 text-[8px] font-medium leading-tight text-white">{p.product}</p>}
                 </div>
               )}
             </div>
           );
         })}
+        {/* cosmepik ロゴ */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2"
+          style={{
+            width: 112,
+            height: 28,
+            backgroundColor: "rgba(255,255,255,0.6)",
+            maskImage: "url(/logo.svg)",
+            maskSize: "contain",
+            maskRepeat: "no-repeat",
+            maskPosition: "center",
+            WebkitMaskImage: "url(/logo.svg)",
+            WebkitMaskSize: "contain",
+            WebkitMaskRepeat: "no-repeat",
+            WebkitMaskPosition: "center",
+          }}
+        />
       </div>
     </section>
   );
@@ -418,7 +447,7 @@ export function PublicPageSSR({ username, profile, sections, themeVars }: Public
             }}
           />
         )}
-        <main className="page-transition-enter relative z-10 mx-auto flex max-w-[400px] flex-col gap-3 px-4 py-8">
+        <main className="relative z-10 mx-auto flex max-w-[400px] flex-col gap-3 px-4 py-8">
           <div className="flex justify-center">
             <Logo className="h-6" height={26} />
           </div>

@@ -13,7 +13,7 @@ import {
 import { useSections } from "@/lib/section-context";
 import { type SectionItem, type SectionType } from "@/lib/sections";
 import { searchMockCosme } from "@/lib/mock-data";
-import { CosmeCard } from "@/components/CosmeCard";
+import { CosmeImage } from "@/components/CosmeImage";
 import type { CosmeItem } from "@/types";
 
 interface AddItemModalProps {
@@ -284,16 +284,43 @@ export function AddItemModal({
                 </div>
               )}
               {searchResults.length > 0 && (
-                <div className="max-h-96 overflow-y-auto space-y-0.5 rounded-xl border border-border p-1.5">
-                  {searchResults.slice(0, 12).map((item) => (
-                    <CosmeCard
-                      key={item.id}
-                      item={item}
-                      onAdd={(i) => handleAddFromSearch(i)}
-                      isInList={false}
-                      compact
-                    />
-                  ))}
+                <div className="max-h-96 overflow-y-auto rounded-xl border border-border p-1.5">
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {searchResults.slice(0, 10).map((item) => (
+                      <div
+                        key={item.id}
+                        className="relative flex flex-col overflow-hidden rounded-xl bg-white shadow-sm"
+                      >
+                        <div className="relative aspect-square w-full bg-muted">
+                          <CosmeImage
+                            src={item.imageUrl}
+                            alt={item.name}
+                            fill
+                            className="object-contain"
+                            sizes="160px"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleAddFromSearch(item)}
+                            aria-label="リストに追加"
+                            className="absolute bottom-1 right-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow transition-all hover:bg-primary/90 active:scale-90"
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                        <div className="px-2 py-1.5">
+                          {item.brand && (
+                            <p className="truncate text-[9px] font-semibold text-primary leading-tight">
+                              {item.brand}
+                            </p>
+                          )}
+                          <h3 className="line-clamp-2 text-[11px] font-medium leading-snug text-foreground">
+                            {item.name}
+                          </h3>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
               <div className="relative">

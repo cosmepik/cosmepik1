@@ -171,7 +171,7 @@ export function PublicSectionRenderer({ section, slug, userAffiliateId, cardDesi
         {hasComments && (
           <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Yomogi&display=swap" />
         )}
-        <div className="relative w-full overflow-hidden rounded-2xl" style={{ aspectRatio: "3 / 4" }}>
+        <div className="relative w-full overflow-hidden" style={{ aspectRatio: "3 / 4" }}>
           {section.backgroundImage && (
             <img src={section.backgroundImage} alt="" className="absolute inset-0 h-full w-full object-cover" />
           )}
@@ -223,12 +223,30 @@ export function PublicSectionRenderer({ section, slug, userAffiliateId, cardDesi
                 {(p.brand || p.product) && (
                   <div className="max-w-[100px] bg-black/40 px-1.5 py-0.5 text-center" style={{ backdropFilter: "blur(2px)" }}>
                     {p.brand && <p className="truncate text-[9px] font-bold text-white">{p.brand}</p>}
-                    {p.product && <p className="line-clamp-2 text-[8px] font-medium leading-tight text-white">{p.product}</p>}
+                    {p.product && <p className="line-clamp-3 text-[8px] font-medium leading-tight text-white">{p.product}</p>}
                   </div>
                 )}
               </div>
             );
           })}
+          {/* cosmepik ロゴ */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2"
+            style={{
+              width: 112,
+              height: 28,
+              backgroundColor: "rgba(255,255,255,0.6)",
+              maskImage: "url(/logo.svg)",
+              maskSize: "contain",
+              maskRepeat: "no-repeat",
+              maskPosition: "center",
+              WebkitMaskImage: "url(/logo.svg)",
+              WebkitMaskSize: "contain",
+              WebkitMaskRepeat: "no-repeat",
+              WebkitMaskPosition: "center",
+            }}
+          />
         </div>
       </section>
     );

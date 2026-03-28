@@ -2,7 +2,9 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Plus, Trash2, ZoomIn, ZoomOut, ImageIcon, Pencil, Check, MessageCircle } from "lucide-react";
+import { useParams } from "next/navigation";
 import { useSections } from "@/lib/section-context";
+import { uploadImage } from "@/lib/storage";
 import type { Section, RecipePlacement } from "@/lib/sections";
 import { RecipeCanvas } from "./recipe-canvas";
 import { AddItemModal } from "./add-item-modal";
@@ -36,6 +38,8 @@ function compressImage(file: File, maxWidth = 800, quality = 0.65): Promise<stri
 }
 
 export function RecipeEditor() {
+  const params = useParams();
+  const slug = params?.slug as string | undefined;
   const { sections, updateSection } = useSections();
   const recipeSection = sections.find((s) => s.type === "recipe") as Section | undefined;
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -98,7 +102,10 @@ export function RecipeEditor() {
     if (!file || !file.type.startsWith("image/")) return;
     try {
       const dataUrl = await compressImage(file);
-      updateRecipe({ backgroundImage: dataUrl });
+      const url = slug
+        ? await uploadImage(dataUrl, `recipe/${slug}`, `bg-${Date.now()}`)
+        : dataUrl;
+      updateRecipe({ backgroundImage: url });
     } catch {
       /* ignore */
     }

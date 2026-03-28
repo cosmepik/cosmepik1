@@ -87,7 +87,7 @@ export function RecipeCanvas({
   return (
     <div
       ref={canvasRef}
-      className="relative w-full overflow-hidden rounded-2xl bg-muted/30"
+      className="relative w-full overflow-hidden bg-muted/30"
       style={{ aspectRatio: "3 / 4", touchAction: editable ? "pan-y" : undefined }}
     >
       {backgroundImage ? (
@@ -97,12 +97,8 @@ export function RecipeCanvas({
           className="absolute inset-0 h-full w-full object-cover"
           draggable={false}
           onClick={() => {
-            if (editable) {
-              if (selectedId) {
-                onSelect?.(null);
-              } else {
-                onBackgroundClick?.();
-              }
+            if (editable && selectedId) {
+              onSelect?.(null);
             }
           }}
         />
@@ -139,6 +135,25 @@ export function RecipeCanvas({
           />
         ),
       )}
+
+      {/* cosmepik ロゴ */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2"
+        style={{
+          width: 112,
+          height: 28,
+          backgroundColor: "rgba(255,255,255,0.6)",
+          maskImage: "url(/logo.svg)",
+          maskSize: "contain",
+          maskRepeat: "no-repeat",
+          maskPosition: "center",
+          WebkitMaskImage: "url(/logo.svg)",
+          WebkitMaskSize: "contain",
+          WebkitMaskRepeat: "no-repeat",
+          WebkitMaskPosition: "center",
+        }}
+      />
     </div>
   );
 }
@@ -275,7 +290,7 @@ function PlacementItem({
         <p className="truncate text-[9px] font-bold text-white">{placement.brand}</p>
       )}
       {placement.product && (
-        <p className="line-clamp-2 text-[8px] font-medium leading-tight text-white">{placement.product}</p>
+        <p className="line-clamp-3 text-[8px] font-medium leading-tight text-white">{placement.product}</p>
       )}
     </div>
   ) : null;

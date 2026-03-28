@@ -20,6 +20,7 @@ import { useStylePickerOpen } from "@/components/cosme-link/style-picker";
 import { CosmepikLogo } from "@/components/cosmepik-logo";
 import { RecipeEditor } from "@/components/cosme-link/recipe-editor";
 import { PublicProfileContent } from "@/components/PublicProfileContent";
+import { useTheme, applyTheme, applyBackground, applyFont, applyTextColor } from "@/lib/theme-context";
 import type { InfluencerProfile } from "@/types";
 
 const WELCOME_DISMISSED_KEY = "cosmepik-welcome-dismissed";
@@ -161,35 +162,30 @@ function EditPageContent({ slug }: { slug: string }) {
   }, [loadProfile]);
 
   const [isPreviewMode, setIsPreviewMode] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
   const editScrollRef = useRef(0);
+  const previewRef = useRef<HTMLDivElement>(null);
+  const { themeId, backgroundId, fontId, textColor } = useTheme();
 
   useEffect(() => {
-    if (isPreviewMode) {
-      document.documentElement.style.overflow = "hidden";
-    } else {
-      document.documentElement.style.overflow = "";
-    }
-    return () => { document.documentElement.style.overflow = ""; };
-  }, [isPreviewMode]);
+    if (!isPreviewMode || !previewRef.current) return;
+    applyTheme(themeId, previewRef.current);
+    applyBackground(backgroundId);
+    applyFont(fontId);
+    if (textColor) applyTextColor(textColor);
+  }, [isPreviewMode, themeId, backgroundId, fontId, textColor]);
 
   const enterPreview = useCallback(() => {
     editScrollRef.current = window.scrollY;
     setIsEditMode(false);
-    setIsAnimating(true);
     setIsPreviewMode(true);
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => setIsAnimating(false));
-    });
+    window.scrollTo(0, 0);
   }, [setIsEditMode]);
 
   const exitPreview = useCallback(() => {
     setIsEditMode(true);
-    setIsAnimating(true);
     setIsPreviewMode(false);
     requestAnimationFrame(() => {
       window.scrollTo(0, editScrollRef.current);
-      requestAnimationFrame(() => setIsAnimating(false));
     });
   }, [setIsEditMode]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -243,33 +239,23 @@ function EditPageContent({ slug }: { slug: string }) {
   return (
     <>
     {/* Preview layer */}
-    <div
-      className="fixed inset-0 z-30"
-      aria-hidden={!isPreviewMode}
-      style={{
-        transform: isPreviewMode === isAnimating ? "translateX(100%)" : "translateX(0)",
-        transition: isAnimating ? "none" : "transform 300ms cubic-bezier(0.4, 0, 0.2, 1)",
-        willChange: "transform",
-        overflow: "auto",
-        backgroundColor: "var(--page-bg, var(--background, #fff))",
-        backgroundImage: "var(--page-bg-image, none)",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        visibility: !isPreviewMode && !isAnimating ? "hidden" : "visible",
-      }}
-    >
-      <InlinePreview slug={slug} onBack={exitPreview} />
-    </div>
+    {isPreviewMode && (
+      <div
+        ref={previewRef}
+        style={{
+          backgroundColor: "var(--page-bg, var(--background, #fff))",
+          backgroundImage: "var(--page-bg-image, none)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          minHeight: "100vh",
+        }}
+      >
+        <InlinePreview slug={slug} onBack={exitPreview} />
+      </div>
+    )}
 
     {/* Edit layer */}
-    <div
-      style={{
-        transform: isPreviewMode !== isAnimating ? "translateX(-30%)" : "translateX(0)",
-        transition: isAnimating ? "none" : "transform 300ms cubic-bezier(0.4, 0, 0.2, 1)",
-        opacity: isPreviewMode !== isAnimating ? 0.5 : 1,
-        pointerEvents: isPreviewMode ? "none" : "auto",
-      }}
-    >
+    <div style={{ display: isPreviewMode ? "none" : "block" }}>
     <main className="relative min-h-screen">
       {backgroundImageUrl && !usePreset && (
         <div

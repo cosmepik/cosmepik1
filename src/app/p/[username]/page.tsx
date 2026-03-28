@@ -4,7 +4,7 @@ import { PublicPageSSR } from "@/components/public/PublicPageSSR";
 import { AffiliateClickHandler } from "@/components/public/AffiliateClickHandler";
 import { AnalyticsBeacon } from "@/components/public/AnalyticsBeacon";
 
-export const revalidate = 10;
+export const revalidate = 60;
 
 type Props = { params: Promise<{ username: string }> };
 
@@ -14,11 +14,12 @@ export default async function PublicPageByUsername({ params }: Props) {
   const themeVars = generateThemeVars(profile);
   const fontUrl = getFontLinkUrl(profile);
 
-  const lightSections = sections.map((s) =>
-    s.type === "recipe" && s.backgroundImage
-      ? { ...s, backgroundImage: "API" }
-      : s
-  );
+  const lightSections = sections.map((s) => {
+    if (s.type !== "recipe" || !s.backgroundImage) return s;
+    const bg = s.backgroundImage;
+    if (bg.startsWith("http://") || bg.startsWith("https://")) return s;
+    return { ...s, backgroundImage: "API" };
+  });
 
   return (
     <>
