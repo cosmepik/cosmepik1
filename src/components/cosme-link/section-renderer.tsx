@@ -107,7 +107,7 @@ function SortableRoutineItem({
             src={item.image}
             alt={item.product || ""}
             fill
-            className="object-cover"
+            className="object-contain"
             sizes="48px"
           />
         )}
@@ -391,7 +391,7 @@ function ProductCard({
                     src={item.image}
                     alt={item.product || ""}
                     fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="object-contain transition-transform duration-500 group-hover:scale-105"
                     sizes="(max-width: 768px) 50vw, 224px"
                   />
                 )}

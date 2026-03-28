@@ -73,7 +73,7 @@ function RoutineItem({
     >
       <div className={cn("relative", listImageClassName)}>
         {item.image && (
-          <CosmeImage src={item.image} alt={item.product || ""} fill className="object-cover" sizes="48px" />
+          <CosmeImage src={item.image} alt={item.product || ""} fill className="object-contain" sizes="48px" />
         )}
       </div>
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 overflow-hidden">
@@ -125,7 +125,7 @@ function ProductCard({
               src={item.image}
               alt={item.product || ""}
               fill
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              className="object-contain transition-transform duration-500 group-hover:scale-105"
               sizes="(max-width: 768px) 50vw, 224px"
             />
           )}
@@ -217,7 +217,7 @@ export function PublicSectionRenderer({ section, slug, userAffiliateId, cardDesi
                     className="block h-14 w-14 overflow-hidden rounded-lg border-2 border-white/80 bg-white shadow-lg"
                     onClick={(e) => { if (p.link) { e.preventDefault(); onClick(p.link, p.id); } }}
                   >
-                    <CosmeImage src={p.image} alt={p.product || ""} fill className="object-cover" sizes="56px" />
+                    <CosmeImage src={p.image} alt={p.product || ""} fill className="object-contain" sizes="56px" />
                   </a>
                 )}
                 {(p.brand || p.product) && (

@@ -23,7 +23,7 @@ export function CosmeCard({ item, onAdd, isInList, compact }: CosmeCardProps) {
             src={item.imageUrl}
             alt={item.name}
             fill
-            className="object-cover object-center"
+            className="object-contain object-center"
             sizes="40px"
           />
         </div>
@@ -58,7 +58,7 @@ export function CosmeCard({ item, onAdd, isInList, compact }: CosmeCardProps) {
           src={item.imageUrl}
           alt={item.name}
           fill
-          className="object-cover object-center"
+          className="object-contain object-center"
           sizes="96px"
         />
       </div>

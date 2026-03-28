@@ -189,7 +189,7 @@ function RoutineItem({ item, listClassName, listImageClassName, cardColorStyle }
       style={cardColorStyle}
     >
       <div className={cn("relative", listImageClassName)}>
-        {item.image && <SafeImage src={item.image} alt={item.product || ""} className="h-full w-full object-cover" sizes="48px" />}
+        {item.image && <SafeImage src={item.image} alt={item.product || ""} className="h-full w-full object-contain" sizes="48px" />}
       </div>
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 overflow-hidden">
         {item.brand && <span className="text-[9px] font-medium uppercase tracking-wider text-primary">{item.brand}</span>}
@@ -218,7 +218,7 @@ function ProductCard({ item, productClassName, productImageClassName, cardColorS
             <SafeImage
               src={item.image}
               alt={item.product || ""}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
               sizes="(max-width: 768px) 50vw, 224px"
             />
           )}
@@ -318,7 +318,7 @@ function RecipeSectionBlock({ section, slug }: { section: Section; slug?: string
                   data-afl={p.link || undefined}
                   className="block h-14 w-14 overflow-hidden rounded-lg border-2 border-white/80 bg-white shadow-lg"
                 >
-                  <SafeImage src={p.image} alt={p.product || ""} className="h-full w-full object-cover" />
+                  <SafeImage src={p.image} alt={p.product || ""} className="h-full w-full object-contain" />
                 </a>
               )}
               {(p.brand || p.product) && (

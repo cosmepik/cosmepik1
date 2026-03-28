@@ -278,7 +278,7 @@ function PlacementItem({
       <img
         src={placement.image}
         alt={placement.product || ""}
-        className="h-full w-full object-cover"
+        className="h-full w-full object-contain"
         draggable={false}
       />
     </div>

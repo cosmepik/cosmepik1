@@ -55,7 +55,7 @@ function toImageUrl(val: unknown): string | undefined {
 
 function upgradeImageSize(url: string): string {
   let u = url.replace(/^http:\/\//, "https://");
-  u = u.replace(/_ex=\d+x\d+/, "_ex=200x200");
+  u = u.replace(/_ex=\d+x\d+/, "_ex=300x300");
   return u;
 }
 
@@ -72,7 +72,7 @@ function mapProduct(p: RakutenProduct, idx: number): CosmeItem & { _jan?: string
     name: cleanseItemName(p.productName ?? "") || p.productName || "（商品名なし）",
     brand: p.brandName ?? "",
     category: p.genreName ?? "",
-    imageUrl: raw,
+    imageUrl: upgradeImageSize(raw),
     rakutenUrl: p.affiliateUrl ?? p.productUrlPC ?? `https://search.rakuten.co.jp/search/mall/${encodeURIComponent(p.productName ?? "")}/?l-id=cosmetree`,
     _jan: p.productCode ?? p.janCode ?? undefined,
   };
