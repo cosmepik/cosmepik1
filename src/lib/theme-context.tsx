@@ -29,6 +29,11 @@ function isPublicProfilePage(pathname: string | null): boolean {
   return false;
 }
 
+function isEditPage(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return pathname.startsWith("/dashboard/edit/") || pathname.startsWith("/dashboard/preview");
+}
+
 const THEME_STORAGE_KEY = "cosmepik-theme";
 const BACKGROUND_STORAGE_KEY = "cosmepik-background";
 const FONT_STORAGE_KEY = "cosmepik-font";
@@ -176,9 +181,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     // 公開プロフィールページでは SSR の inline style が正しいテーマを提供する
     if (isPublicProfilePage(pathname)) return;
 
-    // ダッシュボード等のアプリUIページでは :root を Mint Sparkle に固定。
-    // localStorageから状態を復元するが、:root の CSS変数は変更しない。
+    // テーマカラーは Mint Sparkle に固定（:root のインラインスタイルをリセット）
     resetTheme();
+
+    const onEdit = isEditPage(pathname);
 
     try {
       const storedTheme = localStorage.getItem(THEME_STORAGE_KEY) as ThemeId | null;
@@ -194,11 +200,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
           backgrounds.some((b) => b.id === storedBg))
       ) {
         setBackgroundIdState(storedBg);
+        if (onEdit) applyBackground(storedBg);
+      } else if (onEdit) {
+        applyBackground(DEFAULT_BACKGROUND_ID);
       }
 
       const storedFont = localStorage.getItem(FONT_STORAGE_KEY) as FontId | null;
       if (storedFont && isValidFontId(storedFont)) {
         setFontIdState(storedFont);
+        if (onEdit) applyFont(storedFont);
+      } else if (onEdit) {
+        applyFont(DEFAULT_FONT_ID);
       }
 
       const storedCard = localStorage.getItem(CARD_DESIGN_STORAGE_KEY) as CardDesignId | null;
@@ -231,6 +243,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const setBackgroundId = useCallback((id: string) => {
     setBackgroundIdState(id);
+    applyBackground(id);
     try {
       localStorage.setItem(BACKGROUND_STORAGE_KEY, id);
     } catch {
@@ -240,6 +253,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const setFontId = useCallback((id: FontId) => {
     setFontIdState(id);
+    applyFont(id);
     try {
       localStorage.setItem(FONT_STORAGE_KEY, id);
     } catch {
