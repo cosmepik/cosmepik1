@@ -41,8 +41,8 @@ export async function GET(
     return NextResponse.redirect(bgValue, {
       status: 302,
       headers: {
-        "Cache-Control": "public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000",
-        "CDN-Cache-Control": "public, max-age=604800",
+        "Cache-Control": "public, max-age=60, s-maxage=120, stale-while-revalidate=300",
+        "CDN-Cache-Control": "public, max-age=120",
       },
     });
   }
@@ -59,8 +59,8 @@ export async function GET(
   return new NextResponse(buffer, {
     headers: {
       "Content-Type": contentType,
-      "Cache-Control": "public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000",
-      "CDN-Cache-Control": "public, max-age=604800",
+      "Cache-Control": "public, max-age=60, s-maxage=120, stale-while-revalidate=300",
+      "CDN-Cache-Control": "public, max-age=120",
     },
   });
 }

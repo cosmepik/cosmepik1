@@ -350,7 +350,7 @@ export default function DashboardHomePage() {
         {loading ? (
           <div className="flex flex-col items-center justify-center gap-3 py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-primary/30 border-t-primary" />
-            <p className="text-sm text-muted-foreground">メイクレシピを読み込み中...</p>
+            <p className="text-sm text-muted-foreground">メイクレシピを読み込み中... 5秒くらい待ってね</p>
           </div>
         ) : (
           <>

@@ -251,13 +251,13 @@ function isExternalUrl(url: string): boolean {
   return url.startsWith("http://") || url.startsWith("https://");
 }
 
-function RecipeSectionBlock({ section, slug }: { section: Section; slug?: string }) {
+function RecipeSectionBlock({ section, slug, cacheBust }: { section: Section; slug?: string; cacheBust?: string }) {
   const placements = section.placements ?? [];
   if (!section.backgroundImage && placements.length === 0) return null;
   const bgSrc = isExternalUrl(section.backgroundImage ?? "")
     ? section.backgroundImage
     : slug
-      ? `/api/recipe-bg/${encodeURIComponent(slug)}`
+      ? `/api/recipe-bg/${encodeURIComponent(slug)}${cacheBust ? `?v=${cacheBust}` : ""}`
       : section.backgroundImage;
   const hasComments = placements.some((p) => p.type === "comment");
   return (
@@ -353,8 +353,8 @@ function RecipeSectionBlock({ section, slug }: { section: Section; slug?: string
   );
 }
 
-function SectionBlock({ section, cardDesignId, cardColor, slug }: { section: Section; cardDesignId?: string; cardColor?: string; slug?: string }) {
-  if (section.type === "recipe") return <RecipeSectionBlock section={section} slug={slug} />;
+function SectionBlock({ section, cardDesignId, cardColor, slug, cacheBust }: { section: Section; cardDesignId?: string; cardColor?: string; slug?: string; cacheBust?: string }) {
+  if (section.type === "recipe") return <RecipeSectionBlock section={section} slug={slug} cacheBust={cacheBust} />;
   const design = getCardDesign(cardDesignId);
   const { listClassName, productClassName, listImageClassName, productImageClassName } = design;
   const colorStyle = cardBgStyle(cardColor);
@@ -424,6 +424,7 @@ interface PublicPageSSRProps {
 export function PublicPageSSR({ username, profile, sections, themeVars }: PublicPageSSRProps) {
   const hasCustomBg = !!profile?.backgroundImageUrl;
   const usePreset = !!profile?.usePreset;
+  const cacheBust = profile?.updatedAt ? String(new Date(profile.updatedAt).getTime()) : undefined;
 
   const wrapperStyle: Record<string, string> = {
     ...themeVars,
@@ -455,7 +456,7 @@ export function PublicPageSSR({ username, profile, sections, themeVars }: Public
           <ProfileHeader username={username} profile={profile} />
 
           {sections.map((section) => (
-            <SectionBlock key={section.id} section={section} cardDesignId={profile?.cardDesignId} cardColor={profile?.cardColor} slug={username} />
+            <SectionBlock key={section.id} section={section} cardDesignId={profile?.cardDesignId} cardColor={profile?.cardColor} slug={username} cacheBust={cacheBust} />
           ))}
 
           <AdBanner className="w-full" />
