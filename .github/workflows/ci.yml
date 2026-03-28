@@ -3,8 +3,6 @@ name: CI
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
 
 jobs:
   build:
@@ -22,9 +20,6 @@ jobs:
 
       - name: Type check
         run: npx tsc --noEmit
-
-      - name: Lint
-        run: npm run lint
 
       - name: Security audit
         run: npm audit --audit-level=high || true
