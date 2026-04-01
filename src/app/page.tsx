@@ -1,218 +1,403 @@
 import Link from "next/link";
-import Image from "next/image";
-import { LandingHeaderActions } from "@/components/landing/LandingHeaderActions";
+import { ChevronRight } from "lucide-react";
+import { NonnoHeaderLeft } from "@/components/landing/NonnoHeaderLeft";
+import { NonnoHeaderRight } from "@/components/landing/NonnoHeaderRight";
 import { PhoneMockupModes } from "@/components/landing/PhoneMockupModes";
-import {
-  Instagram,
-  Twitter,
-  Youtube,
-  ChevronRight,
-  Sparkles,
-  BookOpen,
-  Heart,
-  Star,
-} from "lucide-react";
 
 /* =====================================================================
-   cosmepik トップページ - non-no web スタイル
+   cosmepik トップページ - non-no web モバイルデザイン完全再現版
    ===================================================================== */
 
-const NONNO_PINK = "#c8536e";
-const NONNO_DARK = "#1a1a1a";
-const NONNO_GRAY = "#888";
-const NONNO_LIGHT_PINK = "#fdf0f4";
-const NONNO_BORDER = "#f0e0e5";
+// ノンノカラーパレット
+const BG_CREAM = "#f5ece0";         // メインクリーム背景
+const BG_CREAM_LIGHT = "#faf4ed";   // 薄いクリーム
+const NAV_BLUE = "#8dcfdc";         // スカイブルーナビ
+const PINK = "#e8729a";             // ピンクアクセント
+const SECTION_PINK = "#f2c4d4";     // セクションピンク背景
+const TEXT_DARK = "#1a1a1a";
+const TEXT_GRAY = "#888888";
+const TEXT_CATEGORY_PINK = "#d94c7a";
+
+// カテゴリラベルの色マッピング
+const catColor = (cat: string) => {
+  const map: Record<string, string> = {
+    ビューティー: "#d94c7a",
+    スキンケア: "#d94c7a",
+    レシピ: "#d94c7a",
+    コスメ: "#e87a50",
+    特集: "#9b8ec4",
+    連載: "#4a9ec4",
+    収益化: "#e87a50",
+    使い方: "#4ab894",
+    新機能: "#9b8ec4",
+  };
+  return map[cat] || "#888";
+};
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Noto Sans JP', sans-serif" }}>
+    <div className="min-h-screen" style={{ background: BG_CREAM }}>
 
       {/* ========== HEADER ========== */}
-      <header className="sticky top-0 z-50 bg-white border-b" style={{ borderColor: NONNO_BORDER }}>
-        {/* Top Bar - ピンクのアクセントライン */}
-        <div className="h-[3px] w-full" style={{ background: `linear-gradient(90deg, ${NONNO_PINK} 0%, #e87a96 50%, ${NONNO_PINK} 100%)` }} />
+      <header className="sticky top-0 z-50 bg-white shadow-sm">
+        {/* 3カラムヘッダー: LEFT-ICON | LOGO | MENU-ICON */}
+        <div className="flex items-center justify-between px-3 py-2" style={{ minHeight: "52px" }}>
+          {/* 左: LOGINアイコン */}
+          <NonnoHeaderLeft />
 
-        <div className="mx-auto max-w-[768px] px-4">
-          {/* ロゴエリア */}
-          <div className="flex items-center justify-between py-3">
-            {/* ロゴ: ノンノ風 - cosmepik をセリフ体で */}
-            <Link href="/" className="flex flex-col items-start leading-none">
-              <span
-                className="font-serif tracking-widest font-bold"
-                style={{ fontSize: "22px", color: NONNO_PINK, letterSpacing: "0.08em" }}
-              >
-                cosmepik
-              </span>
-              <span className="text-[8px] tracking-[0.25em] font-medium mt-0.5" style={{ color: NONNO_GRAY }}>
-                COSME PROFILE LINK
-              </span>
-            </Link>
+          {/* 中央: ロゴ - non-noスタイル */}
+          <Link href="/" className="flex flex-col items-center flex-1 mx-2">
+            <span
+              style={{
+                fontFamily: "'Georgia', 'Times New Roman', serif",
+                fontSize: "26px",
+                fontWeight: "900",
+                fontStyle: "italic",
+                letterSpacing: "-0.02em",
+                color: TEXT_DARK,
+                lineHeight: 1,
+              }}
+            >
+              cosme<span style={{ color: PINK }}>·</span>pik
+            </span>
+            <span
+              className="text-[8px] tracking-[0.22em] font-medium mt-0.5"
+              style={{ color: TEXT_GRAY }}
+            >
+              COSME PROFILE LINK
+            </span>
+          </Link>
 
-            {/* ヘッダーアクション（ログイン/新規登録） */}
-            <LandingHeaderActions />
-          </div>
-
-          {/* カテゴリナビ - non-no風タブナビ */}
-          <nav className="flex overflow-x-auto scrollbar-hide -mx-4 px-4 pb-0 gap-0 border-t" style={{ borderColor: NONNO_BORDER }}>
-            {[
-              { label: "TOP", href: "/" },
-              { label: "使い方", href: "#howto" },
-              { label: "モード紹介", href: "#modes" },
-              { label: "特徴", href: "#features" },
-              { label: "収益化", href: "/guide/rakuten-affiliate" },
-              { label: "FAQ", href: "/faq" },
-            ].map((item, i) => (
-              <Link
-                key={i}
-                href={item.href}
-                className="flex-shrink-0 px-3 py-2.5 text-[11px] font-medium tracking-wide transition-colors hover:opacity-80 relative"
-                style={{ color: i === 0 ? NONNO_PINK : NONNO_DARK, borderBottom: i === 0 ? `2px solid ${NONNO_PINK}` : "2px solid transparent", marginBottom: "-1px" }}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+          {/* 右: MENUアイコン */}
+          <NonnoHeaderRight />
         </div>
+
+        {/* スカイブルーナビバー */}
+        <nav
+          className="flex overflow-x-auto scrollbar-hide px-2"
+          style={{ background: NAV_BLUE, minHeight: "34px" }}
+        >
+          {[
+            { label: "cosmepikとは", href: "#about" },
+            { label: "2つのモード", href: "#modes" },
+            { label: "使い方", href: "#howto" },
+            { label: "収益化", href: "/guide/rakuten-affiliate" },
+            { label: "ログイン", href: "/login" },
+            { label: "新規登録", href: "/register" },
+            { label: "FAQ", href: "/faq" },
+          ].map((item, i) => (
+            <Link
+              key={i}
+              href={item.href}
+              className="flex-shrink-0 flex items-center px-3 text-[11px] font-medium tracking-wide text-white hover:opacity-80 transition-opacity whitespace-nowrap"
+              style={{ lineHeight: "34px" }}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
       </header>
 
-      <main className="mx-auto max-w-[768px]">
+      <main>
 
-        {/* ========== HERO SECTION - ノンノ表紙風 ========== */}
-        <section className="relative overflow-hidden" style={{ background: NONNO_LIGHT_PINK }}>
-          {/* メインビジュアル */}
-          <div className="relative px-4 pt-6 pb-8">
-            {/* ハッシュタグ */}
-            <div className="flex flex-wrap gap-1.5 mb-4">
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: NONNO_PINK }}>
-                #コスメ好きに
-              </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: "#9b8ec4" }}>
-                #スキンケア
-              </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: "#e87a50" }}>
-                #一軍コスメ
-              </span>
-            </div>
+        {/* ========== HERO - スライドショーバナー風 ========== */}
+        <section
+          className="relative overflow-hidden"
+          style={{
+            background: `linear-gradient(135deg, #fdf0f6 0%, #fce4ee 50%, #fdf5f0 100%)`,
+            minHeight: "220px",
+          }}
+        >
+          {/* 装飾的な円 - ノンノのグラフィック要素 */}
+          <div
+            className="absolute -top-8 -right-8 w-40 h-40 rounded-full opacity-30"
+            style={{ background: PINK }}
+          />
+          <div
+            className="absolute bottom-0 -left-6 w-28 h-28 rounded-full opacity-20"
+            style={{ background: "#9b8ec4" }}
+          />
 
-            {/* メインコピー */}
-            <div className="mb-5">
-              <p className="text-[10px] tracking-[0.3em] font-medium mb-2" style={{ color: NONNO_PINK }}>
-                COSME PROFILE LINK
-              </p>
-              <h1 className="font-serif leading-[1.2] mb-3" style={{ fontSize: "clamp(28px, 8vw, 38px)", color: NONNO_DARK }}>
-                一軍コスメを<br />
-                <span className="italic" style={{ color: NONNO_PINK }}>ファンに</span>シェア
-              </h1>
-              <p className="text-[13px] leading-[1.8]" style={{ color: "#555" }}>
-                お気に入りのコスメやスキンケアルーティンを<br />
-                1つのリンクにまとめて共有できます。
-              </p>
-            </div>
+          <div className="relative px-5 pt-8 pb-10">
+            <p
+              className="text-[10px] tracking-[0.3em] font-bold mb-1"
+              style={{ color: PINK }}
+            >
+              NEW FEATURE
+            </p>
+            {/* ノンノ風: 小さな日本語 + 大きなイタリック英語 */}
+            <p className="text-[13px] font-bold mb-0" style={{ color: TEXT_DARK }}>
+              一軍コスメを
+            </p>
+            <p
+              style={{
+                fontFamily: "'Georgia', 'Times New Roman', serif",
+                fontSize: "52px",
+                fontWeight: "900",
+                fontStyle: "italic",
+                color: PINK,
+                lineHeight: 0.95,
+                letterSpacing: "-0.02em",
+                marginBottom: "8px",
+              }}
+            >
+              Share
+            </p>
+            <p className="text-[13px] leading-relaxed mb-6" style={{ color: "#555" }}>
+              スキンケアルーティンやお気に入りコスメを<br />
+              リンク1つでファンにシェアできます。
+            </p>
 
-            {/* CTAボタン群 */}
-            <div className="flex flex-col gap-2.5 mb-5">
+            {/* CTAボタン - ノンノの丸ボタンスタイル */}
+            <div className="flex flex-col gap-2.5">
               <Link
                 href="/register"
-                className="flex items-center justify-center gap-2 rounded-full py-3.5 px-8 text-sm font-bold tracking-wide text-white transition-all hover:opacity-90 shadow-lg"
-                style={{ background: `linear-gradient(135deg, ${NONNO_PINK} 0%, #e87a96 100%)`, boxShadow: `0 4px 16px rgba(200,83,110,0.35)` }}
+                className="flex items-center justify-center rounded-full py-3 text-sm font-bold text-white tracking-wide"
+                style={{
+                  background: PINK,
+                  boxShadow: `0 4px 14px rgba(232,114,154,0.4)`,
+                }}
               >
-                <Sparkles className="w-4 h-4" />
-                無料でコスメリンクを作成
+                無料ではじめる
               </Link>
               <Link
                 href="/login"
-                className="flex items-center justify-center gap-2 rounded-full py-3 px-8 text-sm font-medium tracking-wide transition-all hover:opacity-80 border"
-                style={{ color: NONNO_PINK, borderColor: NONNO_PINK, background: "white" }}
+                className="flex items-center justify-center rounded-full py-2.5 text-sm font-medium tracking-wide border"
+                style={{ color: PINK, borderColor: PINK, background: "white" }}
               >
-                ログインはこちら
+                ログイン
               </Link>
-            </div>
-
-            <p className="text-[10px] text-center" style={{ color: NONNO_GRAY }}>
-              登録無料・クレジットカード不要
-            </p>
-          </div>
-
-          {/* 区切りライン */}
-          <div className="h-px" style={{ background: NONNO_BORDER }} />
-
-          {/* TOPICS風 小特集バナー */}
-          <div className="px-4 py-3">
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
-              {[
-                { tag: "NEW", text: "スキンケアルーティンを公開", color: "#c8536e" },
-                { tag: "SPECIAL", text: "コスメリストで収益化", color: "#9b8ec4" },
-                { tag: "GUIDE", text: "楽天アフィリエイト連携", color: "#e87a50" },
-              ].map((item, i) => (
-                <Link
-                  key={i}
-                  href={i === 2 ? "/guide/rakuten-affiliate" : "/register"}
-                  className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-white text-[10px] font-medium"
-                  style={{ background: item.color, minWidth: "max-content" }}
-                >
-                  <span className="text-[9px] font-bold opacity-80">{item.tag}</span>
-                  <span>{item.text}</span>
-                </Link>
-              ))}
             </div>
           </div>
         </section>
 
-        {/* ========== WHAT'S NEW風 - 機能ハイライトカード ========== */}
-        <section className="px-4 py-6 border-b" style={{ borderColor: NONNO_BORDER }}>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold tracking-[0.2em]" style={{ color: NONNO_PINK }}>WHAT'S NEW</span>
-              <span className="text-[11px] tracking-wide text-gray-400">新しいcosmepik</span>
-            </div>
-            <Link href="#features" className="flex items-center gap-0.5 text-[10px]" style={{ color: NONNO_PINK }}>
-              VIEW MORE <ChevronRight className="w-3 h-3" />
-            </Link>
+        {/* ========== WHAT'S NEW ========== */}
+        <section className="mt-4 px-3" id="about">
+          {/* セクションヘッダー - ノンノスタイル */}
+          <div className="flex items-baseline gap-2 mb-3">
+            <p className="text-[11px] font-bold tracking-[0.15em]" style={{ color: TEXT_GRAY }}>
+              WHAT&apos;S NEW
+            </p>
+            <p
+              style={{
+                fontFamily: "'Georgia', 'Times New Roman', serif",
+                fontSize: "24px",
+                fontWeight: "900",
+                fontStyle: "italic",
+                color: TEXT_DARK,
+                lineHeight: 1,
+              }}
+            >
+              新しい記事
+            </p>
           </div>
 
-          {/* カードリスト - ノンノ記事カード風 */}
-          <div className="space-y-3">
+          {/* 記事リスト - ノンノWHAT'S NEW形式 */}
+          <div className="space-y-0 bg-white rounded-xl overflow-hidden shadow-sm">
             {[
               {
-                category: "ビューティー",
-                categoryColor: "#c8536e",
+                cat: "スキンケア",
                 date: "2026.04.01",
-                title: "スキンケアルーティンをステップ形式でファンに公開できる「レシピモード」登場",
-                icon: "🌿",
+                title: "朝・夜のスキンケアルーティンをステップ形式で公開できる「レシピモード」がリリース",
               },
               {
-                category: "特集",
-                categoryColor: "#9b8ec4",
+                cat: "新機能",
                 date: "2026.04.01",
-                title: "お気に入りコスメをグリッドでおしゃれに並べる「シンプルモード」で映えプロフィールを",
-                icon: "✨",
+                title: "コスメをグリッドでおしゃれに並べる「シンプルモード」でSNS映えプロフィールを",
               },
               {
-                category: "収益化",
-                categoryColor: "#e87a50",
+                cat: "収益化",
                 date: "2026.04.01",
-                title: "楽天アフィリエイトと連携してコスメを紹介しながら収益化。登録無料でスタート",
-                icon: "💰",
+                title: "楽天アフィリエイト連携で、コスメ紹介しながら収益化。登録無料でスタート",
+              },
+              {
+                cat: "使い方",
+                date: "2026.04.01",
+                title: "InstagramやXのプロフィールリンクに設定するだけ。30秒で無料登録完了",
               },
             ].map((item, i) => (
-              <Link href="/register" key={i} className="flex items-start gap-3 py-2 hover:opacity-80 transition-opacity">
+              <Link
+                href="/register"
+                key={i}
+                className="flex items-start gap-0 border-b last:border-b-0 hover:bg-gray-50 transition-colors"
+                style={{ borderColor: "#f0e8e0" }}
+              >
+                {/* カテゴリカラーバー */}
                 <div
-                  className="w-16 h-16 rounded-xl flex items-center justify-center text-2xl shrink-0"
-                  style={{ background: `${item.categoryColor}18` }}
-                >
-                  {item.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 mb-1">
+                  className="w-1 self-stretch shrink-0"
+                  style={{ background: catColor(item.cat) }}
+                />
+                <div className="flex-1 px-3 py-2.5">
+                  <div className="flex items-center gap-1.5 mb-0.5">
                     <span
-                      className="text-[9px] font-bold px-1.5 py-0.5 rounded"
-                      style={{ background: `${item.categoryColor}18`, color: item.categoryColor }}
+                      className="text-[9px] font-bold"
+                      style={{ color: catColor(item.cat) }}
                     >
-                      {item.category}
+                      {item.cat}
                     </span>
-                    <span className="text-[9px]" style={{ color: NONNO_GRAY }}>{item.date}</span>
+                    <span className="text-[9px]" style={{ color: TEXT_GRAY }}>
+                      {item.date}
+                    </span>
                   </div>
-                  <p className="text-[12px] font-medium leading-[1.5]" style={{ color: NONNO_DARK }}>
+                  <p className="text-[12px] font-medium leading-[1.55]" style={{ color: TEXT_DARK }}>
+                    {item.title}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          <Link
+            href="/register"
+            className="flex items-center justify-center gap-1 mt-2 py-2 text-[11px] font-bold tracking-wide"
+            style={{ color: PINK }}
+          >
+            VIEW MORE <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        </section>
+
+        {/* ========== RANKING - みんなが注目！ ========== */}
+        <section className="mt-6 px-3" id="features">
+          {/* セクションヘッダー */}
+          <div className="flex items-baseline gap-2 mb-3">
+            <p className="text-[11px] font-bold tracking-[0.15em]" style={{ color: TEXT_GRAY }}>
+              みんなが注目！
+            </p>
+            <p
+              style={{
+                fontFamily: "'Georgia', 'Times New Roman', serif",
+                fontSize: "28px",
+                fontWeight: "900",
+                fontStyle: "italic",
+                color: TEXT_DARK,
+                lineHeight: 1,
+              }}
+            >
+              Ranking
+            </p>
+          </div>
+
+          {/* ALLフィルターボタン - ノンノスタイル */}
+          <div className="mb-3">
+            {/* ALL ボタン - 幅広ピンク */}
+            <div
+              className="w-full rounded-full py-2.5 mb-2 text-center text-[13px] font-medium text-white"
+              style={{ background: PINK }}
+            >
+              ALL
+            </div>
+            {/* カテゴリボタン - 2列グリッド */}
+            <div className="grid grid-cols-2 gap-2">
+              {["スキンケア", "コスメ", "レシピモード", "シンプルモード", "収益化", "FAQ"].map(
+                (label, i) => (
+                  <Link
+                    href={i === 4 ? "/guide/rakuten-affiliate" : i === 5 ? "/faq" : "/register"}
+                    key={i}
+                    className="rounded-full py-2 text-center text-[12px] font-medium border hover:bg-pink-50 transition-colors"
+                    style={{ color: TEXT_DARK, borderColor: "#ddd", background: "white" }}
+                  >
+                    {label}
+                  </Link>
+                )
+              )}
+            </div>
+          </div>
+
+          {/* Nō 1〜5 ランキングカード */}
+          <div className="space-y-3 mt-4">
+            {[
+              {
+                rank: 1,
+                cat: "ビューティー",
+                title: "スキンケアルーティンをステップで公開！「レシピモード」の使い方ガイド",
+                date: "2026.04.01",
+                emoji: "🌿",
+                bg: "#fce4ee",
+              },
+              {
+                rank: 2,
+                cat: "コスメ",
+                title: "一軍コスメをグリッドで並べる「シンプルモード」でSNS映えプロフィールを作ろう",
+                date: "2026.04.01",
+                emoji: "✨",
+                bg: "#ede4f8",
+              },
+              {
+                rank: 3,
+                cat: "収益化",
+                title: "楽天アフィリエイト連携でコスメ紹介しながら報酬GET！設定方法を解説",
+                date: "2026.04.01",
+                emoji: "💰",
+                bg: "#fdf0e4",
+              },
+              {
+                rank: 4,
+                cat: "使い方",
+                title: "30秒で無料登録！cosmepikの始め方完全ガイド",
+                date: "2026.04.01",
+                emoji: "📱",
+                bg: "#e4f4f8",
+              },
+              {
+                rank: 5,
+                cat: "特集",
+                title: "パーソナルカラー・肌質・SNSリンクをひとまとめ。美容プロフィールを作成しよう",
+                date: "2026.04.01",
+                emoji: "🎨",
+                bg: "#e8f8e8",
+              },
+            ].map((item) => (
+              <Link
+                href="/register"
+                key={item.rank}
+                className="flex items-start gap-2 hover:opacity-90 transition-opacity"
+              >
+                {/* Nō番号 - ノンノスタイル */}
+                <div className="shrink-0 flex flex-col items-center" style={{ minWidth: "32px" }}>
+                  <span
+                    className="text-[9px] font-bold tracking-widest"
+                    style={{ color: TEXT_CATEGORY_PINK }}
+                  >
+                    Nō
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: "'Georgia', serif",
+                      fontSize: "28px",
+                      fontWeight: "900",
+                      color: TEXT_DARK,
+                      lineHeight: 0.9,
+                    }}
+                  >
+                    {item.rank}
+                  </span>
+                </div>
+
+                {/* サムネイル */}
+                <div
+                  className="shrink-0 w-20 h-16 rounded-xl flex items-center justify-center text-3xl"
+                  style={{ background: item.bg }}
+                >
+                  {item.emoji}
+                </div>
+
+                {/* テキスト */}
+                <div className="flex-1 min-w-0 pt-0.5">
+                  <div className="flex items-center gap-1 mb-0.5">
+                    <span
+                      className="text-[9px] font-bold"
+                      style={{ color: catColor(item.cat) }}
+                    >
+                      {item.cat}
+                    </span>
+                    <span className="text-[9px]" style={{ color: TEXT_GRAY }}>
+                      {item.date}
+                    </span>
+                  </div>
+                  <p
+                    className="text-[12px] font-medium leading-[1.5]"
+                    style={{ color: TEXT_DARK }}
+                  >
                     {item.title}
                   </p>
                 </div>
@@ -221,235 +406,268 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ========== MODES SECTION - スマホモック ========== */}
-        <section id="modes" className="px-4 py-8 border-b" style={{ borderColor: NONNO_BORDER }}>
-          {/* セクションヘッダー - ノンノ風 */}
-          <div className="mb-6 text-center">
-            <p className="text-[10px] font-bold tracking-[0.3em] mb-1" style={{ color: NONNO_PINK }}>
-              FEATURES
-            </p>
-            <h2 className="font-serif text-[22px] font-bold leading-tight mb-2" style={{ color: NONNO_DARK }}>
-              2つのモードで<br />
-              <span className="italic" style={{ color: NONNO_PINK }}>あなたらしく</span>魅せる
-            </h2>
-            <p className="text-[12px] leading-relaxed" style={{ color: "#666" }}>
-              スキンケアルーティンをステップで見せる「レシピモード」と<br />
-              コスメをおしゃれに並べる「シンプルモード」。<br />
-              自分のスタイルに合わせて選べます。
-            </p>
+        {/* ========== SERIES - 連載コンテンツ（ピンク背景） ========== */}
+        <section
+          className="mt-6 px-3 py-6"
+          id="modes"
+          style={{ background: SECTION_PINK }}
+        >
+          {/* セクションヘッダー */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-baseline gap-2">
+              <p className="text-[11px] font-bold tracking-[0.15em]" style={{ color: "#b05070" }}>
+                2つのモード
+              </p>
+              <p
+                style={{
+                  fontFamily: "'Georgia', 'Times New Roman', serif",
+                  fontSize: "26px",
+                  fontWeight: "900",
+                  fontStyle: "italic",
+                  color: TEXT_DARK,
+                  lineHeight: 1,
+                }}
+              >
+                Series
+              </p>
+            </div>
+            {/* ページ数バッジ - ノンノスタイル */}
+            <div
+              className="flex flex-col items-center justify-center w-12 h-12 rounded-full text-white"
+              style={{ background: NAV_BLUE, fontSize: "11px", fontWeight: "bold" }}
+            >
+              <span className="text-[13px] font-bold leading-none">1</span>
+              <div className="w-6 h-[1px] bg-white/70 my-0.5" />
+              <span className="text-[11px] leading-none opacity-80">2</span>
+            </div>
           </div>
 
-          {/* スマホモックアップ - タブ切り替え付き */}
+          {/* スマホモック + モード説明 */}
           <PhoneMockupModes />
         </section>
 
-        {/* ========== PICK UP 風 - 3つの特徴 ========== */}
-        <section id="features" className="px-4 py-8 border-b" style={{ borderColor: NONNO_BORDER, background: "#fdf8fa" }}>
-          <div className="mb-5">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="h-[2px] w-6" style={{ background: NONNO_PINK }} />
-              <span className="text-[11px] font-bold tracking-[0.2em]" style={{ color: NONNO_PINK }}>PICK UP</span>
-            </div>
-            <p className="text-[10px] tracking-wide" style={{ color: NONNO_GRAY }}>編集部のおすすめ機能</p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4">
-            {[
-              {
-                num: "01",
-                icon: <BookOpen className="w-5 h-5" style={{ color: NONNO_PINK }} />,
-                title: "スキンケアルーティン共有",
-                subtitle: "ROUTINE",
-                desc: "朝・夜のスキンケア手順をステップ形式で分かりやすく。「何使ってる？」の質問にリンク1つで答えられます。",
-                tag: "レシピモード",
-                tagColor: "#c8536e",
-              },
-              {
-                num: "02",
-                icon: <Heart className="w-5 h-5" style={{ color: "#9b8ec4" }} />,
-                title: "お気に入りコスメ",
-                subtitle: "FAVORITES",
-                desc: "愛用アイテムをグリッドでまとめておしゃれにコレクション。SNSプロフィールリンクとして最適です。",
-                tag: "シンプルモード",
-                tagColor: "#9b8ec4",
-              },
-              {
-                num: "03",
-                icon: <Star className="w-5 h-5" style={{ color: "#e87a50" }} />,
-                title: "楽天アフィリエイト連携",
-                subtitle: "MONETIZE",
-                desc: "登録した商品に楽天アフィリエイトリンクを付けて収益化。紹介するだけで報酬が得られます。",
-                tag: "収益化機能",
-                tagColor: "#e87a50",
-              },
-            ].map((feature, i) => (
-              <div
-                key={i}
-                className="flex gap-3 p-3.5 rounded-2xl bg-white border"
-                style={{ borderColor: NONNO_BORDER, boxShadow: "0 2px 8px rgba(200,83,110,0.06)" }}
+        {/* ========== PICK UP - 編集部おすすめ ========== */}
+        <section className="mt-4 px-3 py-5" style={{ background: BG_CREAM_LIGHT }}>
+          {/* セクションヘッダー */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-baseline gap-2">
+              <p className="text-[11px] font-bold tracking-[0.15em]" style={{ color: TEXT_GRAY }}>
+                PICK UP
+              </p>
+              <p
+                style={{
+                  fontFamily: "'Georgia', 'Times New Roman', serif",
+                  fontSize: "24px",
+                  fontWeight: "900",
+                  fontStyle: "italic",
+                  color: TEXT_DARK,
+                  lineHeight: 1,
+                }}
               >
-                <div className="flex flex-col items-center gap-2 shrink-0">
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center"
-                    style={{ background: `${feature.tagColor}12` }}
-                  >
-                    {feature.icon}
-                  </div>
-                  <span
-                    className="font-serif text-[22px] font-light"
-                    style={{ color: `${feature.tagColor}30` }}
-                  >
-                    {feature.num}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[9px] tracking-[0.2em] font-medium mb-0.5" style={{ color: NONNO_GRAY }}>
-                    {feature.subtitle}
-                  </p>
-                  <h3 className="text-[13px] font-bold mb-1.5" style={{ color: NONNO_DARK }}>
-                    {feature.title}
-                  </h3>
-                  <p className="text-[11px] leading-[1.7]" style={{ color: "#666" }}>
-                    {feature.desc}
-                  </p>
-                  <span
-                    className="inline-flex items-center gap-0.5 mt-2 text-[9px] font-bold px-2 py-0.5 rounded-full text-white"
-                    style={{ background: feature.tagColor }}
-                  >
-                    {feature.tag}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ========== HOW TO START - ランキング風ステップ ========== */}
-        <section id="howto" className="px-4 py-8 border-b" style={{ borderColor: NONNO_BORDER }}>
-          <div className="mb-5">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] font-bold tracking-[0.2em]" style={{ color: NONNO_PINK }}>HOW TO START</span>
+                おすすめ機能
+              </p>
             </div>
-            <h2 className="font-serif text-[20px] font-bold" style={{ color: NONNO_DARK }}>
-              始め方は<span className="italic" style={{ color: NONNO_PINK }}>シンプル</span>
-            </h2>
           </div>
 
-          <div className="space-y-0">
+          {/* PICK UPカードリスト - ノンノ横スクロール風 */}
+          <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-3 px-3">
             {[
-              { rank: "1", title: "アカウントを作成", desc: "メールアドレスで無料登録。30秒で完了。", icon: "📝" },
-              { rank: "2", title: "プロフィールを設定", desc: "肌質やパーソナルカラー、SNSリンクを追加。", icon: "👤" },
-              { rank: "3", title: "コスメを追加", desc: "お気に入りアイテムやルーティンを登録。", icon: "💄" },
-              { rank: "4", title: "リンクをシェア", desc: "InstagramやXのプロフィールに貼るだけ。", icon: "🔗" },
+              {
+                cat: "ビューティー",
+                emoji: "🌿",
+                bg: "#fce4ee",
+                title: "スキンケアルーティンを朝・夜ステップ別に公開",
+                badge: "レシピモード",
+                badgeColor: "#d94c7a",
+              },
+              {
+                cat: "コスメ",
+                emoji: "✨",
+                bg: "#ede4f8",
+                title: "一軍コスメをグリッドでおしゃれに展示",
+                badge: "シンプルモード",
+                badgeColor: "#9b8ec4",
+              },
+              {
+                cat: "収益化",
+                emoji: "💰",
+                bg: "#fdf0e4",
+                title: "楽天アフィリエイトで コスメ紹介しながら報酬GET",
+                badge: "収益化機能",
+                badgeColor: "#e87a50",
+              },
+              {
+                cat: "特集",
+                emoji: "🎨",
+                bg: "#e4f4f8",
+                title: "肌質・パーソナルカラー・SNSリンクをひとまとめ",
+                badge: "プロフィール",
+                badgeColor: "#4a9ec4",
+              },
             ].map((item, i) => (
-              <div key={i} className="flex items-start gap-3 py-3.5 border-b last:border-b-0" style={{ borderColor: NONNO_BORDER }}>
-                {/* ランク番号 */}
+              <Link
+                href="/register"
+                key={i}
+                className="flex-shrink-0 w-36 rounded-2xl overflow-hidden bg-white shadow-sm hover:opacity-90 transition-opacity"
+                style={{ border: "1px solid rgba(0,0,0,0.06)" }}
+              >
+                {/* サムネイル */}
                 <div
-                  className="flex items-center justify-center shrink-0 font-serif font-bold rounded-full text-white w-8 h-8 text-sm shadow-sm"
-                  style={{ background: i === 0 ? "#c8a830" : i === 1 ? "#aaaaaa" : i === 2 ? "#c8843e" : NONNO_PINK }}
+                  className="w-full h-24 flex items-center justify-center text-4xl"
+                  style={{ background: item.bg }}
                 >
-                  {item.rank}
+                  {item.emoji}
                 </div>
-                <div className="text-xl shrink-0 mt-0.5">{item.icon}</div>
-                <div className="flex-1">
-                  <p className="text-[13px] font-bold mb-0.5" style={{ color: NONNO_DARK }}>{item.title}</p>
-                  <p className="text-[11px]" style={{ color: "#777" }}>{item.desc}</p>
+                <div className="p-2.5">
+                  <div className="flex items-center gap-1 mb-1">
+                    <span
+                      className="text-[8px] font-bold px-1.5 py-0.5 rounded text-white"
+                      style={{ background: item.badgeColor }}
+                    >
+                      {item.badge}
+                    </span>
+                  </div>
+                  <p className="text-[11px] font-medium leading-[1.4]" style={{ color: TEXT_DARK }}>
+                    {item.title}
+                  </p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </section>
 
-        {/* ========== EDITORS SECTION 風 - SNS紹介 ========== */}
-        <section className="px-4 py-8 border-b" style={{ borderColor: NONNO_BORDER }}>
-          <div className="mb-5">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="h-[2px] w-6" style={{ background: "#9b8ec4" }} />
-              <span className="text-[11px] font-bold tracking-[0.2em]" style={{ color: "#9b8ec4" }}>SNS & COMMUNITY</span>
-            </div>
-            <h2 className="font-serif text-[20px] font-bold" style={{ color: NONNO_DARK }}>
-              コスメ好きと<br />
-              <span className="italic" style={{ color: "#9b8ec4" }}>つながろう</span>
-            </h2>
+        {/* ========== HOW TO START ========== */}
+        <section className="mt-4 px-3 py-5" id="howto">
+          {/* セクションヘッダー */}
+          <div className="flex items-baseline gap-2 mb-4">
+            <p className="text-[11px] font-bold tracking-[0.15em]" style={{ color: TEXT_GRAY }}>
+              HOW TO START
+            </p>
+            <p
+              style={{
+                fontFamily: "'Georgia', 'Times New Roman', serif",
+                fontSize: "26px",
+                fontWeight: "900",
+                fontStyle: "italic",
+                color: TEXT_DARK,
+                lineHeight: 1,
+              }}
+            >
+              始め方
+            </p>
           </div>
 
-          {/* SNSボタン */}
-          <div className="grid grid-cols-2 gap-2.5 mb-5">
+          {/* ステップリスト - ノンノランキング風 */}
+          <div className="bg-white rounded-xl overflow-hidden shadow-sm">
             {[
-              { name: "Instagram", icon: <Instagram className="w-4 h-4" />, color: "#E1306C", desc: "コスメ投稿シェア" },
-              { name: "X (Twitter)", icon: <Twitter className="w-4 h-4" />, color: "#1DA1F2", desc: "最新情報をチェック" },
-              { name: "YouTube", icon: <Youtube className="w-4 h-4" />, color: "#FF0000", desc: "コスメ動画まとめ" },
-              { name: "LINE", icon: <span className="text-sm font-bold">L</span>, color: "#00B900", desc: "友達に紹介する" },
-            ].map((sns, i) => (
+              { step: "01", title: "アカウントを作成", desc: "メールアドレスで無料登録。30秒で完了。" },
+              { step: "02", title: "プロフィールを設定", desc: "肌質・パーソナルカラー・SNSリンクを追加。" },
+              { step: "03", title: "コスメを追加", desc: "お気に入りアイテムやルーティンを登録。" },
+              { step: "04", title: "リンクをシェア", desc: "InstagramやXのプロフィールに貼るだけ。" },
+            ].map((item, i) => (
               <div
                 key={i}
-                className="flex items-center gap-2 p-3 rounded-xl border"
-                style={{ borderColor: `${sns.color}30`, background: `${sns.color}08` }}
+                className="flex items-center gap-3 px-4 py-3.5 border-b last:border-b-0"
+                style={{ borderColor: "#f0e8e0" }}
               >
-                <div
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-white shrink-0"
-                  style={{ background: sns.color }}
+                <span
+                  style={{
+                    fontFamily: "'Georgia', serif",
+                    fontSize: "22px",
+                    fontWeight: "900",
+                    color: PINK,
+                    minWidth: "32px",
+                    lineHeight: 1,
+                  }}
                 >
-                  {sns.icon}
-                </div>
+                  {item.step}
+                </span>
                 <div>
-                  <p className="text-[11px] font-bold" style={{ color: NONNO_DARK }}>{sns.name}</p>
-                  <p className="text-[9px]" style={{ color: NONNO_GRAY }}>{sns.desc}</p>
+                  <p className="text-[13px] font-bold" style={{ color: TEXT_DARK }}>{item.title}</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: TEXT_GRAY }}>{item.desc}</p>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* FOLLOW ME メッセージ */}
-          <div
-            className="rounded-2xl p-4 text-center"
-            style={{ background: `linear-gradient(135deg, ${NONNO_LIGHT_PINK} 0%, #f4f0ff 100%)`, border: `1px solid ${NONNO_BORDER}` }}
+          <Link
+            href="/register"
+            className="mt-4 w-full flex items-center justify-center rounded-full py-3.5 text-sm font-bold text-white tracking-wide"
+            style={{
+              background: PINK,
+              boxShadow: `0 4px 14px rgba(232,114,154,0.35)`,
+            }}
           >
-            <p className="text-[10px] font-bold tracking-[0.2em] mb-1" style={{ color: NONNO_PINK }}>JOIN MEMBER</p>
-            <p className="text-[13px] font-bold mb-1" style={{ color: NONNO_DARK }}>
-              cosmepikに登録して<br />コスメリンクを作ろう♡
-            </p>
-            <p className="text-[10px] mb-3" style={{ color: "#888" }}>
-              登録するといろんな特典が盛りだくさん
-            </p>
-            <Link
-              href="/register"
-              className="inline-flex items-center justify-center gap-1.5 rounded-full px-7 py-2.5 text-[13px] font-bold text-white transition-all hover:opacity-90"
-              style={{ background: `linear-gradient(135deg, ${NONNO_PINK} 0%, #e87a96 100%)`, boxShadow: `0 3px 12px rgba(200,83,110,0.3)` }}
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              JOIN MEMBER
-            </Link>
+            無料ではじめる
+          </Link>
+        </section>
+
+        {/* ========== CATEGORY - 気になるカテゴリは？ ========== */}
+        <section
+          className="mt-4 px-3 py-5"
+          style={{ background: SECTION_PINK }}
+        >
+          <p
+            className="text-[12px] font-bold tracking-[0.1em] mb-3"
+            style={{ color: "#b05070" }}
+          >
+            気になるカテゴリは？Category
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { label: "non-noモデル風プロフ", href: "/register" },
+              { label: "レシピモード", href: "/register" },
+              { label: "シンプルモード", href: "/register" },
+              { label: "楽天アフィリエイト", href: "/guide/rakuten-affiliate" },
+              { label: "スキンケア", href: "/register" },
+              { label: "メイクコスメ", href: "/register" },
+              { label: "プロフィール設定", href: "/register" },
+              { label: "利用規約", href: "/terms" },
+              { label: "プライバシー", href: "/privacy" },
+              { label: "FAQ", href: "/faq" },
+              { label: "特定商取引法", href: "/tokushoho" },
+              { label: "お問い合わせ", href: "/contact" },
+            ].map((item, i) => (
+              <Link
+                key={i}
+                href={item.href}
+                className="text-[11px] font-medium px-3 py-1.5 rounded-full border bg-white hover:bg-pink-50 transition-colors"
+                style={{ borderColor: "#ddc8d0", color: TEXT_DARK }}
+              >
+                {item.label}
+              </Link>
+            ))}
           </div>
         </section>
 
-        {/* ========== HOT KEYWORD 風 - カテゴリ ========== */}
-        <section className="px-4 py-6 border-b" style={{ borderColor: NONNO_BORDER }}>
-          <p className="text-[11px] font-bold tracking-[0.2em] mb-3" style={{ color: NONNO_PINK }}>
+        {/* ========== HOT KEYWORD ========== */}
+        <section className="mt-4 px-3 py-5">
+          <p
+            className="text-[12px] font-bold tracking-[0.1em] mb-3"
+            style={{ color: PINK }}
+          >
             Hot Keyword
           </p>
           <div className="flex flex-wrap gap-2">
             {[
               "#スキンケアルーティン",
               "#韓国コスメ",
-              "#日焼け止め",
-              "#化粧水",
               "#プチプラコスメ",
               "#デパコス",
-              "#メイクレシピ",
               "#パーソナルカラー",
               "#敏感肌",
-              "#美容液",
-              "#下地",
-              "#ファンデーション",
-              "#SNS映え",
+              "#メイクレシピ",
               "#一軍コスメ",
+              "#日焼け止め",
+              "#美容液",
+              "#SNS映えコスメ",
+              "#コスメ収集",
             ].map((tag, i) => (
               <Link
                 key={i}
                 href="/register"
-                className="text-[11px] px-3 py-1 rounded-full border transition-colors hover:opacity-80"
-                style={{ color: NONNO_PINK, borderColor: `${NONNO_PINK}40`, background: `${NONNO_PINK}08` }}
+                className="text-[11px] font-medium hover:opacity-70 transition-opacity"
+                style={{ color: TEXT_CATEGORY_PINK }}
               >
                 {tag}
               </Link>
@@ -457,72 +675,80 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ========== GET STARTED CTA ========== */}
+        {/* ========== JOIN MEMBER CTA ========== */}
         <section
-          className="px-4 py-10 text-center"
-          style={{ background: `linear-gradient(160deg, #fff0f4 0%, #f7f0ff 100%)` }}
+          className="mt-4 mx-3 mb-6 rounded-2xl px-5 py-6 text-center"
+          style={{
+            background: "white",
+            border: `1.5px solid ${SECTION_PINK}`,
+            boxShadow: "0 2px 16px rgba(232,114,154,0.1)",
+          }}
         >
-          <p className="text-[10px] font-bold tracking-[0.3em] mb-2" style={{ color: NONNO_PINK }}>
-            GET STARTED
+          <p
+            className="text-[10px] font-bold tracking-[0.3em] mb-1"
+            style={{ color: PINK }}
+          >
+            JOIN MEMBER
           </p>
-          <h2 className="font-serif text-[24px] font-bold mb-3 leading-tight" style={{ color: NONNO_DARK }}>
-            今すぐ始めよう
-          </h2>
-          <p className="text-[12px] mb-6" style={{ color: "#777" }}>
-            登録無料。クレジットカード不要。
+          <p className="text-[15px] font-bold mb-1" style={{ color: TEXT_DARK }}>
+            cosmepikに登録して<br />コスメリンクを作ろう♡
+          </p>
+          <p className="text-[11px] mb-4" style={{ color: TEXT_GRAY }}>
+            登録するといろんな特典が盛りだくさん
           </p>
           <Link
             href="/register"
-            className="inline-flex items-center justify-center gap-2 rounded-full px-10 py-4 text-sm font-bold text-white transition-all hover:opacity-90 mb-3"
-            style={{
-              background: `linear-gradient(135deg, ${NONNO_PINK} 0%, #e87a96 100%)`,
-              boxShadow: `0 6px 20px rgba(200,83,110,0.4)`,
-            }}
+            className="inline-flex items-center justify-center rounded-full px-10 py-3 text-sm font-bold text-white"
+            style={{ background: PINK, boxShadow: `0 4px 14px rgba(232,114,154,0.4)` }}
           >
-            <Sparkles className="w-4 h-4" />
-            コスメリンクを作成
+            JOIN MEMBER
           </Link>
-          <p className="text-[10px]" style={{ color: NONNO_GRAY }}>
-            登録無料 / クレジットカード不要
-          </p>
         </section>
       </main>
 
       {/* ========== FOOTER ========== */}
-      <footer className="bg-white border-t" style={{ borderColor: NONNO_BORDER }}>
-        <div className="mx-auto max-w-[768px] px-4 py-8">
+      <footer className="border-t bg-white" style={{ borderColor: "#e8d8e0" }}>
+        <div className="px-4 py-6">
           {/* ロゴ */}
-          <div className="flex flex-col items-center mb-6">
+          <div className="flex flex-col items-center mb-4">
             <span
-              className="font-serif font-bold tracking-widest mb-1"
-              style={{ fontSize: "20px", color: NONNO_PINK }}
+              style={{
+                fontFamily: "'Georgia', 'Times New Roman', serif",
+                fontSize: "22px",
+                fontWeight: "900",
+                fontStyle: "italic",
+                color: TEXT_DARK,
+              }}
             >
-              cosmepik
+              cosme<span style={{ color: PINK }}>·</span>pik
             </span>
-            <span className="text-[9px] tracking-[0.2em]" style={{ color: NONNO_GRAY }}>
+            <span className="text-[8px] tracking-[0.2em] mt-0.5" style={{ color: TEXT_GRAY }}>
               COSME PROFILE LINK
             </span>
           </div>
 
-          {/* ナビリンク */}
-          <nav className="flex flex-wrap justify-center gap-x-5 gap-y-2 mb-6 text-[11px]" style={{ color: NONNO_GRAY }}>
-            <Link href="/guide" className="hover:opacity-80 transition-opacity">ABOUT</Link>
-            <Link href="/terms" className="hover:opacity-80 transition-opacity">利用規約</Link>
-            <Link href="/privacy" className="hover:opacity-80 transition-opacity">プライバシーポリシー</Link>
-            <Link href="/tokushoho" className="hover:opacity-80 transition-opacity">特定商取引法</Link>
-            <Link href="/faq" className="hover:opacity-80 transition-opacity">FAQ</Link>
-            <Link href="/contact" className="hover:opacity-80 transition-opacity">お問い合わせ</Link>
+          {/* フッターリンク */}
+          <nav className="flex flex-wrap justify-center gap-x-4 gap-y-2 mb-5 text-[11px]" style={{ color: TEXT_GRAY }}>
+            <Link href="/guide" className="hover:opacity-80">使い方ガイド</Link>
+            <Link href="/terms" className="hover:opacity-80">利用規約</Link>
+            <Link href="/privacy" className="hover:opacity-80">プライバシーポリシー</Link>
+            <Link href="/tokushoho" className="hover:opacity-80">特定商取引法</Link>
+            <Link href="/faq" className="hover:opacity-80">FAQ</Link>
+            <Link href="/contact" className="hover:opacity-80">お問い合わせ</Link>
           </nav>
 
-          {/* アイコン装飾 */}
-          <div className="flex justify-center items-center gap-1.5 mb-5 text-gray-300">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="w-1 h-1 rounded-full" style={{ background: `${NONNO_PINK}40` }} />
+          {/* 区切り */}
+          <div className="flex justify-center gap-1 mb-4">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="w-1 h-1 rounded-full"
+                style={{ background: `${PINK}50` }}
+              />
             ))}
           </div>
 
-          {/* コピーライト */}
-          <p className="text-center text-[10px]" style={{ color: NONNO_GRAY }}>
+          <p className="text-center text-[10px]" style={{ color: TEXT_GRAY }}>
             &copy; 2026 cosmepik. All rights reserved.
           </p>
         </div>
