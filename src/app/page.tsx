@@ -18,6 +18,76 @@ const TEXT_DARK = "#1a1a1a";
 const TEXT_GRAY = "#888888";
 const TEXT_CATEGORY_PINK = "#d94c7a";
 
+/**
+ * ノンノ風・斜めピンクバナーの見出しコンポーネント
+ * 写真の「"下地迷子"の人……全員注目！[PR]」のように
+ * ピンク角丸を少し傾けたスタイル
+ */
+function SectionHeading({
+  label,
+  title,
+  rotate = -2,
+  bg = "#f2a8c0",
+  dark = false,
+}: {
+  label: string;
+  title: string;
+  rotate?: number;
+  bg?: string;
+  dark?: boolean;
+}) {
+  return (
+    <div className="mb-5 overflow-visible" style={{ paddingLeft: "4px" }}>
+      {/* 傾いたピンクバナー */}
+      <div
+        style={{
+          display: "inline-block",
+          transform: `rotate(${rotate}deg)`,
+          transformOrigin: "left center",
+        }}
+      >
+        <div
+          style={{
+            background: bg,
+            borderRadius: "6px",
+            padding: "5px 14px 5px 10px",
+            display: "inline-flex",
+            alignItems: "baseline",
+            gap: "6px",
+            boxShadow: "2px 2px 0px rgba(0,0,0,0.08)",
+          }}
+        >
+          <span
+            style={{
+              fontSize: "10px",
+              fontWeight: "800",
+              letterSpacing: "0.1em",
+              color: dark ? "rgba(255,255,255,0.85)" : "#7a3050",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {label}
+          </span>
+          <span
+            style={{
+              fontFamily: "'Georgia', 'Times New Roman', serif",
+              fontSize: "22px",
+              fontWeight: "900",
+              fontStyle: "italic",
+              color: dark ? "white" : "#1a1a1a",
+              lineHeight: 1,
+              letterSpacing: "-0.01em",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {title}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // カテゴリラベルの色マッピング
 const catColor = (cat: string) => {
   const map: Record<string, string> = {
@@ -172,25 +242,8 @@ export default function LandingPage() {
         </section>
 
         {/* ========== WHAT'S NEW ========== */}
-        <section className="mt-4 px-3" id="about">
-          {/* セクションヘッダー - ノンノスタイル */}
-          <div className="flex items-baseline gap-2 mb-3">
-            <p className="text-[11px] font-bold tracking-[0.15em]" style={{ color: TEXT_GRAY }}>
-              WHAT&apos;S NEW
-            </p>
-            <p
-              style={{
-                fontFamily: "'Georgia', 'Times New Roman', serif",
-                fontSize: "24px",
-                fontWeight: "900",
-                fontStyle: "italic",
-                color: TEXT_DARK,
-                lineHeight: 1,
-              }}
-            >
-              新しい記事
-            </p>
-          </div>
+        <section className="mt-6 px-3" id="about">
+          <SectionHeading label="WHAT'S NEW" title="新しい記事" rotate={-1.5} bg="#f5b8cc" />
 
           {/* 記事リスト - ノンノWHAT'S NEW形式 */}
           <div className="space-y-0 bg-white rounded-xl overflow-hidden shadow-sm">
@@ -258,24 +311,7 @@ export default function LandingPage() {
 
         {/* ========== RANKING - みんなが注目！ ========== */}
         <section className="mt-6 px-3" id="features">
-          {/* セクションヘッダー */}
-          <div className="flex items-baseline gap-2 mb-3">
-            <p className="text-[11px] font-bold tracking-[0.15em]" style={{ color: TEXT_GRAY }}>
-              みんなが注目！
-            </p>
-            <p
-              style={{
-                fontFamily: "'Georgia', 'Times New Roman', serif",
-                fontSize: "28px",
-                fontWeight: "900",
-                fontStyle: "italic",
-                color: TEXT_DARK,
-                lineHeight: 1,
-              }}
-            >
-              Ranking
-            </p>
-          </div>
+          <SectionHeading label="みんなが注目！" title="Ranking" rotate={-2} bg="#f5b8cc" />
 
           {/* ALLフィルターボタン - ノンノスタイル */}
           <div className="mb-3">
@@ -412,28 +448,11 @@ export default function LandingPage() {
           id="modes"
           style={{ background: SECTION_PINK }}
         >
-          {/* セクションヘッダー */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-baseline gap-2">
-              <p className="text-[11px] font-bold tracking-[0.15em]" style={{ color: "#b05070" }}>
-                2つのモード
-              </p>
-              <p
-                style={{
-                  fontFamily: "'Georgia', 'Times New Roman', serif",
-                  fontSize: "26px",
-                  fontWeight: "900",
-                  fontStyle: "italic",
-                  color: TEXT_DARK,
-                  lineHeight: 1,
-                }}
-              >
-                Series
-              </p>
-            </div>
+          <div className="flex items-start justify-between">
+            <SectionHeading label="連載コンテンツ" title="Series" rotate={-2} bg="#e8829a" dark />
             {/* ページ数バッジ - ノンノスタイル */}
             <div
-              className="flex flex-col items-center justify-center w-12 h-12 rounded-full text-white"
+              className="flex flex-col items-center justify-center w-12 h-12 rounded-full text-white shrink-0 mt-1"
               style={{ background: NAV_BLUE, fontSize: "11px", fontWeight: "bold" }}
             >
               <span className="text-[13px] font-bold leading-none">1</span>
@@ -448,26 +467,7 @@ export default function LandingPage() {
 
         {/* ========== PICK UP - 編集部おすすめ ========== */}
         <section className="mt-4 px-3 py-5" style={{ background: BG_CREAM_LIGHT }}>
-          {/* セクションヘッダー */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-baseline gap-2">
-              <p className="text-[11px] font-bold tracking-[0.15em]" style={{ color: TEXT_GRAY }}>
-                PICK UP
-              </p>
-              <p
-                style={{
-                  fontFamily: "'Georgia', 'Times New Roman', serif",
-                  fontSize: "24px",
-                  fontWeight: "900",
-                  fontStyle: "italic",
-                  color: TEXT_DARK,
-                  lineHeight: 1,
-                }}
-              >
-                おすすめ機能
-              </p>
-            </div>
-          </div>
+          <SectionHeading label="PICK UP" title="おすすめ機能" rotate={-1.5} bg="#f5c8b8" />
 
           {/* PICK UPカードリスト - ノンノ横スクロール風 */}
           <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-3 px-3">
@@ -538,24 +538,7 @@ export default function LandingPage() {
 
         {/* ========== HOW TO START ========== */}
         <section className="mt-4 px-3 py-5" id="howto">
-          {/* セクションヘッダー */}
-          <div className="flex items-baseline gap-2 mb-4">
-            <p className="text-[11px] font-bold tracking-[0.15em]" style={{ color: TEXT_GRAY }}>
-              HOW TO START
-            </p>
-            <p
-              style={{
-                fontFamily: "'Georgia', 'Times New Roman', serif",
-                fontSize: "26px",
-                fontWeight: "900",
-                fontStyle: "italic",
-                color: TEXT_DARK,
-                lineHeight: 1,
-              }}
-            >
-              始め方
-            </p>
-          </div>
+          <SectionHeading label="HOW TO START" title="始め方" rotate={-2} bg="#f5b8cc" />
 
           {/* ステップリスト - ノンノランキング風 */}
           <div className="bg-white rounded-xl overflow-hidden shadow-sm">
@@ -607,12 +590,7 @@ export default function LandingPage() {
           className="mt-4 px-3 py-5"
           style={{ background: SECTION_PINK }}
         >
-          <p
-            className="text-[12px] font-bold tracking-[0.1em] mb-3"
-            style={{ color: "#b05070" }}
-          >
-            気になるカテゴリは？Category
-          </p>
+          <SectionHeading label="気になるカテゴリは？" title="Category" rotate={-1.5} bg="#e8829a" dark />
           <div className="flex flex-wrap gap-2">
             {[
               { label: "non-noモデル風プロフ", href: "/register" },
@@ -642,12 +620,7 @@ export default function LandingPage() {
 
         {/* ========== HOT KEYWORD ========== */}
         <section className="mt-4 px-3 py-5">
-          <p
-            className="text-[12px] font-bold tracking-[0.1em] mb-3"
-            style={{ color: PINK }}
-          >
-            Hot Keyword
-          </p>
+          <SectionHeading label="" title="Hot Keyword" rotate={-1.5} bg="#f5b8cc" />
           <div className="flex flex-wrap gap-2">
             {[
               "#スキンケアルーティン",
@@ -684,12 +657,9 @@ export default function LandingPage() {
             boxShadow: "0 2px 16px rgba(232,114,154,0.1)",
           }}
         >
-          <p
-            className="text-[10px] font-bold tracking-[0.3em] mb-1"
-            style={{ color: PINK }}
-          >
-            JOIN MEMBER
-          </p>
+          <div className="flex justify-center mb-1">
+            <SectionHeading label="" title="Join Member" rotate={-1.5} bg="#f5b8cc" />
+          </div>
           <p className="text-[15px] font-bold mb-1" style={{ color: TEXT_DARK }}>
             cosmepikに登録して<br />コスメリンクを作ろう♡
           </p>
