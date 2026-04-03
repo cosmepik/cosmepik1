@@ -203,22 +203,26 @@ export function PublicSectionRenderer({ section, slug, userAffiliateId, cardDesi
               );
             }
             const scale = p.scale ?? 1;
+            const Wrapper = p.link ? "a" : "div";
+            const wrapperProps = p.link
+              ? {
+                  href: p.link,
+                  target: "_blank" as const,
+                  rel: "noopener noreferrer",
+                  onClick: (e: React.MouseEvent) => { e.preventDefault(); onClick(p.link, p.id); },
+                }
+              : {};
             return (
-              <div
+              <Wrapper
                 key={p.id}
+                {...wrapperProps}
                 className="absolute z-10 flex flex-col items-center gap-0.5"
                 style={{ left: `${p.x}%`, top: `${p.y}%`, transform: `translate(-50%, -50%) scale(${scale})` }}
               >
                 {p.image && (
-                  <a
-                    href={p.link || "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block h-14 w-14 overflow-hidden rounded-lg border-2 border-white/80 bg-white shadow-lg"
-                    onClick={(e) => { if (p.link) { e.preventDefault(); onClick(p.link, p.id); } }}
-                  >
+                  <div className="h-14 w-14 overflow-hidden rounded-lg border-2 border-white/80 bg-white shadow-lg">
                     <CosmeImage src={p.image} alt={p.product || ""} fill className="object-contain" sizes="56px" />
-                  </a>
+                  </div>
                 )}
                 {(p.brand || p.product) && (
                   <div className="max-w-[100px] bg-black/40 px-1.5 py-0.5 text-center" style={{ backdropFilter: "blur(2px)" }}>
@@ -226,7 +230,7 @@ export function PublicSectionRenderer({ section, slug, userAffiliateId, cardDesi
                     {p.product && <p className="line-clamp-3 text-[8px] font-medium leading-tight text-white">{p.product}</p>}
                   </div>
                 )}
-              </div>
+              </Wrapper>
             );
           })}
           {/* cosmepik ロゴ */}

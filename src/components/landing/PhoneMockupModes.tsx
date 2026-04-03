@@ -311,7 +311,7 @@ export function PhoneMockupModes() {
               : { background: "white", color: "#555", border: "1px solid #ddd" }
           }
         >
-          🌿 レシピモード
+          レシピモード
         </button>
         <button
           type="button"
@@ -323,7 +323,7 @@ export function PhoneMockupModes() {
               : { background: "white", color: "#555", border: "1px solid #ddd" }
           }
         >
-          ✨ シンプルモード
+          シンプルモード
         </button>
       </div>
 
@@ -340,7 +340,7 @@ export function PhoneMockupModes() {
               className="inline-flex items-center gap-1 mb-1.5 px-3 py-1 rounded-full text-[10px] font-black text-white"
               style={{ background: "#e8729a" }}
             >
-              🌿 レシピモード
+              レシピモード
             </div>
             <p className="text-[10.5px] leading-relaxed" style={{ color: "#664455" }}>
               朝・夜のスキンケア手順をステップで紹介。ルーティン派に最適。
@@ -359,7 +359,7 @@ export function PhoneMockupModes() {
               className="inline-flex items-center gap-1 mb-1.5 px-3 py-1 rounded-full text-[10px] font-black text-white"
               style={{ background: "#9b8ec4" }}
             >
-              ✨ シンプルモード
+              シンプルモード
             </div>
             <p className="text-[10.5px] leading-relaxed" style={{ color: "#554466" }}>
               コスメをグリッドでおしゃれに展示。映えコレクション派に。

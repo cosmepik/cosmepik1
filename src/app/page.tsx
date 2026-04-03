@@ -1,7 +1,7 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ChevronRight } from "lucide-react";
-import { NonnoHeaderLeft } from "@/components/landing/NonnoHeaderLeft";
-import { NonnoHeaderRight } from "@/components/landing/NonnoHeaderRight";
+import { CosmepikLogo } from "@/components/cosmepik-logo";
 import { PhoneMockupModes } from "@/components/landing/PhoneMockupModes";
 
 /* =====================================================================
@@ -9,8 +9,8 @@ import { PhoneMockupModes } from "@/components/landing/PhoneMockupModes";
    ===================================================================== */
 
 // ノンノカラーパレット
-const BG_CREAM = "#f5ece0";         // メインクリーム背景
-const BG_CREAM_LIGHT = "#faf4ed";   // 薄いクリーム
+const BG_CREAM = "#ffffff";         // メイン背景（白）
+const BG_CREAM_LIGHT = "#ffffff";   // セクション背景（白）
 const NAV_BLUE = "#8dcfdc";         // スカイブルーナビ
 const PINK = "#e8729a";             // ピンクアクセント
 const SECTION_PINK = "#f2c4d4";     // セクションピンク背景
@@ -18,71 +18,53 @@ const TEXT_DARK = "#1a1a1a";
 const TEXT_GRAY = "#888888";
 const TEXT_CATEGORY_PINK = "#d94c7a";
 
-/**
- * ノンノ風・斜めピンクバナーの見出しコンポーネント
- * 写真の「"下地迷子"の人……全員注目！[PR]」のように
- * ピンク角丸を少し傾けたスタイル
- */
-function SectionHeading({
-  label,
-  title,
-  rotate = -2,
-  bg = "#f2a8c0",
-  dark = false,
-}: {
-  label: string;
-  title: string;
-  rotate?: number;
-  bg?: string;
-  dark?: boolean;
-}) {
+/** セクション見出し（フラットな薄ピンク箱・1px黒枠・角なし・サンセリフ） */
+const SECTION_HEADING_BG = "#f2b6bb";
+const SECTION_HEADING_FONT =
+  'var(--font-noto-sans), "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif';
+
+function SectionHeading({ label, title }: { label: string; title: string }) {
+  const showLabel = label.trim().length > 0;
   return (
-    <div className="mb-5 overflow-visible" style={{ paddingLeft: "4px" }}>
-      {/* 傾いたピンクバナー */}
+    <div className="mb-5">
       <div
         style={{
-          display: "inline-block",
-          transform: `rotate(${rotate}deg)`,
-          transformOrigin: "left center",
+          background: SECTION_HEADING_BG,
+          border: "1px solid #000000",
+          borderRadius: 0,
+          padding: "9px 18px",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "10px",
+          fontFamily: SECTION_HEADING_FONT,
+          boxShadow: "none",
         }}
       >
-        <div
-          style={{
-            background: bg,
-            borderRadius: "6px",
-            padding: "5px 14px 5px 10px",
-            display: "inline-flex",
-            alignItems: "baseline",
-            gap: "6px",
-            boxShadow: "2px 2px 0px rgba(0,0,0,0.08)",
-          }}
-        >
+        {showLabel ? (
           <span
             style={{
-              fontSize: "10px",
-              fontWeight: "800",
-              letterSpacing: "0.1em",
-              color: dark ? "rgba(255,255,255,0.85)" : "#7a3050",
+              fontSize: "11px",
+              fontWeight: 500,
+              color: "#000000",
+              letterSpacing: "normal",
               whiteSpace: "nowrap",
             }}
           >
             {label}
           </span>
-          <span
-            style={{
-              fontFamily: "'Georgia', 'Times New Roman', serif",
-              fontSize: "22px",
-              fontWeight: "900",
-              fontStyle: "italic",
-              color: dark ? "white" : "#1a1a1a",
-              lineHeight: 1,
-              letterSpacing: "-0.01em",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {title}
-          </span>
-        </div>
+        ) : null}
+        <span
+          style={{
+            fontSize: "15px",
+            fontWeight: 500,
+            color: "#000000",
+            letterSpacing: "normal",
+            lineHeight: 1.35,
+            whiteSpace: "nowrap",
+          }}
+        >
+          {title}
+        </span>
       </div>
     </div>
   );
@@ -111,35 +93,29 @@ export default function LandingPage() {
       {/* ========== HEADER ========== */}
       <header className="sticky top-0 z-50 bg-white shadow-sm">
         {/* 3カラムヘッダー: LEFT-ICON | LOGO | MENU-ICON */}
-        <div className="flex items-center justify-between px-3 py-2" style={{ minHeight: "52px" }}>
-          {/* 左: LOGINアイコン */}
-          <NonnoHeaderLeft />
-
-          {/* 中央: ロゴ - non-noスタイル */}
-          <Link href="/" className="flex flex-col items-center flex-1 mx-2">
-            <span
-              style={{
-                fontFamily: "'Georgia', 'Times New Roman', serif",
-                fontSize: "26px",
-                fontWeight: "900",
-                fontStyle: "italic",
-                letterSpacing: "-0.02em",
-                color: TEXT_DARK,
-                lineHeight: 1,
-              }}
-            >
-              cosme<span style={{ color: PINK }}>·</span>pik
-            </span>
-            <span
-              className="text-[8px] tracking-[0.22em] font-medium mt-0.5"
-              style={{ color: TEXT_GRAY }}
-            >
-              COSME PROFILE LINK
-            </span>
+        <div className="relative flex items-center justify-center px-3 py-2" style={{ minHeight: "56px" }}>
+          {/* 中央: ロゴ */}
+          <Link href="/" className="flex items-center">
+            <CosmepikLogo height={32} color={NAV_BLUE} />
           </Link>
 
-          {/* 右: MENUアイコン */}
-          <NonnoHeaderRight />
+          {/* 右: ログイン・新規登録 */}
+          <div className="absolute right-3 flex items-center gap-2">
+            <Link
+              href="/login"
+              className="rounded-full px-4 py-1.5 text-[11px] font-medium border transition-colors hover:bg-gray-50"
+              style={{ color: TEXT_DARK, borderColor: "#ccc" }}
+            >
+              ログイン
+            </Link>
+            <Link
+              href="/register"
+              className="rounded-full px-4 py-1.5 text-[11px] font-bold text-white transition-opacity hover:opacity-90"
+              style={{ background: PINK }}
+            >
+              新規登録
+            </Link>
+          </div>
         </div>
 
         {/* スカイブルーナビバー */}
@@ -148,8 +124,8 @@ export default function LandingPage() {
           style={{ background: NAV_BLUE, minHeight: "34px" }}
         >
           {[
-            { label: "cosmepikとは", href: "#about" },
             { label: "2つのモード", href: "#modes" },
+            { label: "cosmepikとは", href: "#about" },
             { label: "使い方", href: "#howto" },
             { label: "収益化", href: "/guide/rakuten-affiliate" },
             { label: "ログイン", href: "/login" },
@@ -170,59 +146,53 @@ export default function LandingPage() {
 
       <main>
 
-        {/* ========== HERO - スライドショーバナー風 ========== */}
-        <section
-          className="relative overflow-hidden"
-          style={{
-            background: `linear-gradient(135deg, #fdf0f6 0%, #fce4ee 50%, #fdf5f0 100%)`,
-            minHeight: "220px",
-          }}
-        >
-          {/* 装飾的な円 - ノンノのグラフィック要素 */}
-          <div
-            className="absolute -top-8 -right-8 w-40 h-40 rounded-full opacity-30"
-            style={{ background: PINK }}
-          />
-          <div
-            className="absolute bottom-0 -left-6 w-28 h-28 rounded-full opacity-20"
-            style={{ background: "#9b8ec4" }}
-          />
+        {/* ========== HERO ========== */}
+        <section className="relative overflow-hidden bg-white px-3 pt-4">
 
-          <div className="relative px-5 pt-8 pb-10">
-            <p
-              className="text-[10px] tracking-[0.3em] font-bold mb-1"
-              style={{ color: PINK }}
-            >
-              NEW FEATURE
-            </p>
-            {/* ノンノ風: 小さな日本語 + 大きなイタリック英語 */}
-            <p className="text-[13px] font-bold mb-0" style={{ color: TEXT_DARK }}>
-              一軍コスメを
-            </p>
-            <p
-              style={{
-                fontFamily: "'Georgia', 'Times New Roman', serif",
-                fontSize: "52px",
-                fontWeight: "900",
-                fontStyle: "italic",
-                color: PINK,
-                lineHeight: 0.95,
-                letterSpacing: "-0.02em",
-                marginBottom: "8px",
-              }}
-            >
-              Share
-            </p>
-            <p className="text-[13px] leading-relaxed mb-6" style={{ color: "#555" }}>
-              スキンケアルーティンやお気に入りコスメを<br />
-              リンク1つでファンにシェアできます。
-            </p>
+          <div
+            className="relative flex flex-col items-center rounded-2xl px-5 pt-10 pb-8"
+            style={{ background: SECTION_PINK }}
+          >
+            {/* キャッチコピー */}
+            <div className="mb-8 flex flex-col items-center">
+              <CosmepikLogo height={36} color={NAV_BLUE} />
+              <p className="text-[15px] font-bold mt-3" style={{ color: TEXT_DARK }}>
+                メイクレシピを作ってファンにリンクをシェアしよう
+              </p>
+            </div>
 
-            {/* CTAボタン - ノンノの丸ボタンスタイル */}
-            <div className="flex flex-col gap-2.5">
+            {/* スマホモック */}
+            <div className="relative w-[220px] mx-auto mb-8 flex justify-center">
+              <div
+                className="relative overflow-hidden"
+                style={{
+                  borderRadius: "32px",
+                  border: "4px solid #1a1a1a",
+                  boxShadow: "0 20px 60px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.1) inset",
+                }}
+              >
+                <Image
+                  src="/hero-mockup.png"
+                  alt="cosmepikのプロフィール画面"
+                  width={440}
+                  height={880}
+                  className="w-full h-auto block"
+                  style={{ objectFit: "cover", objectPosition: "center" }}
+                  priority
+                />
+              </div>
+              {/* ホームバー */}
+              <div
+                className="absolute bottom-2 left-1/2 -translate-x-1/2"
+                style={{ width: "60px", height: "4px", background: "#333", borderRadius: "2px" }}
+              />
+            </div>
+
+            {/* CTAボタン */}
+            <div className="flex flex-col gap-2.5 w-full max-w-xs">
               <Link
                 href="/register"
-                className="flex items-center justify-center rounded-full py-3 text-sm font-bold text-white tracking-wide"
+                className="flex items-center justify-center rounded-full py-3.5 text-sm font-bold text-white tracking-wide transition-opacity hover:opacity-90"
                 style={{
                   background: PINK,
                   boxShadow: `0 4px 14px rgba(232,114,154,0.4)`,
@@ -232,8 +202,8 @@ export default function LandingPage() {
               </Link>
               <Link
                 href="/login"
-                className="flex items-center justify-center rounded-full py-2.5 text-sm font-medium tracking-wide border"
-                style={{ color: PINK, borderColor: PINK, background: "white" }}
+                className="flex items-center justify-center rounded-full py-3 text-sm font-medium tracking-wide border transition-colors hover:bg-white/80"
+                style={{ color: TEXT_DARK, borderColor: "#ccc", background: "white" }}
               >
                 ログイン
               </Link>
@@ -241,215 +211,10 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ========== WHAT'S NEW ========== */}
-        <section className="mt-6 px-3" id="about">
-          <SectionHeading label="WHAT'S NEW" title="新しい記事" rotate={-1.5} bg="#f5b8cc" />
-
-          {/* 記事リスト - ノンノWHAT'S NEW形式 */}
-          <div className="space-y-0 bg-white rounded-xl overflow-hidden shadow-sm">
-            {[
-              {
-                cat: "スキンケア",
-                date: "2026.04.01",
-                title: "朝・夜のスキンケアルーティンをステップ形式で公開できる「レシピモード」がリリース",
-              },
-              {
-                cat: "新機能",
-                date: "2026.04.01",
-                title: "コスメをグリッドでおしゃれに並べる「シンプルモード」でSNS映えプロフィールを",
-              },
-              {
-                cat: "収益化",
-                date: "2026.04.01",
-                title: "楽天アフィリエイト連携で、コスメ紹介しながら収益化。登録無料でスタート",
-              },
-              {
-                cat: "使い方",
-                date: "2026.04.01",
-                title: "InstagramやXのプロフィールリンクに設定するだけ。30秒で無料登録完了",
-              },
-            ].map((item, i) => (
-              <Link
-                href="/register"
-                key={i}
-                className="flex items-start gap-0 border-b last:border-b-0 hover:bg-gray-50 transition-colors"
-                style={{ borderColor: "#f0e8e0" }}
-              >
-                {/* カテゴリカラーバー */}
-                <div
-                  className="w-1 self-stretch shrink-0"
-                  style={{ background: catColor(item.cat) }}
-                />
-                <div className="flex-1 px-3 py-2.5">
-                  <div className="flex items-center gap-1.5 mb-0.5">
-                    <span
-                      className="text-[9px] font-bold"
-                      style={{ color: catColor(item.cat) }}
-                    >
-                      {item.cat}
-                    </span>
-                    <span className="text-[9px]" style={{ color: TEXT_GRAY }}>
-                      {item.date}
-                    </span>
-                  </div>
-                  <p className="text-[12px] font-medium leading-[1.55]" style={{ color: TEXT_DARK }}>
-                    {item.title}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-
-          <Link
-            href="/register"
-            className="flex items-center justify-center gap-1 mt-2 py-2 text-[11px] font-bold tracking-wide"
-            style={{ color: PINK }}
-          >
-            VIEW MORE <ChevronRight className="w-3.5 h-3.5" />
-          </Link>
-        </section>
-
-        {/* ========== RANKING - みんなが注目！ ========== */}
-        <section className="mt-6 px-3" id="features">
-          <SectionHeading label="みんなが注目！" title="Ranking" rotate={-2} bg="#f5b8cc" />
-
-          {/* ALLフィルターボタン - ノンノスタイル */}
-          <div className="mb-3">
-            {/* ALL ボタン - 幅広ピンク */}
-            <div
-              className="w-full rounded-full py-2.5 mb-2 text-center text-[13px] font-medium text-white"
-              style={{ background: PINK }}
-            >
-              ALL
-            </div>
-            {/* カテゴリボタン - 2列グリッド */}
-            <div className="grid grid-cols-2 gap-2">
-              {["スキンケア", "コスメ", "レシピモード", "シンプルモード", "収益化", "FAQ"].map(
-                (label, i) => (
-                  <Link
-                    href={i === 4 ? "/guide/rakuten-affiliate" : i === 5 ? "/faq" : "/register"}
-                    key={i}
-                    className="rounded-full py-2 text-center text-[12px] font-medium border hover:bg-pink-50 transition-colors"
-                    style={{ color: TEXT_DARK, borderColor: "#ddd", background: "white" }}
-                  >
-                    {label}
-                  </Link>
-                )
-              )}
-            </div>
-          </div>
-
-          {/* Nō 1〜5 ランキングカード */}
-          <div className="space-y-3 mt-4">
-            {[
-              {
-                rank: 1,
-                cat: "ビューティー",
-                title: "スキンケアルーティンをステップで公開！「レシピモード」の使い方ガイド",
-                date: "2026.04.01",
-                emoji: "🌿",
-                bg: "#fce4ee",
-              },
-              {
-                rank: 2,
-                cat: "コスメ",
-                title: "一軍コスメをグリッドで並べる「シンプルモード」でSNS映えプロフィールを作ろう",
-                date: "2026.04.01",
-                emoji: "✨",
-                bg: "#ede4f8",
-              },
-              {
-                rank: 3,
-                cat: "収益化",
-                title: "楽天アフィリエイト連携でコスメ紹介しながら報酬GET！設定方法を解説",
-                date: "2026.04.01",
-                emoji: "💰",
-                bg: "#fdf0e4",
-              },
-              {
-                rank: 4,
-                cat: "使い方",
-                title: "30秒で無料登録！cosmepikの始め方完全ガイド",
-                date: "2026.04.01",
-                emoji: "📱",
-                bg: "#e4f4f8",
-              },
-              {
-                rank: 5,
-                cat: "特集",
-                title: "パーソナルカラー・肌質・SNSリンクをひとまとめ。美容プロフィールを作成しよう",
-                date: "2026.04.01",
-                emoji: "🎨",
-                bg: "#e8f8e8",
-              },
-            ].map((item) => (
-              <Link
-                href="/register"
-                key={item.rank}
-                className="flex items-start gap-2 hover:opacity-90 transition-opacity"
-              >
-                {/* Nō番号 - ノンノスタイル */}
-                <div className="shrink-0 flex flex-col items-center" style={{ minWidth: "32px" }}>
-                  <span
-                    className="text-[9px] font-bold tracking-widest"
-                    style={{ color: TEXT_CATEGORY_PINK }}
-                  >
-                    Nō
-                  </span>
-                  <span
-                    style={{
-                      fontFamily: "'Georgia', serif",
-                      fontSize: "28px",
-                      fontWeight: "900",
-                      color: TEXT_DARK,
-                      lineHeight: 0.9,
-                    }}
-                  >
-                    {item.rank}
-                  </span>
-                </div>
-
-                {/* サムネイル */}
-                <div
-                  className="shrink-0 w-20 h-16 rounded-xl flex items-center justify-center text-3xl"
-                  style={{ background: item.bg }}
-                >
-                  {item.emoji}
-                </div>
-
-                {/* テキスト */}
-                <div className="flex-1 min-w-0 pt-0.5">
-                  <div className="flex items-center gap-1 mb-0.5">
-                    <span
-                      className="text-[9px] font-bold"
-                      style={{ color: catColor(item.cat) }}
-                    >
-                      {item.cat}
-                    </span>
-                    <span className="text-[9px]" style={{ color: TEXT_GRAY }}>
-                      {item.date}
-                    </span>
-                  </div>
-                  <p
-                    className="text-[12px] font-medium leading-[1.5]"
-                    style={{ color: TEXT_DARK }}
-                  >
-                    {item.title}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        {/* ========== SERIES - 連載コンテンツ（ピンク背景） ========== */}
-        <section
-          className="mt-6 px-3 py-6"
-          id="modes"
-          style={{ background: SECTION_PINK }}
-        >
+        {/* ========== 2つのモード ========== */}
+        <section className="mt-6 px-3 py-6 bg-white" id="modes">
           <div className="flex items-start justify-between">
-            <SectionHeading label="連載コンテンツ" title="Series" rotate={-2} bg="#e8829a" dark />
+            <SectionHeading label="選べる！" title="二つのモードで自分らしく" />
             {/* ページ数バッジ - ノンノスタイル */}
             <div
               className="flex flex-col items-center justify-center w-12 h-12 rounded-full text-white shrink-0 mt-1"
@@ -465,80 +230,94 @@ export default function LandingPage() {
           <PhoneMockupModes />
         </section>
 
-        {/* ========== PICK UP - 編集部おすすめ ========== */}
-        <section className="mt-4 px-3 py-5" style={{ background: BG_CREAM_LIGHT }}>
-          <SectionHeading label="PICK UP" title="おすすめ機能" rotate={-1.5} bg="#f5c8b8" />
+        {/* ========== 収益化セクション ========== */}
+        <section className="mt-6 px-3 py-6" id="monetize">
+          <SectionHeading label="あなたの" title="メイクレシピを収益化" />
 
-          {/* PICK UPカードリスト - ノンノ横スクロール風 */}
-          <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-3 px-3">
-            {[
-              {
-                cat: "ビューティー",
-                emoji: "🌿",
-                bg: "#fce4ee",
-                title: "スキンケアルーティンを朝・夜ステップ別に公開",
-                badge: "レシピモード",
-                badgeColor: "#d94c7a",
-              },
-              {
-                cat: "コスメ",
-                emoji: "✨",
-                bg: "#ede4f8",
-                title: "一軍コスメをグリッドでおしゃれに展示",
-                badge: "シンプルモード",
-                badgeColor: "#9b8ec4",
-              },
-              {
-                cat: "収益化",
-                emoji: "💰",
-                bg: "#fdf0e4",
-                title: "楽天アフィリエイトで コスメ紹介しながら報酬GET",
-                badge: "収益化機能",
-                badgeColor: "#e87a50",
-              },
-              {
-                cat: "特集",
-                emoji: "🎨",
-                bg: "#e4f4f8",
-                title: "肌質・パーソナルカラー・SNSリンクをひとまとめ",
-                badge: "プロフィール",
-                badgeColor: "#4a9ec4",
-              },
-            ].map((item, i) => (
-              <Link
-                href="/register"
-                key={i}
-                className="flex-shrink-0 w-36 rounded-2xl overflow-hidden bg-white shadow-sm hover:opacity-90 transition-opacity"
-                style={{ border: "1px solid rgba(0,0,0,0.06)" }}
+          <p className="text-[15px] font-bold leading-relaxed mt-3 mb-5" style={{ color: PINK }}>
+            cosmepikで紹介したコスメが購入されると、<br />
+            売上の一部があなたの報酬に。
+          </p>
+
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <div
+                className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold text-white"
+                style={{ background: PINK }}
               >
-                {/* サムネイル */}
-                <div
-                  className="w-full h-24 flex items-center justify-center text-4xl"
-                  style={{ background: item.bg }}
-                >
-                  {item.emoji}
-                </div>
-                <div className="p-2.5">
-                  <div className="flex items-center gap-1 mb-1">
-                    <span
-                      className="text-[8px] font-bold px-1.5 py-0.5 rounded text-white"
-                      style={{ background: item.badgeColor }}
-                    >
-                      {item.badge}
-                    </span>
-                  </div>
-                  <p className="text-[11px] font-medium leading-[1.4]" style={{ color: TEXT_DARK }}>
-                    {item.title}
-                  </p>
-                </div>
-              </Link>
-            ))}
+                1
+              </div>
+              <div>
+                <p className="text-[13px] font-bold" style={{ color: TEXT_DARK }}>楽天アフィリエイトと連携</p>
+                <p className="text-[11px] mt-0.5" style={{ color: TEXT_GRAY }}>
+                  無料の楽天アフィリエイトIDを取得して、cosmepikに設定するだけ。
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <div
+                className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold text-white"
+                style={{ background: PINK }}
+              >
+                2
+              </div>
+              <div>
+                <p className="text-[13px] font-bold" style={{ color: TEXT_DARK }}>コスメを紹介するだけ</p>
+                <p className="text-[11px] mt-0.5" style={{ color: TEXT_GRAY }}>
+                  レシピモードやシンプルモードでお気に入りコスメをシェア。リンクには自動でアフィリエイトIDが付きます。
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <div
+                className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold text-white"
+                style={{ background: PINK }}
+              >
+                3
+              </div>
+              <div>
+                <p className="text-[13px] font-bold" style={{ color: TEXT_DARK }}>購入されたら報酬GET</p>
+                <p className="text-[11px] mt-0.5" style={{ color: TEXT_GRAY }}>
+                  あなたのページ経由で楽天市場の商品が購入されると、成果報酬が発生。登録も利用も完全無料です。
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-center mt-5">
+            <Link
+              href="/guide/rakuten-affiliate"
+              className="inline-flex items-center justify-center rounded-full px-6 py-2.5 text-[12px] font-bold text-white transition-opacity hover:opacity-90"
+              style={{ background: PINK }}
+            >
+              収益化ガイドを見る
+            </Link>
+          </div>
+        </section>
+
+        {/* ========== おすすめピック ========== */}
+        <section className="mt-6 px-3" id="features">
+          <SectionHeading label="#cosmepik編集部" title="おすすめピック！" />
+
+          <div
+            className="mt-4 relative flex items-center justify-center rounded-2xl overflow-hidden"
+            style={{ minHeight: "160px" }}
+          >
+            <div
+              className="absolute inset-0 rounded-2xl"
+              style={{ background: "#f0f0f0", filter: "blur(0.5px)" }}
+            />
+            <p className="relative text-[14px] font-medium" style={{ color: "#aaaaaa" }}>
+              準備中 ⚙️
+            </p>
           </div>
         </section>
 
         {/* ========== HOW TO START ========== */}
         <section className="mt-4 px-3 py-5" id="howto">
-          <SectionHeading label="HOW TO START" title="始め方" rotate={-2} bg="#f5b8cc" />
+          <SectionHeading label="HOW TO START" title="始め方" />
 
           {/* ステップリスト - ノンノランキング風 */}
           <div className="bg-white rounded-xl overflow-hidden shadow-sm">
@@ -555,7 +334,7 @@ export default function LandingPage() {
               >
                 <span
                   style={{
-                    fontFamily: "'Georgia', serif",
+                    fontFamily: SECTION_HEADING_FONT,
                     fontSize: "22px",
                     fontWeight: "900",
                     color: PINK,
@@ -590,7 +369,7 @@ export default function LandingPage() {
           className="mt-4 px-3 py-5"
           style={{ background: SECTION_PINK }}
         >
-          <SectionHeading label="気になるカテゴリは？" title="Category" rotate={-1.5} bg="#e8829a" dark />
+          <SectionHeading label="気になるカテゴリは？" title="Category" />
           <div className="flex flex-wrap gap-2">
             {[
               { label: "non-noモデル風プロフ", href: "/register" },
@@ -620,7 +399,7 @@ export default function LandingPage() {
 
         {/* ========== HOT KEYWORD ========== */}
         <section className="mt-4 px-3 py-5">
-          <SectionHeading label="" title="Hot Keyword" rotate={-1.5} bg="#f5b8cc" />
+          <SectionHeading label="" title="Hot Keyword" />
           <div className="flex flex-wrap gap-2">
             {[
               "#スキンケアルーティン",
@@ -658,7 +437,7 @@ export default function LandingPage() {
           }}
         >
           <div className="flex justify-center mb-1">
-            <SectionHeading label="" title="Join Member" rotate={-1.5} bg="#f5b8cc" />
+            <SectionHeading label="" title="Join Member" />
           </div>
           <p className="text-[15px] font-bold mb-1" style={{ color: TEXT_DARK }}>
             cosmepikに登録して<br />コスメリンクを作ろう♡
@@ -681,20 +460,7 @@ export default function LandingPage() {
         <div className="px-4 py-6">
           {/* ロゴ */}
           <div className="flex flex-col items-center mb-4">
-            <span
-              style={{
-                fontFamily: "'Georgia', 'Times New Roman', serif",
-                fontSize: "22px",
-                fontWeight: "900",
-                fontStyle: "italic",
-                color: TEXT_DARK,
-              }}
-            >
-              cosme<span style={{ color: PINK }}>·</span>pik
-            </span>
-            <span className="text-[8px] tracking-[0.2em] mt-0.5" style={{ color: TEXT_GRAY }}>
-              COSME PROFILE LINK
-            </span>
+            <CosmepikLogo height={32} color={NAV_BLUE} />
           </div>
 
           {/* フッターリンク */}

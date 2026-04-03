@@ -39,6 +39,7 @@ export function AddItemModal({
   const [label, setLabel] = useState("");
   const [linkLabel, setLinkLabel] = useState("");
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [submittedKeyword, setSubmittedKeyword] = useState("");
   const [searchResults, setSearchResults] = useState<CosmeItem[]>([]);
   const [isSearchPending, setIsSearchPending] = useState(false);
   const [searchApiError, setSearchApiError] = useState<string | null>(null);
@@ -85,6 +86,7 @@ export function AddItemModal({
     setLabel("");
     setLinkLabel("");
     setSearchKeyword("");
+    setSubmittedKeyword("");
     setSearchResults([]);
     setIsSearchPending(false);
     setSearchApiError(null);
@@ -92,9 +94,14 @@ export function AddItemModal({
     onClose();
   };
 
-  // モーダル内検索：localhostはモックのみ。本番はAPI呼び出し（15秒タイムアウト）
-  useEffect(() => {
+  const handleSearch = () => {
     const k = searchKeyword.trim();
+    if (!k) return;
+    setSubmittedKeyword(k);
+  };
+
+  useEffect(() => {
+    const k = submittedKeyword.trim();
     if (!k) {
       setSearchResults([]);
       setSearchApiError(null);
@@ -104,20 +111,22 @@ export function AddItemModal({
     }
 
     setIsSearchPending(true);
+    setSearchResults([]);
+    setSearchApiError(null);
+    setSearchApiDebug(null);
+
     const isProduction =
       typeof window !== "undefined" &&
       !["localhost", "127.0.0.1"].includes(window.location.hostname);
 
     if (!isProduction) {
       setSearchResults(searchMockCosme(k));
-      setSearchApiError(null);
-      setSearchApiDebug(null);
       setIsSearchPending(false);
       return;
     }
 
-    const timer = setTimeout(async () => {
-      setSearchApiError(null);
+    let cancelled = false;
+    (async () => {
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
@@ -125,6 +134,7 @@ export function AddItemModal({
           signal: controller.signal,
         });
         clearTimeout(timeoutId);
+        if (cancelled) return;
         const data = await res.json().catch(() => ({}));
         const items = Array.isArray(data?.items) ? data.items : [];
         const errMsg = data?.error ?? data?.error_description;
@@ -144,6 +154,7 @@ export function AddItemModal({
           setSearchResults([]);
         }
       } catch (e) {
+        if (cancelled) return;
         const msg = e instanceof Error && e.name === "AbortError"
           ? "検索がタイムアウトしました"
           : (e instanceof Error ? e.message : "楽天APIへの接続に失敗");
@@ -151,11 +162,11 @@ export function AddItemModal({
         setSearchApiDebug(null);
         setSearchResults([]);
       } finally {
-        setIsSearchPending(false);
+        if (!cancelled) setIsSearchPending(false);
       }
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchKeyword]);
+    })();
+    return () => { cancelled = true; };
+  }, [submittedKeyword]);
 
   const handleAddFromSearch = (item: CosmeItem) => {
     const newItem: SectionItem = {
@@ -255,15 +266,25 @@ export function AddItemModal({
                   <Search className="mr-1 inline h-4 w-4" />
                   コスメを検索
                 </label>
-                <input
-                  type="search"
-                  value={searchKeyword}
-                  onChange={(e) => setSearchKeyword(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
-                  enterKeyHint="search"
-                  placeholder="ファンデーション、SHISEIDO など"
-                  className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="search"
+                    value={searchKeyword}
+                    onChange={(e) => setSearchKeyword(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSearch(); } }}
+                    enterKeyHint="search"
+                    placeholder="ファンデーション、SHISEIDO など"
+                    className="flex-1 rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSearch}
+                    disabled={!searchKeyword.trim() || isSearchPending}
+                    className="flex items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    <Search className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
               {isSearchPending && (
                 <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
@@ -314,7 +335,7 @@ export function AddItemModal({
                               {item.brand}
                             </p>
                           )}
-                          <h3 className="line-clamp-2 text-[11px] font-medium leading-snug text-foreground">
+                          <h3 className="line-clamp-4 text-[11px] font-medium leading-snug text-foreground">
                             {item.name}
                           </h3>
                         </div>

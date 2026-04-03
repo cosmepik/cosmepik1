@@ -273,6 +273,8 @@ function PlacementItem({
   const scale = placement.scale ?? 1;
   const handleDrag = useDrag(editable, onSelect, onMove);
 
+  const labelAlign = placement.x > 75 ? "self-end" : placement.x < 25 ? "self-start" : "self-center";
+
   const imageElement = placement.image && (
     <div className="relative h-14 w-14 overflow-hidden rounded-lg border-2 border-white/80 bg-white shadow-lg">
       <img
@@ -285,12 +287,12 @@ function PlacementItem({
   );
 
   const labelElement = (placement.brand || placement.product) ? (
-    <div className="max-w-[100px] bg-black/40 px-1.5 py-0.5 text-center backdrop-blur-[2px]">
+    <div className={`w-[100px] ${labelAlign} bg-black/40 px-1.5 py-0.5 text-center backdrop-blur-[2px]`}>
       {placement.brand && (
         <p className="truncate text-[9px] font-bold text-white">{placement.brand}</p>
       )}
       {placement.product && (
-        <p className="line-clamp-3 text-[8px] font-medium leading-tight text-white">{placement.product}</p>
+        <p className="line-clamp-4 text-[8px] font-medium leading-tight text-white">{placement.product}</p>
       )}
     </div>
   ) : null;
