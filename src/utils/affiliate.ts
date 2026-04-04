@@ -38,7 +38,9 @@ function isRakutenProductUrl(url: string): boolean {
     const u = new URL(url);
     return (
       u.hostname.includes("item.rakuten.co.jp") ||
-      u.hostname.includes("hb.afl.rakuten.co.jp")
+      u.hostname.includes("hb.afl.rakuten.co.jp") ||
+      u.hostname.includes("search.rakuten.co.jp") ||
+      u.hostname.includes("product.rakuten.co.jp")
     );
   } catch {
     return false;
