@@ -92,53 +92,49 @@ export default function LandingPage() {
 
       {/* ========== HEADER ========== */}
       <header className="sticky top-0 z-50 bg-white shadow-sm">
-        {/* 3カラムヘッダー: LEFT-ICON | LOGO | MENU-ICON */}
-        <div className="relative flex items-center justify-center px-3 py-2" style={{ minHeight: "56px" }}>
-          {/* 中央: ロゴ */}
+        <div className="flex items-center justify-between px-3 py-2" style={{ minHeight: "56px" }}>
           <Link href="/" className="flex items-center">
             <CosmepikLogo height={32} color={NAV_BLUE} />
           </Link>
-
-        </div>
-
-        {/* スカイブルーナビバー */}
-        <nav
-          className="flex items-center"
-          style={{ background: NAV_BLUE, minHeight: "34px" }}
-        >
-          <div className="flex-1 overflow-x-auto scrollbar-hide flex px-2">
-            {[
-              { label: "2つのモード", href: "#modes" },
-              { label: "cosmepikとは", href: "#about" },
-              { label: "使い方", href: "#howto" },
-              { label: "収益化", href: "/guide/rakuten-affiliate" },
-              { label: "FAQ", href: "/faq" },
-            ].map((item, i) => (
-              <Link
-                key={i}
-                href={item.href}
-                className="flex-shrink-0 flex items-center px-3 text-[11px] font-medium tracking-wide text-white hover:opacity-80 transition-opacity whitespace-nowrap"
-                style={{ lineHeight: "34px" }}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
-          <div className="flex items-center gap-1.5 flex-shrink-0 pr-2">
+          <div className="flex items-center gap-2">
             <Link
               href="/login"
-              className="rounded-full px-3 py-1 text-[11px] font-medium border border-white/60 text-white transition-opacity hover:opacity-80 whitespace-nowrap"
+              className="rounded-full px-4 py-1.5 text-[11px] font-medium border transition-colors hover:bg-gray-50"
+              style={{ color: TEXT_DARK, borderColor: "#ccc" }}
             >
               ログイン
             </Link>
             <Link
               href="/register"
-              className="rounded-full px-3 py-1 text-[11px] font-bold text-white transition-opacity hover:opacity-90 whitespace-nowrap"
+              className="rounded-full px-4 py-1.5 text-[11px] font-bold text-white transition-opacity hover:opacity-90"
               style={{ background: PINK }}
             >
               新規登録
             </Link>
           </div>
+        </div>
+
+        {/* スカイブルーナビバー */}
+        <nav
+          className="flex items-center overflow-x-auto scrollbar-hide px-2"
+          style={{ background: NAV_BLUE, minHeight: "34px" }}
+        >
+          {[
+            { label: "2つのモード", href: "#modes" },
+            { label: "cosmepikとは", href: "#about" },
+            { label: "使い方", href: "#howto" },
+            { label: "収益化", href: "/guide/rakuten-affiliate" },
+            { label: "FAQ", href: "/faq" },
+          ].map((item, i) => (
+            <Link
+              key={i}
+              href={item.href}
+              className="flex-shrink-0 flex items-center px-3 text-[11px] font-medium tracking-wide text-white hover:opacity-80 transition-opacity whitespace-nowrap"
+              style={{ lineHeight: "34px" }}
+            >
+              {item.label}
+            </Link>
+          ))}
         </nav>
       </header>
 
@@ -161,9 +157,24 @@ export default function LandingPage() {
             {/* キャッチコピー */}
             <div className="mb-8 flex flex-col items-center">
               <CosmepikLogo height={36} color={NAV_BLUE} />
-              <p className="text-[15px] font-bold mt-3" style={{ color: TEXT_DARK }}>
-                メイクレシピを作ってファンにリンクをシェアしよう
-              </p>
+              <div className="relative mt-4 rounded-2xl bg-white px-5 py-4 shadow-sm" style={{ border: "1.5px solid #eee" }}>
+                <p className="text-[15px] font-bold leading-relaxed text-center" style={{ color: TEXT_DARK }}>
+                  メイクレシピを超簡単に作成、<br />収益化しよう！
+                </p>
+                {/* 吹き出しの三角 */}
+                <div
+                  className="absolute left-1/2 -translate-x-1/2"
+                  style={{
+                    bottom: "-10px",
+                    width: 0,
+                    height: 0,
+                    borderLeft: "10px solid transparent",
+                    borderRight: "10px solid transparent",
+                    borderTop: "10px solid white",
+                    filter: "drop-shadow(0 1px 0 #eee)",
+                  }}
+                />
+              </div>
             </div>
 
             {/* スマホモック */}
@@ -213,6 +224,34 @@ export default function LandingPage() {
                 ログイン
               </Link>
             </div>
+          </div>
+        </section>
+
+        {/* ========== cosmepikって何ができるの？ ========== */}
+        <section className="mt-6 px-3 py-6" id="about">
+          <SectionHeading label="#cosmepikって" title="何ができるの？" />
+          <div className="mt-4 space-y-3">
+            {[
+              { icon: "📸", title: "メイクレシピを作成", desc: "写真の上にコスメを配置して、あなただけのメイクレシピを簡単に作れます" },
+              { icon: "🔗", title: "リンクでシェア", desc: "作ったレシピをSNSのプロフィールに貼って、フォロワーにシェアできます" },
+              { icon: "💰", title: "コスメで収益化", desc: "紹介したコスメが購入されると、売上の一部があなたの報酬になります" },
+            ].map((item) => (
+              <div key={item.title} className="flex items-start gap-2">
+                <div
+                  className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+                  style={{ background: SECTION_PINK }}
+                >
+                  <span className="text-base">{item.icon}</span>
+                </div>
+                <div
+                  className="flex-1 bg-white px-4 py-3 shadow-sm"
+                  style={{ border: "1px solid #f0f0f0", borderRadius: "2px 20px 20px 20px" }}
+                >
+                  <p className="text-[13px] font-bold" style={{ color: TEXT_DARK }}>{item.title}</p>
+                  <p className="text-[11px] mt-0.5 leading-relaxed" style={{ color: TEXT_GRAY }}>{item.desc}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
