@@ -44,6 +44,12 @@ function cardBgStyle(cardColor: string | undefined): React.CSSProperties | undef
   return { backgroundColor: cardColor };
 }
 
+function buildFallbackLink(item: SectionItem): string {
+  if (item.link) return item.link;
+  if (item.product) return `https://search.rakuten.co.jp/search/mall/${encodeURIComponent(item.product)}/?l-id=cosmetree`;
+  return "";
+}
+
 function RoutineItem({
   item,
   onClick,
@@ -57,17 +63,18 @@ function RoutineItem({
   listImageClassName: string;
   cardColorStyle?: React.CSSProperties;
 }) {
+  const effectiveLink = buildFallbackLink(item);
   return (
     <a
-      href={item.link || "#"}
+      href={effectiveLink || "#"}
       target="_blank"
       rel="noopener noreferrer"
       className={cn("flex items-stretch gap-2", listClassName)}
       style={cardColorStyle}
       onClick={(e) => {
-        if (item.link) {
+        if (effectiveLink) {
           e.preventDefault();
-          onClick(item.link, item.id);
+          onClick(effectiveLink, item.id);
         }
       }}
     >
@@ -107,15 +114,16 @@ function ProductCard({
   return (
     <div className="group relative">
       <a
-        href={item.link || "#"}
+        href={buildFallbackLink(item) || "#"}
         target="_blank"
         rel="noopener noreferrer"
         className={cn("relative block overflow-hidden", productClassName)}
         style={cardColorStyle}
         onClick={(e) => {
-          if (item.link) {
+          const link = buildFallbackLink(item);
+          if (link) {
             e.preventDefault();
-            onClick(item.link, item.id);
+            onClick(link, item.id);
           }
         }}
       >
@@ -203,7 +211,7 @@ export function PublicSectionRenderer({ section, slug, userAffiliateId, cardDesi
               );
             }
             const scale = p.scale ?? 1;
-            const effectiveLink = p.link || (p.product ? `https://search.rakuten.co.jp/search/mall/${encodeURIComponent(p.product)}/?l-id=cosmetree` : "");
+            const effectiveLink = buildFallbackLink(p);
             const Wrapper = effectiveLink ? "a" : "div";
             const wrapperProps = effectiveLink
               ? {
