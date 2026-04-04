@@ -40,6 +40,7 @@ export function AddItemModal({
   const [linkLabel, setLinkLabel] = useState("");
   const [searchKeyword, setSearchKeyword] = useState("");
   const [submittedKeyword, setSubmittedKeyword] = useState("");
+  const [searchCount, setSearchCount] = useState(0);
   const [searchResults, setSearchResults] = useState<CosmeItem[]>([]);
   const [isSearchPending, setIsSearchPending] = useState(false);
   const [searchApiError, setSearchApiError] = useState<string | null>(null);
@@ -98,6 +99,7 @@ export function AddItemModal({
     const k = searchKeyword.trim();
     if (!k) return;
     setSubmittedKeyword(k);
+    setSearchCount((c) => c + 1);
   };
 
   useEffect(() => {
@@ -166,7 +168,7 @@ export function AddItemModal({
       }
     })();
     return () => { cancelled = true; };
-  }, [submittedKeyword]);
+  }, [submittedKeyword, searchCount]);
 
   const handleAddFromSearch = (item: CosmeItem) => {
     const newItem: SectionItem = {
@@ -274,13 +276,13 @@ export function AddItemModal({
                     onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSearch(); } }}
                     enterKeyHint="search"
                     placeholder="ファンデーション、SHISEIDO など"
-                    className="flex-1 rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                    className="min-w-0 flex-1 rounded-xl border-2 border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                   />
                   <button
                     type="button"
                     onClick={handleSearch}
                     disabled={!searchKeyword.trim() || isSearchPending}
-                    className="flex items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+                    className="flex shrink-0 items-center justify-center rounded-xl bg-primary px-3 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
                   >
                     <Search className="h-4 w-4" />
                   </button>
@@ -319,6 +321,7 @@ export function AddItemModal({
                             fill
                             className="object-contain"
                             sizes="160px"
+                            unoptimized
                           />
                           <button
                             type="button"

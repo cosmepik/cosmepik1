@@ -45,7 +45,7 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook
 1. Stripe ダッシュボード → **開発者** → **Webhook**
 2. **エンドポイントを追加**
 3. URL: `https://あなたのドメイン/api/stripe/webhook`
-4. イベント: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
+4. イベント: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`, `invoice.paid`
 5. 署名シークレットをコピー → Netlify の環境変数 `STRIPE_WEBHOOK_SECRET` に設定
 
 ## 5. Supabase マイグレーション

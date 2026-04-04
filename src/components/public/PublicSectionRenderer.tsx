@@ -203,13 +203,14 @@ export function PublicSectionRenderer({ section, slug, userAffiliateId, cardDesi
               );
             }
             const scale = p.scale ?? 1;
-            const Wrapper = p.link ? "a" : "div";
-            const wrapperProps = p.link
+            const effectiveLink = p.link || (p.product ? `https://search.rakuten.co.jp/search/mall/${encodeURIComponent(p.product)}/?l-id=cosmetree` : "");
+            const Wrapper = effectiveLink ? "a" : "div";
+            const wrapperProps = effectiveLink
               ? {
-                  href: p.link,
+                  href: effectiveLink,
                   target: "_blank" as const,
                   rel: "noopener noreferrer",
-                  onClick: (e: React.MouseEvent) => { e.preventDefault(); onClick(p.link, p.id); },
+                  onClick: (e: React.MouseEvent) => { e.preventDefault(); onClick(effectiveLink, p.id); },
                 }
               : {};
             return (

@@ -1,7 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
+
+async function findUserByCustomer(
+  supabase: SupabaseClient,
+  customerId: string,
+): Promise<string | null> {
+  const { data } = await supabase
+    .from("user_subscriptions")
+    .select("user_id")
+    .eq("stripe_customer_id", customerId)
+    .limit(1)
+    .single();
+  return data?.user_id ?? null;
+}
 
 /** Stripe Webhook: サブスクリプション状態を保存 */
 export async function POST(request: NextRequest) {
@@ -49,6 +62,7 @@ export async function POST(request: NextRequest) {
             user_id: userId,
             stripe_subscription_id: subId,
             stripe_subscription_status: sub.status,
+            payment_failed_at: null,
             updated_at: new Date().toISOString(),
           },
           { onConflict: "user_id" }
@@ -73,8 +87,52 @@ export async function POST(request: NextRequest) {
       }
       break;
     }
+    case "invoice.payment_failed": {
+      const invoice = event.data.object as Stripe.Invoice;
+      const customerId = typeof invoice.customer === "string"
+        ? invoice.customer
+        : invoice.customer?.id;
+      if (!customerId) break;
+
+      const userId = await findUserByCustomer(supabase, customerId);
+      if (!userId) {
+        console.warn("[Stripe webhook] invoice.payment_failed: user not found for customer", customerId);
+        break;
+      }
+
+      await supabase
+        .from("user_subscriptions")
+        .update({
+          payment_failed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", userId);
+
+      console.log(`[Stripe webhook] payment failed for user ${userId}`);
+      break;
+    }
+    case "invoice.paid": {
+      const invoice = event.data.object as Stripe.Invoice;
+      const customerId = typeof invoice.customer === "string"
+        ? invoice.customer
+        : invoice.customer?.id;
+      if (!customerId) break;
+
+      const userId = await findUserByCustomer(supabase, customerId);
+      if (!userId) break;
+
+      await supabase
+        .from("user_subscriptions")
+        .update({
+          payment_failed_at: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", userId);
+
+      console.log(`[Stripe webhook] payment succeeded for user ${userId}, cleared failure flag`);
+      break;
+    }
     default:
-      // 未処理のイベントは無視
       break;
   }
 

@@ -11,6 +11,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
+  const [emailSent, setEmailSent] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +38,7 @@ export default function RegisterPage() {
         });
         return;
       }
+      setEmailSent(true);
       setMessage({ type: "ok", text: "確認メールを送信しました。メール内のリンクをクリックしてください。" });
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : "";
@@ -141,10 +143,10 @@ export default function RegisterPage() {
           )}
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || emailSent}
             className="w-full rounded-lg bg-green py-3 font-medium text-white hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
           >
-            {loading ? "処理中..." : "登録する"}
+            {loading ? "処理中..." : emailSent ? "確認メール送信済み ✓" : "登録する"}
           </button>
           <div className="relative flex items-center py-2">
             <span className="absolute inset-0 flex items-center">

@@ -36,10 +36,19 @@ export async function POST(request: NextRequest) {
 
     let customerId = existing?.stripe_customer_id as string | undefined;
 
+    const { data: cosmeSet } = await supabase
+      .from("cosme_sets")
+      .select("slug, name")
+      .eq("user_id", user.id)
+      .limit(1)
+      .single();
+    const displayName = cosmeSet?.slug ?? user.email ?? user.id;
+
     if (!customerId) {
       const customer = await stripe.customers.create({
+        name: displayName,
         email: user.email ?? undefined,
-        metadata: { supabase_user_id: user.id },
+        metadata: { supabase_user_id: user.id, username: cosmeSet?.slug ?? "" },
       });
       customerId = customer.id;
       await supabase.from("user_subscriptions").upsert(
@@ -51,6 +60,11 @@ export async function POST(request: NextRequest) {
         { onConflict: "user_id" }
       );
     }
+
+    await stripe.customers.update(customerId, {
+      name: displayName,
+      metadata: { supabase_user_id: user.id, username: cosmeSet?.slug ?? "" },
+    });
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,

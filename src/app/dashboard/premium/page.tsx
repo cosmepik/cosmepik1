@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Crown, Sparkles, Image, Palette, X, LayoutGrid, Settings, CheckCircle2 } from "lucide-react";
+import { Crown, Sparkles, Image, Palette, X, LayoutGrid, Settings, CheckCircle2, AlertTriangle } from "lucide-react";
 import { SideMenu } from "@/components/cosme-link/side-menu";
 import { DashboardHeader } from "@/components/DashboardHeader";
 
@@ -34,12 +34,16 @@ export default function PremiumPage() {
   const [upgrading, setUpgrading] = useState(false);
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
   const [isPremium, setIsPremium] = useState<boolean | null>(null);
+  const [paymentFailed, setPaymentFailed] = useState(false);
   const [openingPortal, setOpeningPortal] = useState(false);
 
   useEffect(() => {
     fetch("/api/premium/me")
       .then((r) => r.json())
-      .then((d) => setIsPremium(d.premium === true))
+      .then((d) => {
+        setIsPremium(d.premium === true);
+        setPaymentFailed(!!d.paymentFailedAt);
+      })
       .catch(() => setIsPremium(false));
   }, []);
 
@@ -119,6 +123,30 @@ export default function PremiumPage() {
             </p>
           )}
         </div>
+
+        {/* Payment failed warning */}
+        {paymentFailed && isPremium && (
+          <div className="mb-8 flex items-start gap-3 rounded-2xl border-2 border-amber-400/50 bg-amber-50 p-5">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" aria-hidden />
+            <div>
+              <h3 className="mb-1 font-semibold text-amber-800">
+                お支払いに失敗しました
+              </h3>
+              <p className="text-sm text-amber-700">
+                直近の請求でカード決済が完了できませんでした。プレミアム機能は一時的にご利用いただけますが、お支払い方法を更新されない場合、プレミアム機能が停止されます。
+              </p>
+              <button
+                type="button"
+                onClick={handleOpenPortal}
+                disabled={openingPortal}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
+              >
+                <Settings className="h-4 w-4" aria-hidden />
+                お支払い方法を更新する
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Benefits */}
         <div className="mb-12 space-y-6">

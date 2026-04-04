@@ -99,55 +99,60 @@ export default function LandingPage() {
             <CosmepikLogo height={32} color={NAV_BLUE} />
           </Link>
 
-          {/* 右: ログイン・新規登録 */}
-          <div className="absolute right-3 flex items-center gap-2">
+        </div>
+
+        {/* スカイブルーナビバー */}
+        <nav
+          className="flex items-center"
+          style={{ background: NAV_BLUE, minHeight: "34px" }}
+        >
+          <div className="flex-1 overflow-x-auto scrollbar-hide flex px-2">
+            {[
+              { label: "2つのモード", href: "#modes" },
+              { label: "cosmepikとは", href: "#about" },
+              { label: "使い方", href: "#howto" },
+              { label: "収益化", href: "/guide/rakuten-affiliate" },
+              { label: "FAQ", href: "/faq" },
+            ].map((item, i) => (
+              <Link
+                key={i}
+                href={item.href}
+                className="flex-shrink-0 flex items-center px-3 text-[11px] font-medium tracking-wide text-white hover:opacity-80 transition-opacity whitespace-nowrap"
+                style={{ lineHeight: "34px" }}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5 flex-shrink-0 pr-2">
             <Link
               href="/login"
-              className="rounded-full px-4 py-1.5 text-[11px] font-medium border transition-colors hover:bg-gray-50"
-              style={{ color: TEXT_DARK, borderColor: "#ccc" }}
+              className="rounded-full px-3 py-1 text-[11px] font-medium border border-white/60 text-white transition-opacity hover:opacity-80 whitespace-nowrap"
             >
               ログイン
             </Link>
             <Link
               href="/register"
-              className="rounded-full px-4 py-1.5 text-[11px] font-bold text-white transition-opacity hover:opacity-90"
+              className="rounded-full px-3 py-1 text-[11px] font-bold text-white transition-opacity hover:opacity-90 whitespace-nowrap"
               style={{ background: PINK }}
             >
               新規登録
             </Link>
           </div>
-        </div>
-
-        {/* スカイブルーナビバー */}
-        <nav
-          className="flex overflow-x-auto scrollbar-hide px-2"
-          style={{ background: NAV_BLUE, minHeight: "34px" }}
-        >
-          {[
-            { label: "2つのモード", href: "#modes" },
-            { label: "cosmepikとは", href: "#about" },
-            { label: "使い方", href: "#howto" },
-            { label: "収益化", href: "/guide/rakuten-affiliate" },
-            { label: "ログイン", href: "/login" },
-            { label: "新規登録", href: "/register" },
-            { label: "FAQ", href: "/faq" },
-          ].map((item, i) => (
-            <Link
-              key={i}
-              href={item.href}
-              className="flex-shrink-0 flex items-center px-3 text-[11px] font-medium tracking-wide text-white hover:opacity-80 transition-opacity whitespace-nowrap"
-              style={{ lineHeight: "34px" }}
-            >
-              {item.label}
-            </Link>
-          ))}
         </nav>
       </header>
 
-      <main>
+      <main
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, #e5e5e5 1px, transparent 1px), linear-gradient(to bottom, #e5e5e5 1px, transparent 1px)",
+          backgroundSize: "24px 24px",
+          backgroundColor: "#f5f5f5",
+        }}
+      >
 
         {/* ========== HERO ========== */}
-        <section className="relative overflow-hidden bg-white px-3 pt-4">
+        <section className="relative overflow-hidden px-3 pt-4">
 
           <div
             className="relative flex flex-col items-center rounded-2xl px-5 pt-10 pb-8"
@@ -212,7 +217,7 @@ export default function LandingPage() {
         </section>
 
         {/* ========== 2つのモード ========== */}
-        <section className="mt-6 px-3 py-6 bg-white" id="modes">
+        <section className="mt-6 px-3 py-6" id="modes">
           <div className="flex items-start justify-between">
             <SectionHeading label="選べる！" title="二つのモードで自分らしく" />
             {/* ページ数バッジ - ノンノスタイル */}
@@ -307,7 +312,7 @@ export default function LandingPage() {
           >
             <div
               className="absolute inset-0 rounded-2xl"
-              style={{ background: "#f0f0f0", filter: "blur(0.5px)" }}
+              style={{ background: "rgba(245,245,245,0.5)", filter: "blur(0.5px)" }}
             />
             <p className="relative text-[14px] font-medium" style={{ color: "#aaaaaa" }}>
               準備中 ⚙️

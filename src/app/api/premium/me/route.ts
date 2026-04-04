@@ -23,12 +23,17 @@ export async function GET() {
 
     const { data: sub } = await admin
       .from("user_subscriptions")
-      .select("stripe_subscription_status")
+      .select("stripe_subscription_status, payment_failed_at")
       .eq("user_id", user.id)
       .single();
 
-    const premium = sub?.stripe_subscription_status === "active";
-    return NextResponse.json({ premium });
+    const status = sub?.stripe_subscription_status;
+    const premium = status === "active" || status === "past_due";
+    return NextResponse.json({
+      premium,
+      subscriptionStatus: status ?? null,
+      paymentFailedAt: sub?.payment_failed_at ?? null,
+    });
   } catch (e) {
     console.error("[premium/me]", e);
     return NextResponse.json({ premium: false });
