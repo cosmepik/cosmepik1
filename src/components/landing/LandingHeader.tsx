@@ -20,7 +20,7 @@ export function LandingHeader() {
       setLoggedIn(false);
       return;
     }
-    sb.auth.getUser().then(({ data }) => {
+    sb.auth.getUser().then(({ data }: { data: { user: unknown } }) => {
       setLoggedIn(!!data.user);
     });
   }, []);
