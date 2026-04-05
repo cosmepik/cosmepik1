@@ -20,8 +20,12 @@ export const metadata: Metadata = {
   title: "#cosmepik(コスメピック)",
   description: "インフルエンサーの愛用コスメをまとめたリンクツリー",
   icons: {
-    icon: "/favicon.png",
-    apple: "/favicon.png",
+    icon: [
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon.png", sizes: "48x48", type: "image/png" },
+      { url: "/favicon-96.png", sizes: "96x96", type: "image/png" },
+    ],
+    apple: "/favicon-96.png",
   },
   ...(isProduction ? {} : { robots: { index: false, follow: false } }),
 };
