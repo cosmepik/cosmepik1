@@ -40,6 +40,12 @@ import { CosmeImage } from "@/components/CosmeImage";
 import { AddItemModal } from "./add-item-modal";
 import { RecipeCanvas } from "./recipe-canvas";
 
+function buildFallbackLink(item: SectionItem): string {
+  if (item.link) return item.link;
+  if (item.product) return `https://search.rakuten.co.jp/search/mall/${encodeURIComponent(item.product)}/?l-id=cosmetree`;
+  return "";
+}
+
 interface SectionRendererProps {
   section: Section;
 }
@@ -142,9 +148,10 @@ function SortableRoutineItem({
           {...listeners}
           {...attributes}
           onClick={(e) => {
-            if (!isDragging && item.link) {
+            const link = buildFallbackLink(item);
+            if (!isDragging && link) {
               e.preventDefault();
-              onAffiliateClick(item.link, item.id);
+              onAffiliateClick(link, item.id);
             }
           }}
         >
@@ -152,15 +159,16 @@ function SortableRoutineItem({
         </div>
       ) : (
         <a
-          href={item.link || "#"}
+          href={buildFallbackLink(item) || "#"}
           target="_blank"
           rel="noopener noreferrer"
           className={cn("flex items-center gap-2", listClassName)}
           style={cardColorStyle}
           onClick={(e) => {
-            if (item.link) {
+            const link = buildFallbackLink(item);
+            if (link) {
               e.preventDefault();
-              onAffiliateClick(item.link, item.id);
+              onAffiliateClick(link, item.id);
             }
           }}
         >
@@ -373,15 +381,16 @@ function ProductCard({
   return (
     <div className="group relative">
       <a
-        href={item.link || "#"}
+        href={buildFallbackLink(item) || "#"}
         target="_blank"
         rel="noopener noreferrer"
         className={cn("relative block overflow-hidden", productClassName)}
         style={cardColorStyle}
         onClick={(e) => {
-          if (item.link) {
+          const link = buildFallbackLink(item);
+          if (link) {
             e.preventDefault();
-            onAffiliateClick(item.link, item.id);
+            onAffiliateClick(link, item.id);
           }
         }}
       >

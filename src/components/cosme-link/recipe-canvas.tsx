@@ -6,6 +6,12 @@ import type { RecipePlacement } from "@/lib/sections";
 const HANDWRITING_FONT = "Yomogi, cursive";
 const FONT_LINK = "https://fonts.googleapis.com/css2?family=Yomogi&display=swap";
 
+function buildFallbackLink(p: RecipePlacement): string {
+  if (p.link) return p.link;
+  if (p.product) return `https://search.rakuten.co.jp/search/mall/${encodeURIComponent(p.product)}/?l-id=cosmetree`;
+  return "";
+}
+
 function useHandwritingFont() {
   useEffect(() => {
     if (document.querySelector(`link[href="${FONT_LINK}"]`)) return;
@@ -110,7 +116,7 @@ export function RecipeCanvas({
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-12 w-12 opacity-40">
             <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" />
           </svg>
-          <p className="text-sm">顔写真をタップしてアップロード</p>
+          <p className="text-sm">タップして顔写真をアップロード</p>
         </div>
       ) : null}
 
@@ -297,10 +303,11 @@ function PlacementItem({
     </div>
   ) : null;
 
-  if (!editable && placement.link) {
+  const effectiveLink = buildFallbackLink(placement);
+  if (!editable && effectiveLink) {
     return (
       <a
-        href={placement.link}
+        href={effectiveLink}
         target="_blank"
         rel="noopener noreferrer"
         className="absolute z-10 flex flex-col items-center gap-0.5"

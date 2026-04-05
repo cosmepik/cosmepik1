@@ -46,11 +46,11 @@ const steps = [
       { text: "「マイページ」→「サイト情報の登録」をクリック" },
       { text: "「追加登録」をクリック" },
     ],
-    formImage: "/images/guide/rakuten-form.jpg",
+    formImage: "/images/guide/rakuten-form.png",
     formAlt: "サイト情報登録フォーム",
     formFields: [
-      { label: "運営サイト名", example: "cosmepik_あなたのユーザー名" },
-      { label: "運営サイトURL", example: "https://cosmepik.com/p/あなたのユーザー名" },
+      { label: "運営サイト名", example: "cosmepik.me", hint: "「cosmepik.me」でOK！自由に決められます" },
+      { label: "運営サイトURL", example: "https://cosmepik.me", hint: "cosmepikの公開プロフURLをそのまま貼り付けてもOK" },
       { label: "サイトのジャンル", example: "美容" },
       { label: "扱う商品ジャンル", example: "美容・コスメ・香水" },
     ],
@@ -230,6 +230,9 @@ function StepCard({
                     <code className="rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground">
                       {field.example}
                     </code>
+                    {"hint" in field && field.hint && (
+                      <span className="text-[10px] text-muted-foreground">{field.hint}</span>
+                    )}
                   </div>
                 ))}
               </div>

@@ -295,16 +295,6 @@ function EditPageContent({ slug }: { slug: string }) {
       />
 
       <div className="mx-auto max-w-md px-4 pt-0 pb-5">
-        {/* 他の子のページを見るバナー（ビューポート幅で中央揃え） */}
-        <div className="relative mb-4 w-screen max-w-none ml-[calc(-50vw+50%)]">
-          <Link
-            href="/dashboard"
-            className="flex w-full items-center justify-center gap-1.5 rounded-none border-b border-border bg-white py-2.5 text-sm font-medium text-primary transition-colors hover:bg-muted/50"
-          >
-            他の子のページを参考にする
-            <span aria-hidden>👀</span>
-          </Link>
-        </div>
 
         {/* デザイン編集ボタン群（背景・テーマ） */}
         <DesignEditButtons
@@ -315,7 +305,7 @@ function EditPageContent({ slug }: { slug: string }) {
         />
 
         {/* 公開リンク（編集ボタン群） */}
-        <div className="mx-auto mb-5 w-full max-w-[400px]">
+        <div className="mx-auto mt-4 mb-5 w-full max-w-[400px]">
           {editingUrl ? (
             <div className="flex flex-col gap-2 px-1">
               <div className="flex items-center gap-2 rounded-xl border-2 border-primary/40 bg-white px-3 py-2.5 shadow-sm">

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { CosmepikLogo } from "@/components/cosmepik-logo";
 import { createCosmeSet, setProfile } from "@/lib/store";
@@ -17,7 +18,7 @@ export default function OnboardingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [mode, setMode] = useState<CosmeSetMode>("simple");
+  const [mode, setMode] = useState<CosmeSetMode>("recipe");
 
   useEffect(() => {
     fetch("/api/dashboard")
@@ -137,37 +138,62 @@ export default function OnboardingPage() {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => setMode("simple")}
-                  className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 transition-all ${mode === "simple" ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/40"}`}
+                  onClick={() => setMode("recipe")}
+                  className={`flex flex-col items-center gap-2 rounded-xl border-2 p-2 pb-3 transition-all ${mode === "recipe" ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/40"}`}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className={`h-7 w-7 ${mode === "simple" ? "text-primary" : "text-muted-foreground"}`}>
-                    <line x1="8" x2="21" y1="6" y2="6" /><line x1="8" x2="21" y1="12" y2="12" /><line x1="8" x2="21" y1="18" y2="18" /><line x1="3" x2="3.01" y1="6" y2="6" /><line x1="3" x2="3.01" y1="12" y2="12" /><line x1="3" x2="3.01" y1="18" y2="18" />
-                  </svg>
-                  <span className={`text-xs font-medium ${mode === "simple" ? "text-primary" : "text-muted-foreground"}`}>シンプル</span>
-                  <span className="text-[10px] text-muted-foreground">コスメをリスト表示</span>
+                  <div className="relative w-full aspect-[9/16] overflow-hidden rounded-lg">
+                    <Image
+                      src="/hero-mockup.png"
+                      alt="レシピモード"
+                      fill
+                      className="object-cover object-top"
+                      sizes="150px"
+                    />
+                  </div>
+                  <div
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white"
+                    style={{ background: "#e8729a" }}
+                  >
+                    レシピモード
+                  </div>
+                  <span className="text-[10px] text-muted-foreground text-center leading-tight">写真の上にコスメを表示できるモード</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => setMode("recipe")}
-                  className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 transition-all ${mode === "recipe" ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/40"}`}
+                  onClick={() => setMode("simple")}
+                  className={`flex flex-col items-center gap-2 rounded-xl border-2 p-2 pb-3 transition-all ${mode === "simple" ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/40"}`}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className={`h-7 w-7 ${mode === "recipe" ? "text-primary" : "text-muted-foreground"}`}>
-                    <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" />
-                  </svg>
-                  <span className={`text-xs font-medium ${mode === "recipe" ? "text-primary" : "text-muted-foreground"}`}>メイクレシピ</span>
-                  <span className="text-[10px] text-muted-foreground">顔写真にコスメ配置</span>
+                  <div className="relative w-full aspect-[9/16] overflow-hidden rounded-lg">
+                    <Image
+                      src="/simple-mockup.png"
+                      alt="シンプルモード"
+                      fill
+                      className="object-cover object-top"
+                      sizes="150px"
+                    />
+                  </div>
+                  <div
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white"
+                    style={{ background: "#9b8ec4" }}
+                  >
+                    シンプルモード
+                  </div>
+                  <span className="text-[10px] text-muted-foreground text-center leading-tight">コスメをカードで並べるモード</span>
                 </button>
               </div>
             </div>
             <div>
-              <label
-                htmlFor="display-name"
-                className="mb-1.5 block text-sm font-medium text-foreground"
-              >
-                あなたの名前
-              </label>
+              <div className="mb-1.5 flex items-baseline gap-1.5">
+                <label
+                  htmlFor="display-name"
+                  className="text-sm font-medium text-foreground"
+                >
+                  あなたの名前
+                </label>
+                <span className="text-[10px] text-muted-foreground">（あとから変更できるよ）</span>
+              </div>
               <p className="mb-2 text-xs text-muted-foreground">
-                コスメページに表示される名前です
+                アイコンの下に表示される名前です
               </p>
               <input
                 id="display-name"
@@ -183,12 +209,12 @@ export default function OnboardingPage() {
             <div>
               <label
                 htmlFor="slug"
-                className="mb-1.5 block text-sm font-medium text-foreground"
+                className="mb-1 block text-sm font-medium text-foreground"
               >
                 コスメページのURLを決めましょう
               </label>
               <p className="mb-2 text-xs text-muted-foreground">
-                半角英数で入力してね（これがあなたのページのアドレスになるよ）
+                半角英数で入力してね（あとから変更できるよ）
               </p>
               <div className="flex overflow-hidden rounded-xl border-2 border-input bg-white transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
                 <span className="flex items-center bg-muted/50 pl-4 pr-2 text-sm font-medium text-muted-foreground shrink-0 border-r border-input">

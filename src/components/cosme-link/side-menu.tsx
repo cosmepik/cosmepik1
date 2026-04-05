@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { X, Globe, Home, BarChart2, Settings, LogOut, ChevronRight, DollarSign, Crown } from "lucide-react";
+import { X, Globe, Home, BarChart2, Settings, LogOut, ChevronRight, DollarSign, Crown, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useProfile } from "@/lib/profile-context";
 import { useUser } from "@/hooks/use-user";
@@ -53,10 +53,12 @@ const menuItems = (
 
 const revenueItem = {
   icon: DollarSign,
-  label: "収益化",
+  label: "収益化（ベータ版）",
   href: "/dashboard/revenue",
   description: "楽天アフィリエイトID設定",
 };
+
+const ADMIN_EMAIL = "cosmepik.team@gmail.com";
 
 export function SideMenu({ isOpen, onClose }: SideMenuProps) {
   const { profile } = useProfile();
@@ -66,6 +68,7 @@ export function SideMenu({ isOpen, onClose }: SideMenuProps) {
 
   const email = user?.email ?? "";
   const initial = email ? email.charAt(0).toUpperCase() : "?";
+  const isAdmin = email === ADMIN_EMAIL;
 
   useEffect(() => {
     fetch("/api/db-info")
@@ -187,6 +190,24 @@ export function SideMenu({ isOpen, onClose }: SideMenuProps) {
                 <ChevronRight className="h-4 w-4 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5" />
               </Link>
             </li>
+            {isAdmin && (
+              <li>
+                <Link
+                  href="/dashboard/admin"
+                  onClick={onClose}
+                  className="group flex items-center gap-3.5 rounded-xl px-3 py-3 transition-all hover:bg-accent"
+                >
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600 transition-colors group-hover:bg-amber-500 group-hover:text-white">
+                    <Shield className="h-4.5 w-4.5" strokeWidth={1.75} />
+                  </div>
+                  <div className="flex flex-1 flex-col items-start text-left">
+                    <span className="text-sm font-medium text-foreground">管理</span>
+                    <span className="text-[11px] text-muted-foreground">ユーザー一覧・閲覧数</span>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              </li>
+            )}
           </ul>
 
           {/* Divider */}

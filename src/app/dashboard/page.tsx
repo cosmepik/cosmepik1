@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   Ticket,
@@ -73,7 +74,7 @@ export default function DashboardHomePage() {
   const [createSlug, setCreateSlug] = useState("");
   const [createFormError, setCreateFormError] = useState<string | null>(null);
   const [slugInputError, setSlugInputError] = useState<string | null>(null);
-  const [createMode, setCreateMode] = useState<CosmeSetMode>("simple");
+  const [createMode, setCreateMode] = useState<CosmeSetMode>("recipe");
 
   const load = useCallback(() => {
     const timeout = setTimeout(() => setLoading(false), 10000);
@@ -684,25 +685,47 @@ export default function DashboardHomePage() {
                       <div className="grid grid-cols-2 gap-3">
                         <button
                           type="button"
-                          onClick={() => setCreateMode("simple")}
-                          className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all ${createMode === "simple" ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/40"}`}
+                          onClick={() => setCreateMode("recipe")}
+                          className={`flex flex-col items-center gap-2 rounded-xl border-2 p-2 pb-3 transition-all ${createMode === "recipe" ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/40"}`}
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className={`h-8 w-8 ${createMode === "simple" ? "text-primary" : "text-muted-foreground"}`}>
-                            <line x1="8" x2="21" y1="6" y2="6" /><line x1="8" x2="21" y1="12" y2="12" /><line x1="8" x2="21" y1="18" y2="18" /><line x1="3" x2="3.01" y1="6" y2="6" /><line x1="3" x2="3.01" y1="12" y2="12" /><line x1="3" x2="3.01" y1="18" y2="18" />
-                          </svg>
-                          <span className={`text-xs font-medium ${createMode === "simple" ? "text-primary" : "text-muted-foreground"}`}>シンプル</span>
-                          <span className="text-[10px] text-muted-foreground">コスメをリスト表示</span>
+                          <div className="relative w-full aspect-[9/16] overflow-hidden rounded-lg">
+                            <Image
+                              src="/hero-mockup.png"
+                              alt="レシピモード"
+                              fill
+                              className="object-cover object-top"
+                              sizes="150px"
+                            />
+                          </div>
+                          <div
+                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white"
+                            style={{ background: "#e8729a" }}
+                          >
+                            レシピモード
+                          </div>
+                          <span className="text-[10px] text-muted-foreground text-center leading-tight">写真の上にコスメを表示できるモード</span>
                         </button>
                         <button
                           type="button"
-                          onClick={() => setCreateMode("recipe")}
-                          className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all ${createMode === "recipe" ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/40"}`}
+                          onClick={() => setCreateMode("simple")}
+                          className={`flex flex-col items-center gap-2 rounded-xl border-2 p-2 pb-3 transition-all ${createMode === "simple" ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/40"}`}
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className={`h-8 w-8 ${createMode === "recipe" ? "text-primary" : "text-muted-foreground"}`}>
-                            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" />
-                          </svg>
-                          <span className={`text-xs font-medium ${createMode === "recipe" ? "text-primary" : "text-muted-foreground"}`}>メイクレシピ</span>
-                          <span className="text-[10px] text-muted-foreground">顔写真にコスメ配置</span>
+                          <div className="relative w-full aspect-[9/16] overflow-hidden rounded-lg">
+                            <Image
+                              src="/simple-mockup.png"
+                              alt="シンプルモード"
+                              fill
+                              className="object-cover object-top"
+                              sizes="150px"
+                            />
+                          </div>
+                          <div
+                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white"
+                            style={{ background: "#9b8ec4" }}
+                          >
+                            シンプルモード
+                          </div>
+                          <span className="text-[10px] text-muted-foreground text-center leading-tight">コスメをカードで並べるモード</span>
                         </button>
                       </div>
                     </div>

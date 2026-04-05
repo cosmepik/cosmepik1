@@ -67,13 +67,17 @@ const PLACEHOLDER_IMG =
 function mapProduct(p: RakutenProduct, idx: number): CosmeItem & { _jan?: string } {
   const raw = (p.mediumImageUrl ?? p.smallImageUrl ?? PLACEHOLDER_IMG)
     .replace(/^http:\/\//, "https://");
+  const rakutenUrl =
+    (p.affiliateUrl && p.affiliateUrl.startsWith("http") ? p.affiliateUrl : null) ||
+    (p.productUrlPC && p.productUrlPC.startsWith("http") ? p.productUrlPC : null) ||
+    `https://search.rakuten.co.jp/search/mall/${encodeURIComponent(p.productName ?? "")}/?l-id=cosmetree`;
   return {
     id: p.productId ?? `product-${idx}`,
     name: cleanseItemName(p.productName ?? "") || p.productName || "（商品名なし）",
     brand: p.brandName ?? "",
     category: p.genreName ?? "",
     imageUrl: upgradeImageSize(raw),
-    rakutenUrl: p.affiliateUrl ?? p.productUrlPC ?? `https://search.rakuten.co.jp/search/mall/${encodeURIComponent(p.productName ?? "")}/?l-id=cosmetree`,
+    rakutenUrl,
     _jan: p.productCode ?? p.janCode ?? undefined,
   };
 }
@@ -88,13 +92,18 @@ function mapIchibaItem(item: RakutenItem, idx: number): CosmeItem & { _jan?: str
     PLACEHOLDER_IMG;
 
   const rawName = item.itemName ?? "";
+  const rakutenUrl =
+    (item.affiliateUrl && item.affiliateUrl.startsWith("http") ? item.affiliateUrl : null) ||
+    (item.itemUrl && item.itemUrl.startsWith("http") ? item.itemUrl : null) ||
+    `https://search.rakuten.co.jp/search/mall/${encodeURIComponent(item.itemName ?? "")}/?l-id=cosmetree`;
+
   return {
     id: item.itemCode ?? `ichiba-${idx}`,
     name: cleanseItemName(rawName) || rawName || "（商品名なし）",
     brand: "",
     category: item.genreName ?? "",
     imageUrl: upgradeImageSize(rawUrl),
-    rakutenUrl: item.affiliateUrl ?? item.itemUrl ?? `https://search.rakuten.co.jp/search/mall/${encodeURIComponent(item.itemName ?? "")}/?l-id=cosmetree`,
+    rakutenUrl,
     _jan: undefined,
   };
 }
@@ -192,6 +201,7 @@ async function fetchIchibaItems(
       keyword,
       genreId: "100939",
       format: "json",
+      formatVersion: "2",
       hits: String(hits),
     });
     const affiliateId = process.env.RAKUTEN_AFFILIATE_ID?.trim();
@@ -211,6 +221,14 @@ async function fetchIchibaItems(
         const item = x?.Item ?? x;
         if (item) rawItems.push(item);
       }
+    }
+    if (rawItems.length > 0) {
+      const sample = rawItems[0];
+      console.log("[IchibaItem/Search] sample item:", {
+        itemUrl: sample.itemUrl ?? "(missing)",
+        affiliateUrl: sample.affiliateUrl ?? "(missing)",
+        itemName: sample.itemName?.slice(0, 30),
+      });
     }
     return rawItems.map(mapIchibaItem);
   } catch (e) {

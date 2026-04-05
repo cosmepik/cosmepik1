@@ -3,6 +3,8 @@ import Image from "next/image";
 import { ChevronRight } from "lucide-react";
 import { CosmepikLogo } from "@/components/cosmepik-logo";
 import { PhoneMockupModes } from "@/components/landing/PhoneMockupModes";
+import { LandingHeader } from "@/components/landing/LandingHeader";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 /* =====================================================================
    cosmepik トップページ - non-no web モバイルデザイン完全再現版
@@ -86,57 +88,37 @@ const catColor = (cat: string) => {
   return map[cat] || "#888";
 };
 
-export default function LandingPage() {
+interface BlogPost {
+  id: string;
+  title: string;
+  category: string;
+  thumbnail_url: string | null;
+  created_at: string;
+}
+
+async function fetchBlogPosts(): Promise<BlogPost[]> {
+  try {
+    const admin = createAdminClient();
+    if (!admin) return [];
+    const { data } = await admin
+      .from("blog_posts")
+      .select("id, title, category, thumbnail_url, created_at")
+      .eq("published", true)
+      .order("created_at", { ascending: false })
+      .limit(6);
+    return (data as BlogPost[]) ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export default async function LandingPage() {
+  const blogPosts = await fetchBlogPosts();
   return (
     <div className="min-h-screen" style={{ background: BG_CREAM }}>
 
       {/* ========== HEADER ========== */}
-      <header className="sticky top-0 z-50 bg-white shadow-sm">
-        <div className="flex items-center justify-between px-3 py-2" style={{ minHeight: "56px" }}>
-          <Link href="/" className="flex items-center">
-            <CosmepikLogo height={32} color={NAV_BLUE} />
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/login"
-              className="rounded-full px-4 py-1.5 text-[11px] font-medium border transition-colors hover:bg-gray-50"
-              style={{ color: TEXT_DARK, borderColor: "#ccc" }}
-            >
-              ログイン
-            </Link>
-            <Link
-              href="/register"
-              className="rounded-full px-4 py-1.5 text-[11px] font-bold text-white transition-opacity hover:opacity-90"
-              style={{ background: PINK }}
-            >
-              新規登録
-            </Link>
-          </div>
-        </div>
-
-        {/* スカイブルーナビバー */}
-        <nav
-          className="flex items-center overflow-x-auto scrollbar-hide px-2"
-          style={{ background: NAV_BLUE, minHeight: "34px" }}
-        >
-          {[
-            { label: "2つのモード", href: "#modes" },
-            { label: "cosmepikとは", href: "#about" },
-            { label: "使い方", href: "#howto" },
-            { label: "収益化", href: "/guide/rakuten-affiliate" },
-            { label: "FAQ", href: "/faq" },
-          ].map((item, i) => (
-            <Link
-              key={i}
-              href={item.href}
-              className="flex-shrink-0 flex items-center px-3 text-[11px] font-medium tracking-wide text-white hover:opacity-80 transition-opacity whitespace-nowrap"
-              style={{ lineHeight: "34px" }}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-      </header>
+      <LandingHeader />
 
       <main
         style={{
@@ -345,18 +327,57 @@ export default function LandingPage() {
         <section className="mt-6 px-3" id="features">
           <SectionHeading label="#cosmepik編集部" title="おすすめピック！" />
 
-          <div
-            className="mt-4 relative flex items-center justify-center rounded-2xl overflow-hidden"
-            style={{ minHeight: "160px" }}
-          >
+          {blogPosts.length === 0 ? (
             <div
-              className="absolute inset-0 rounded-2xl"
-              style={{ background: "rgba(245,245,245,0.5)", filter: "blur(0.5px)" }}
-            />
-            <p className="relative text-[14px] font-medium" style={{ color: "#aaaaaa" }}>
-              準備中 ⚙️
-            </p>
-          </div>
+              className="mt-4 relative flex items-center justify-center rounded-2xl overflow-hidden"
+              style={{ minHeight: "160px" }}
+            >
+              <div
+                className="absolute inset-0 rounded-2xl"
+                style={{ background: "rgba(245,245,245,0.5)", filter: "blur(0.5px)" }}
+              />
+              <p className="relative text-[14px] font-medium" style={{ color: "#aaaaaa" }}>
+                記事を準備中です
+              </p>
+            </div>
+          ) : (
+            <div className="mt-4 space-y-2.5">
+              {blogPosts.map((post) => (
+                <Link
+                  key={post.id}
+                  href={`/blog/${post.id}`}
+                  className="group flex items-center gap-3 rounded-xl bg-white p-3 shadow-sm transition-all hover:shadow-md"
+                >
+                  {post.thumbnail_url ? (
+                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg">
+                      <Image src={post.thumbnail_url} alt="" fill className="object-cover" sizes="64px" />
+                    </div>
+                  ) : (
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg" style={{ background: SECTION_PINK }}>
+                      <span className="text-lg">📝</span>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span
+                        className="text-[10px] font-bold"
+                        style={{ color: catColor(post.category) }}
+                      >
+                        {post.category}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {new Date(post.created_at).toLocaleDateString("ja-JP")}
+                      </span>
+                    </div>
+                    <p className="text-[13px] font-bold leading-snug line-clamp-2" style={{ color: TEXT_DARK }}>
+                      {post.title}
+                    </p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* ========== HOW TO START ========== */}
