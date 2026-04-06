@@ -10,34 +10,51 @@ import { getCosmeSets, getProfile, setProfile } from "@/lib/store";
 
 /** 収益化ページ：楽天アフィリエイトID設定（全メイクレシピに一括適用） */
 export default function RevenuePage() {
-  const { user } = useUser();
-  const userId = user?.id ?? "demo";
+  const { user, loading: userLoading } = useUser();
+  const userId = user?.id;
 
   const [loading, setLoading] = useState(true);
   const [hasSets, setHasSets] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [rakutenAffiliateId, setRakutenAffiliateId] = useState("");
+  const [originalId, setOriginalId] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  const hasChanged = rakutenAffiliateId.trim() !== originalId;
+
   const load = useCallback(() => {
+    if (!userId) return;
+    setLoading(true);
     getCosmeSets(userId)
       .then(async (data) => {
         const list = data ?? [];
         setHasSets(list.length > 0);
         if (list.length > 0) {
-          const first = await getProfile(list[0]!.slug);
-          setRakutenAffiliateId(first?.rakutenAffiliateId ?? "");
+          const slug = list[0]!.slug;
+          const res = await fetch(`/api/profile/${encodeURIComponent(slug)}`, { cache: "no-store" });
+          if (res.ok) {
+            const json = await res.json();
+            const id = json.profile?.rakutenAffiliateId ?? json.profile?.rakuten_affiliate_id ?? "";
+            setRakutenAffiliateId(id);
+            setOriginalId(id);
+          } else {
+            const first = await getProfile(slug);
+            const id = first?.rakutenAffiliateId ?? "";
+            setRakutenAffiliateId(id);
+            setOriginalId(id);
+          }
         }
       })
       .finally(() => setLoading(false));
   }, [userId]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (!userLoading) load();
+  }, [userLoading, load]);
 
   const handleSave = async () => {
+    if (!userId) return;
     const sets = await getCosmeSets(userId);
     const list = sets ?? [];
     if (list.length === 0) {
@@ -47,16 +64,17 @@ export default function RevenuePage() {
     setSaving(true);
     setSaved(false);
     try {
-      const idToSave = rakutenAffiliateId.trim() || undefined;
+      const idToSave = rakutenAffiliateId.trim() || null;
 
       for (const s of list) {
         const profile = await getProfile(s.slug);
         await setProfile({
           ...(profile ?? {}),
           username: s.slug,
-          rakutenAffiliateId: idToSave,
+          rakutenAffiliateId: idToSave ?? undefined,
         });
       }
+      setOriginalId(rakutenAffiliateId.trim());
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
@@ -126,10 +144,10 @@ export default function RevenuePage() {
               <button
                 type="button"
                 onClick={handleSave}
-                disabled={saving || !hasSets}
+                disabled={saving || !hasSets || !hasChanged}
                 className="rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
               >
-                {saving ? "保存中..." : saved ? "保存しました！" : "保存"}
+                {saving ? "保存中..." : "保存"}
               </button>
               {saved && (
                 <span className="text-sm text-green-600">保存しました</span>
