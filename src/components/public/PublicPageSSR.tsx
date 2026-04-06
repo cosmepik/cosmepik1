@@ -251,7 +251,7 @@ function isExternalUrl(url: string): boolean {
   return url.startsWith("http://") || url.startsWith("https://");
 }
 
-function RecipeSectionBlock({ section, slug, cacheBust }: { section: Section; slug?: string; cacheBust?: string }) {
+function RecipeSectionBlock({ section, slug, cacheBust, isPremium }: { section: Section; slug?: string; cacheBust?: string; isPremium?: boolean }) {
   const placements = section.placements ?? [];
   if (!section.backgroundImage && placements.length === 0) return null;
   const bgSrc = isExternalUrl(section.backgroundImage ?? "")
@@ -330,31 +330,32 @@ function RecipeSectionBlock({ section, slug, cacheBust }: { section: Section; sl
             </div>
           );
         })}
-        {/* cosmepik ロゴ */}
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2"
-          style={{
-            width: 112,
-            height: 28,
-            backgroundColor: "rgba(255,255,255,0.6)",
-            maskImage: "url(/logo.svg)",
-            maskSize: "contain",
-            maskRepeat: "no-repeat",
-            maskPosition: "center",
-            WebkitMaskImage: "url(/logo.svg)",
-            WebkitMaskSize: "contain",
-            WebkitMaskRepeat: "no-repeat",
-            WebkitMaskPosition: "center",
-          }}
-        />
+        {!isPremium && (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2"
+            style={{
+              width: 112,
+              height: 28,
+              backgroundColor: "rgba(255,255,255,0.6)",
+              maskImage: "url(/logo.svg)",
+              maskSize: "contain",
+              maskRepeat: "no-repeat",
+              maskPosition: "center",
+              WebkitMaskImage: "url(/logo.svg)",
+              WebkitMaskSize: "contain",
+              WebkitMaskRepeat: "no-repeat",
+              WebkitMaskPosition: "center",
+            }}
+          />
+        )}
       </div>
     </section>
   );
 }
 
-function SectionBlock({ section, cardDesignId, cardColor, slug, cacheBust }: { section: Section; cardDesignId?: string; cardColor?: string; slug?: string; cacheBust?: string }) {
-  if (section.type === "recipe") return <RecipeSectionBlock section={section} slug={slug} cacheBust={cacheBust} />;
+function SectionBlock({ section, cardDesignId, cardColor, slug, cacheBust, isPremium }: { section: Section; cardDesignId?: string; cardColor?: string; slug?: string; cacheBust?: string; isPremium?: boolean }) {
+  if (section.type === "recipe") return <RecipeSectionBlock section={section} slug={slug} cacheBust={cacheBust} isPremium={isPremium} />;
   const design = getCardDesign(cardDesignId);
   const { listClassName, productClassName, listImageClassName, productImageClassName } = design;
   const colorStyle = cardBgStyle(cardColor);
@@ -419,9 +420,10 @@ interface PublicPageSSRProps {
   profile: InfluencerProfile | null;
   sections: Section[];
   themeVars: Record<string, string>;
+  isPremium?: boolean;
 }
 
-export function PublicPageSSR({ username, profile, sections, themeVars }: PublicPageSSRProps) {
+export function PublicPageSSR({ username, profile, sections, themeVars, isPremium }: PublicPageSSRProps) {
   const hasCustomBg = !!profile?.backgroundImageUrl;
   const usePreset = !!profile?.usePreset;
   const cacheBust = profile?.updatedAt ? String(new Date(profile.updatedAt).getTime()) : undefined;
@@ -449,27 +451,31 @@ export function PublicPageSSR({ username, profile, sections, themeVars }: Public
           />
         )}
         <main className="relative z-10 mx-auto flex max-w-[400px] flex-col gap-3 px-4 py-8">
-          <div className="flex justify-center">
-            <Logo className="h-6" height={26} />
-          </div>
+          {!isPremium && (
+            <div className="flex justify-center">
+              <Logo className="h-6" height={26} />
+            </div>
+          )}
 
           <ProfileHeader username={username} profile={profile} />
 
           {sections.map((section) => (
-            <SectionBlock key={section.id} section={section} cardDesignId={profile?.cardDesignId} cardColor={profile?.cardColor} slug={username} cacheBust={cacheBust} />
+            <SectionBlock key={section.id} section={section} cardDesignId={profile?.cardDesignId} cardColor={profile?.cardColor} slug={username} cacheBust={cacheBust} isPremium={isPremium} />
           ))}
 
-          <AdBanner className="w-full" />
+          {!isPremium && <AdBanner className="w-full" />}
 
-          <footer className="flex flex-col items-center gap-2 pb-8 pt-4">
-            <div className="flex items-center justify-center gap-1.5 text-muted-foreground">
-              <span className="text-xs font-medium">Powered by</span>
-              <Logo className="shrink-0" height={18} color="var(--green)" />
-            </div>
-            <a href="/" className="text-xs font-medium text-green hover:underline">
-              cosmepikを使ってみる
-            </a>
-          </footer>
+          {!isPremium && (
+            <footer className="flex flex-col items-center gap-2 pb-8 pt-4">
+              <div className="flex items-center justify-center gap-1.5 text-muted-foreground">
+                <span className="text-xs font-medium">Powered by</span>
+                <Logo className="shrink-0" height={18} color="var(--green)" />
+              </div>
+              <a href="/" className="text-xs font-medium text-green hover:underline">
+                cosmepikを使ってみる
+              </a>
+            </footer>
+          )}
         </main>
       </div>
     </div>
