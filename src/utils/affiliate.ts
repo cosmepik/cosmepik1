@@ -57,13 +57,25 @@ export function generateAffiliateLink(
     "";
 
   const hasValidUserId = userAffiliateId != null && isValidAffiliateId(userAffiliateId);
+  const hasValidAdminId = isValidAffiliateId(adminId);
   const userRate =
     parseFloat(
       (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_USER_REVENUE_SHARE_RATE) || "0.6"
     ) || 0.6;
 
-  const useUser = hasValidUserId && Math.random() < userRate;
-  const affiliateId = useUser && userAffiliateId ? userAffiliateId.trim() : adminId;
+  let affiliateId: string;
+  let useUser: boolean;
+
+  if (hasValidUserId && hasValidAdminId) {
+    useUser = Math.random() < userRate;
+    affiliateId = useUser ? userAffiliateId!.trim() : adminId;
+  } else if (hasValidUserId) {
+    useUser = true;
+    affiliateId = userAffiliateId!.trim();
+  } else {
+    useUser = false;
+    affiliateId = adminId;
+  }
 
   if (!isRakutenProductUrl(itemUrl)) {
     return { url: itemUrl, usedId: useUser ? "user" : "admin" };

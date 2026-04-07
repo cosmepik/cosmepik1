@@ -5,7 +5,7 @@ import { AffiliateClickHandler } from "@/components/public/AffiliateClickHandler
 import { AnalyticsBeacon } from "@/components/public/AnalyticsBeacon";
 import { checkPremiumByUsername } from "@/lib/premium-server";
 
-export const revalidate = 86400;
+export const revalidate = 60;
 
 type Props = { params: Promise<{ username: string }> };
 
