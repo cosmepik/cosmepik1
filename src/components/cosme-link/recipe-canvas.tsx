@@ -310,6 +310,8 @@ function PlacementItem({
         href={effectiveLink}
         target="_blank"
         rel="noopener noreferrer"
+        data-afl={effectiveLink}
+        data-item-id={placement.id}
         className="absolute z-10 flex flex-col items-center gap-0.5"
         style={{
           left: `${placement.x}%`,
