@@ -243,7 +243,7 @@ export default function DashboardHomePage() {
   const handleCopyUrl = useCallback((set: CosmeSet) => {
     const url =
       typeof window !== "undefined"
-        ? `${window.location.origin}/p/${set.slug}`
+        ? `${window.location.origin}/${set.slug}`
         : "";
     if (url) {
       navigator.clipboard.writeText(url);
@@ -549,7 +549,7 @@ export default function DashboardHomePage() {
                               e.preventDefault();
                               const url =
                                 typeof window !== "undefined"
-                                  ? `${window.location.origin}/p/${set.slug}`
+                                  ? `${window.location.origin}/${set.slug}`
                                   : "";
                               if (url) window.open(url, "_blank");
                               setOpenMenuSetId(null);

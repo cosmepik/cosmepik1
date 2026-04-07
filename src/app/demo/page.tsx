@@ -12,7 +12,7 @@ export default function DemoPage() {
   const username = "demo";
   const [shareOpen, setShareOpen] = useState(false);
   const profileLink =
-    typeof window !== "undefined" ? `${window.location.origin}/p/${username}` : "";
+    typeof window !== "undefined" ? `${window.location.origin}/${username}` : "";
 
   return (
     <>

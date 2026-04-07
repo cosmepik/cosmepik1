@@ -218,7 +218,7 @@ export default function OnboardingPage() {
               </p>
               <div className="flex overflow-hidden rounded-xl border-2 border-input bg-white transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
                 <span className="flex items-center bg-muted/50 pl-4 pr-2 text-sm font-medium text-muted-foreground shrink-0 border-r border-input">
-                  cosmepik.me/p/
+                  cosmepik.me/
                 </span>
                 <input
                   id="slug"

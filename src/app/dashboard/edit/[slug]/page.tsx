@@ -84,7 +84,7 @@ function InlinePreview({ slug, onBack }: { slug: string; onBack: () => void }) {
   const [shareOpen, setShareOpen] = useState(false);
 
   const profileUrl =
-    typeof window !== "undefined" ? `${window.location.origin}/p/${slug}` : "";
+    typeof window !== "undefined" ? `${window.location.origin}/${slug}` : "";
 
   const influencer: InfluencerProfile = {
     ...toInfluencerProfile(ctxProfile),
@@ -195,7 +195,7 @@ function EditPageContent({ slug }: { slug: string }) {
   const [tempSlug, setTempSlug] = useState(slug);
   const [slugInputWarning, setSlugInputWarning] = useState<string | null>(null);
   useEffect(() => {
-    setProfileUrl(typeof window !== "undefined" ? `${window.location.origin}/p/${slug}` : "");
+    setProfileUrl(typeof window !== "undefined" ? `${window.location.origin}/${slug}` : "");
   }, [slug]);
   useEffect(() => {
     setTempSlug(slug);

@@ -205,7 +205,7 @@ export default function AnalyticsPage() {
                             {entry.count.toLocaleString()}
                           </span>
                           <Link
-                            href={`/p/${entry.slug}`}
+                            href={`/${entry.slug}`}
                             target="_blank"
                             className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground opacity-0 transition-all hover:bg-muted group-hover:opacity-100"
                           >

@@ -39,7 +39,6 @@ export default function LoginPage() {
           ? "ログインできませんでした。もう一度正しい情報を入力してください。"
           : msg;
       setMessage({ type: "error", text: displayText });
-    } finally {
       setLoading(false);
     }
   };

@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { username } = await params;
   const base = getBaseUrl();
   const ogImage = `${base}/api/og?username=${encodeURIComponent(username)}`;
-  const url = `${base}/p/${username}`;
+  const url = `${base}/${username}`;
 
   return {
     title: `${username} のコスメ | cosmepik`,

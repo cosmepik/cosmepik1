@@ -306,7 +306,7 @@ export default function AdminPage() {
                         <td className="px-4 py-3 text-right tabular-nums font-medium">{u.clicks.toLocaleString()}</td>
                         <td className="px-4 py-3 text-right text-xs text-muted-foreground tabular-nums">{u.createdAt ? new Date(u.createdAt).toLocaleDateString("ja-JP") : "-"}</td>
                         <td className="px-4 py-3 text-center">
-                          <a href={`/p/${u.slug}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs text-primary transition-colors hover:bg-primary/5">
+                          <a href={`/${u.slug}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs text-primary transition-colors hover:bg-primary/5">
                             <ExternalLink className="h-3 w-3" />見る
                           </a>
                         </td>

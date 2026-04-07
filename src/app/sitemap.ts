@@ -40,7 +40,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const usernames = await getPublicUsernames();
   const profilePages: MetadataRoute.Sitemap = usernames.map((u) => ({
-    url: `${SITE_URL}/p/${u}`,
+    url: `${SITE_URL}/${u}`,
     lastModified: now,
     changeFrequency: "daily" as const,
     priority: 0.8,

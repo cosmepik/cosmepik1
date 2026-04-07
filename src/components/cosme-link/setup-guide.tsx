@@ -63,7 +63,7 @@ export function SetupGuide() {
   };
 
   const handleCopyUrl = async () => {
-    const url = typeof window !== "undefined" ? `${window.location.origin}/p/${profile.username}` : "";
+    const url = typeof window !== "undefined" ? `${window.location.origin}/${profile.username}` : "";
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -96,7 +96,7 @@ export function SetupGuide() {
           </p>
           <div className="mb-4 flex items-center gap-2 rounded-xl border border-border bg-muted/30 px-3 py-2">
             <span className="min-w-0 flex-1 truncate text-sm text-foreground">
-              {typeof window !== "undefined" ? `${window.location.origin}/p/${profile.username}` : ""}
+              {typeof window !== "undefined" ? `${window.location.origin}/${profile.username}` : ""}
             </span>
             <button
               type="button"

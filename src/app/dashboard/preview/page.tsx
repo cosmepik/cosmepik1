@@ -44,7 +44,7 @@ function PreviewContent() {
   }, [username]);
 
   const profileLink =
-    typeof window !== "undefined" ? `${window.location.origin}/p/${username}` : "";
+    typeof window !== "undefined" ? `${window.location.origin}/${username}` : "";
 
   return (
     <>
