@@ -1,3 +1,4 @@
+import type React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -51,6 +52,21 @@ async function fetchPost(id: string): Promise<BlogPost | null> {
 type Props = { params: Promise<{ id: string }> };
 
 const COSMEPIK_URL_RE = /^https?:\/\/cosmepik\.me\/(?:p\/)?([a-zA-Z0-9_-]+)\s*$/;
+const URL_RE = /(https?:\/\/[^\s]+)/g;
+
+function renderLineWithLinks(text: string): React.ReactNode {
+  const parts = text.split(URL_RE);
+  if (parts.length === 1) return text;
+  return parts.map((part, j) =>
+    URL_RE.test(part) ? (
+      <a key={j} href={part} target="_blank" rel="noopener noreferrer" className="text-primary underline break-all hover:text-primary/80">
+        {part}
+      </a>
+    ) : (
+      <span key={j}>{part}</span>
+    ),
+  );
+}
 
 interface EmbedProfile {
   username: string;
@@ -171,7 +187,7 @@ export default async function BlogDetailPage({ params }: Props) {
             }
             return (
               <p key={i} className={line.trim() === "" ? "h-4" : "mb-4 leading-relaxed"}>
-                {line}
+                {renderLineWithLinks(line)}
               </p>
             );
           })}
