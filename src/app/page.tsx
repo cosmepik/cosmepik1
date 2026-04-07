@@ -105,7 +105,7 @@ async function fetchBlogPosts(): Promise<BlogPost[]> {
       .select("id, title, category, thumbnail_url, created_at")
       .eq("published", true)
       .order("created_at", { ascending: false })
-      .limit(6);
+      .limit(5);
     return (data as BlogPost[]) ?? [];
   } catch {
     return [];
@@ -134,7 +134,7 @@ export default async function LandingPage() {
 
           <div
             className="relative flex flex-col items-center rounded-2xl px-5 pt-10 pb-8"
-            style={{ background: SECTION_PINK }}
+            style={{ background: "rgba(242, 196, 212, 0.45)", boxShadow: "0 8px 32px rgba(242, 196, 212, 0.4), 0 2px 8px rgba(0,0,0,0.06)" }}
           >
             {/* キャッチコピー */}
             <div className="mb-8 flex flex-col items-center">
@@ -325,7 +325,7 @@ export default async function LandingPage() {
 
         {/* ========== おすすめピック ========== */}
         <section className="mt-6 px-3" id="features">
-          <SectionHeading label="#cosmepik編集部" title="おすすめピック！" />
+          <SectionHeading label="#cosmepik編集部" title="Pickup!" />
 
           {blogPosts.length === 0 ? (
             <div
@@ -341,41 +341,36 @@ export default async function LandingPage() {
               </p>
             </div>
           ) : (
-            <div className="mt-4 space-y-2.5">
-              {blogPosts.map((post) => (
+            <div className="mt-4" style={{ border: "1.5px dashed #333" }}>
+              {blogPosts.map((post, i) => (
                 <Link
                   key={post.id}
                   href={`/blog/${post.id}`}
-                  className="group flex items-center gap-3 rounded-xl bg-white p-3 shadow-sm transition-all hover:shadow-md"
+                  className="group flex items-center gap-3 px-3 py-2 transition-all hover:opacity-80"
+                  style={i > 0 ? { borderTop: "1.5px dashed #333" } : undefined}
                 >
                   {post.thumbnail_url ? (
-                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg">
-                      <Image src={post.thumbnail_url} alt="" fill className="object-cover" sizes="64px" />
+                    <div className="relative h-[56px] w-[56px] shrink-0 overflow-hidden rounded-lg">
+                      <Image src={post.thumbnail_url} alt="" fill className="object-cover" sizes="56px" />
                     </div>
                   ) : (
-                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg" style={{ background: SECTION_PINK }}>
-                      <span className="text-lg">📝</span>
+                    <div className="flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-lg" style={{ background: SECTION_PINK }}>
+                      <span className="text-xl">📝</span>
                     </div>
                   )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <span
-                        className="text-[10px] font-bold"
-                        style={{ color: catColor(post.category) }}
-                      >
-                        {post.category}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground">
-                        {new Date(post.created_at).toLocaleDateString("ja-JP")}
-                      </span>
-                    </div>
-                    <p className="text-[13px] font-bold leading-snug line-clamp-2" style={{ color: TEXT_DARK }}>
-                      {post.title}
-                    </p>
+                  <div className="flex min-w-0 flex-1 flex-col justify-center">
+                    <span className="text-[11px] font-bold" style={{ color: catColor(post.category) }}>{post.category}</span>
+                    <p className="mt-1 text-[13px] font-bold leading-[1.45] line-clamp-3" style={{ color: TEXT_DARK }}>{post.title}</p>
                   </div>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5" />
                 </Link>
               ))}
+              <Link
+                href="/blog"
+                className="flex items-center justify-center py-3 text-[13px] font-bold tracking-[0.15em] transition-opacity hover:opacity-60"
+                style={{ color: TEXT_DARK, borderTop: "1.5px dashed #333" }}
+              >
+                VIEW MORE
+              </Link>
             </div>
           )}
         </section>

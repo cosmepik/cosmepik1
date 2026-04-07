@@ -14,6 +14,7 @@ import { useSections } from "@/lib/section-context";
 import { type SectionItem, type SectionType } from "@/lib/sections";
 import { searchMockCosme } from "@/lib/mock-data";
 import { CosmeImage } from "@/components/CosmeImage";
+import { uploadImage } from "@/lib/storage";
 import type { CosmeItem } from "@/types";
 
 interface AddItemModalProps {
@@ -45,6 +46,30 @@ export function AddItemModal({
   const [isSearchPending, setIsSearchPending] = useState(false);
   const [searchApiError, setSearchApiError] = useState<string | null>(null);
   const [searchApiDebug, setSearchApiDebug] = useState<object | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const handleImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageUploading(true);
+    try {
+      const reader = new FileReader();
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      setImagePreview(dataUrl);
+      const url = await uploadImage(dataUrl, "cosme-items", `manual-${Date.now()}`);
+      setImage(url);
+    } catch {
+      setImage("");
+      setImagePreview(null);
+    } finally {
+      setImageUploading(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,6 +107,7 @@ export function AddItemModal({
     setProduct("");
     setLink("");
     setImage("");
+    setImagePreview(null);
     setPrice("");
     setBadge("");
     setLabel("");
@@ -347,15 +373,11 @@ export function AddItemModal({
                   </div>
                 </div>
               )}
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center text-xs">
-                  <span className="bg-card px-2 text-muted-foreground">または手動で入力</span>
-                </div>
-              </div>
-                  <div className="flex flex-col gap-2">
+              <div className="mt-5 rounded-xl border border-dashed border-border/80 bg-muted/30 p-4">
+                <p className="mb-1 text-center text-xs font-medium text-muted-foreground">手動で追加する</p>
+                <p className="mb-4 text-center text-[10px] text-muted-foreground/70">※手動で追加したコスメは収益化対象外です</p>
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-1.5">
                     <label className="text-sm font-medium text-card-foreground">
                       <Package className="mr-1 inline h-4 w-4" />
                       商品名 <span className="text-destructive">*</span>
@@ -364,31 +386,15 @@ export function AddItemModal({
                       type="text"
                       value={product}
                       onChange={(e) => setProduct(e.target.value)}
-                      placeholder="グリーンティーシード ヒアルロン セラム"
+                      placeholder="例：グリーンティーシード ヒアルロン セラム"
                       className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                       required
                     />
                   </div>
-                  {sectionType === "routine" && (
-                    <div className="flex flex-col gap-2">
-                      <label className="text-sm font-medium text-card-foreground">
-                        ステップラベル
-                      </label>
-                      <input
-                        type="text"
-                        value={label}
-                        onChange={(e) => setLabel(e.target.value)}
-                        placeholder="洗顔"
-                        className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-                      />
-                    </div>
-                  )}
                   {sectionType === "products" && (
                     <>
-                      <div className="flex flex-col gap-2">
-                        <label className="text-sm font-medium text-card-foreground">
-                          価格
-                        </label>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm font-medium text-card-foreground">価格</label>
                         <input
                           type="text"
                           value={price}
@@ -397,10 +403,8 @@ export function AddItemModal({
                           className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                         />
                       </div>
-                      <div className="flex flex-col gap-2">
-                        <label className="text-sm font-medium text-card-foreground">
-                          バッジ
-                        </label>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm font-medium text-card-foreground">バッジ</label>
                         <div className="flex gap-2">
                           {(["", "NEW", "BEST", "SALE"] as const).map((b) => (
                             <button
@@ -420,42 +424,53 @@ export function AddItemModal({
                       </div>
                     </>
                   )}
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-1.5">
                     <label className="text-sm font-medium text-card-foreground">
                       <LinkIcon className="mr-1 inline h-4 w-4" />
-                      商品リンク
+                      商品リンク <span className="text-xs font-normal text-muted-foreground">（任意）</span>
                     </label>
                     <input
                       type="url"
                       value={link}
                       onChange={(e) => setLink(e.target.value)}
-                      placeholder="https://example.com/product"
+                      placeholder="例：https://example.com/product"
                       className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                     />
                   </div>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-1.5">
                     <label className="text-sm font-medium text-card-foreground">
                       <ImageIcon className="mr-1 inline h-4 w-4" />
-                      画像URL
+                      商品画像 <span className="text-xs font-normal text-muted-foreground">（任意）</span>
                     </label>
-                    <input
-                      type="url"
-                      value={image}
-                      onChange={(e) => setImage(e.target.value)}
-                      placeholder="https://example.com/image.jpg"
-                      className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      商品画像のURLを入力してください
-                    </p>
+                    <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-background px-4 py-3 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-foreground">
+                      {imageUploading ? (
+                        <><Loader2 className="h-4 w-4 animate-spin" />アップロード中...</>
+                      ) : imagePreview || image ? (
+                        <>
+                          <img src={imagePreview || image} alt="" className="h-10 w-10 rounded-lg object-cover" />
+                          <span className="text-foreground">画像を変更する</span>
+                        </>
+                      ) : (
+                        <><ImageIcon className="h-4 w-4" />写真フォルダから選択</>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageFile}
+                        className="hidden"
+                        disabled={imageUploading}
+                      />
+                    </label>
                   </div>
                   <button
                     type="submit"
-                    className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-primary py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                    className="mt-1 flex items-center justify-center gap-2 rounded-xl bg-primary py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                   >
                     <Plus className="h-4 w-4" />
                     追加
                   </button>
+                </div>
+              </div>
                 </form>
           ) : null}
         </div>

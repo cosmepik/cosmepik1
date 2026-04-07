@@ -121,7 +121,7 @@ export default function AnalyticsPage() {
                 </div>
 
                 <p className="mt-3 text-xs text-white/60">
-                  すべてのメイクレシピの公開ページ（/p/◯◯）へのアクセス合計
+                  すべてのメイクレシピの公開ページ（/◯◯）へのアクセス合計
                 </p>
               </div>
             </div>

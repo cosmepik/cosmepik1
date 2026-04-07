@@ -15,6 +15,8 @@ import {
   Trash2,
   ExternalLink,
   ChevronRight,
+  Eye,
+  Newspaper,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SideMenu } from "@/components/cosme-link/side-menu";
@@ -306,6 +308,25 @@ export default function DashboardHomePage() {
     [],
   );
 
+  const [totalViews, setTotalViews] = useState<number | null>(null);
+  const [blogPosts, setBlogPosts] = useState<{ id: string; title: string; category: string; thumbnail_url?: string; created_at: string }[]>([]);
+
+  useEffect(() => {
+    if (!dashUser) return;
+    fetch("/api/analytics/views")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) setTotalViews(data.total ?? 0);
+      })
+      .catch(() => {});
+    fetch("/api/admin/blog")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.posts) setBlogPosts(data.posts.slice(0, 4));
+      })
+      .catch(() => {});
+  }, [dashUser]);
+
   const [showWelcome, setShowWelcome] = useState(false);
   useEffect(() => {
     if (!loading && sets.length > 0 && sessionStorage.getItem("cosmepik-show-welcome") === "1") {
@@ -335,6 +356,22 @@ export default function DashboardHomePage() {
             {displayName ? `${displayName} さん` : "マイページ"}
           </h1>
         </div>
+
+        {/* Total Views */}
+        {totalViews !== null && (
+          <div
+            className="mb-5 flex items-center gap-4 rounded-2xl bg-white px-5 py-2.5 shadow-sm"
+            style={{ border: "1.5px solid #eee" }}
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-500">
+              <Eye className="h-[18px] w-[18px]" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-medium text-muted-foreground">ページ総閲覧数</p>
+              <p className="mt-0.5 text-xl font-bold tabular-nums tracking-tight text-foreground">{totalViews.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">views</span></p>
+            </div>
+          </div>
+        )}
 
         {/* Section Title */}
         <div className="mb-4 flex items-center justify-between">
@@ -595,17 +632,15 @@ export default function DashboardHomePage() {
             ) : (
               <Link
                 href="/dashboard/premium"
-                className="mt-4 flex w-full flex-col items-center gap-2.5 overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 py-6 text-center transition-all hover:shadow-md hover:shadow-amber-100/50"
+                className="mt-4 flex w-full items-center gap-3 overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 px-4 py-3 transition-all hover:shadow-md hover:shadow-amber-100/50"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-400 text-white shadow-sm">
-                  <Crown className="h-5 w-5" />
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-400 text-white shadow-sm">
+                  <Crown className="h-4 w-4" />
                 </div>
-                <span className="text-sm font-semibold text-foreground">
-                  プレミアムプランで複数のメイクレシピを作成
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  無料プランではメイクレシピは1つまでです
-                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-foreground">プレミアムプランで複数作成</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">無料プランではメイクレシピは1つまでです</p>
+                </div>
               </Link>
             )}
 
@@ -838,6 +873,49 @@ export default function DashboardHomePage() {
               </div>
             )}
           </>
+        )}
+
+        {/* Blog Section */}
+        {blogPosts.length > 0 && (
+          <div className="mt-8">
+            <div className="mb-3 flex items-center gap-2">
+              <Newspaper className="h-4 w-4 text-pink-400" />
+              <h2 className="text-sm font-bold text-foreground">#cosmepik編集部</h2>
+            </div>
+            <div style={{ border: "1.5px dashed #333" }}>
+              {blogPosts.map((post, i) => (
+                <Link
+                  key={post.id}
+                  href={`/blog/${post.id}`}
+                  className="group flex items-center gap-3 px-3 py-2 transition-all hover:opacity-80"
+                  style={i > 0 ? { borderTop: "1.5px dashed #333" } : undefined}
+                >
+                  {post.thumbnail_url ? (
+                    <div className="relative h-[56px] w-[56px] shrink-0 overflow-hidden rounded-lg">
+                      <Image src={post.thumbnail_url} alt="" fill className="object-cover" sizes="56px" />
+                    </div>
+                  ) : (
+                    <div className="flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-lg bg-pink-50">
+                      <span className="text-xl">📝</span>
+                    </div>
+                  )}
+                  <div className="flex min-w-0 flex-1 flex-col justify-center">
+                    <span className="text-[11px] font-bold text-pink-400">{post.category}</span>
+                    <p className="mt-1 text-[13px] font-bold leading-[1.45] text-foreground line-clamp-2">
+                      {post.title}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+              <Link
+                href="/blog"
+                className="flex items-center justify-center py-3 text-[13px] font-bold tracking-[0.15em] transition-opacity hover:opacity-60"
+                style={{ color: "#1a1a1a", borderTop: "1.5px dashed #333" }}
+              >
+                VIEW MORE
+              </Link>
+            </div>
+          </div>
         )}
       </div>
     </main>
