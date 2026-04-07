@@ -31,17 +31,12 @@ function extractProductUrlFromAffiliate(url: string): string | null {
 }
 
 /**
- * 楽天商品URLかどうか
+ * 楽天商品URLかどうか（*.rakuten.co.jp 全般を認識）
  */
 function isRakutenProductUrl(url: string): boolean {
   try {
     const u = new URL(url);
-    return (
-      u.hostname.includes("item.rakuten.co.jp") ||
-      u.hostname.includes("hb.afl.rakuten.co.jp") ||
-      u.hostname.includes("search.rakuten.co.jp") ||
-      u.hostname.includes("product.rakuten.co.jp")
-    );
+    return u.hostname.endsWith(".rakuten.co.jp") || u.hostname === "rakuten.co.jp";
   } catch {
     return false;
   }

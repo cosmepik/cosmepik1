@@ -7,8 +7,15 @@
 import { cn } from "@/lib/utils";
 import { getCardDesign } from "@/lib/card-designs";
 import { AdBanner } from "@/components/AdSense";
+import { generateAffiliateLink } from "@/utils/affiliate";
 import type { InfluencerProfile, SnsLink } from "@/types";
 import type { Section, SectionItem } from "@/lib/sections";
+
+function aflHref(link: string | undefined, userAffiliateId?: string | null): string {
+  if (!link) return "#";
+  const { url } = generateAffiliateLink(userAffiliateId || null, link);
+  return url;
+}
 
 /* ── Inline SVG Icons（lucide-react を排除するため直接定義） ────── */
 
@@ -177,10 +184,10 @@ function SafeImage({ src, alt, className, sizes }: { src?: string; alt: string; 
   );
 }
 
-function RoutineItem({ item, listClassName, listImageClassName, cardColorStyle }: { item: SectionItem; listClassName: string; listImageClassName: string; cardColorStyle?: React.CSSProperties }) {
+function RoutineItem({ item, listClassName, listImageClassName, cardColorStyle, userAffiliateId }: { item: SectionItem; listClassName: string; listImageClassName: string; cardColorStyle?: React.CSSProperties; userAffiliateId?: string | null }) {
   return (
     <a
-      href={item.link || "#"}
+      href={aflHref(item.link, userAffiliateId)}
       target="_blank"
       rel="noopener noreferrer"
       data-afl={item.link || undefined}
@@ -201,11 +208,11 @@ function RoutineItem({ item, listClassName, listImageClassName, cardColorStyle }
   );
 }
 
-function ProductCard({ item, productClassName, productImageClassName, cardColorStyle }: { item: SectionItem; productClassName: string; productImageClassName: string; cardColorStyle?: React.CSSProperties }) {
+function ProductCard({ item, productClassName, productImageClassName, cardColorStyle, userAffiliateId }: { item: SectionItem; productClassName: string; productImageClassName: string; cardColorStyle?: React.CSSProperties; userAffiliateId?: string | null }) {
   return (
     <div className="group relative">
       <a
-        href={item.link || "#"}
+        href={aflHref(item.link, userAffiliateId)}
         target="_blank"
         rel="noopener noreferrer"
         data-afl={item.link || undefined}
@@ -251,7 +258,7 @@ function isExternalUrl(url: string): boolean {
   return url.startsWith("http://") || url.startsWith("https://");
 }
 
-function RecipeSectionBlock({ section, slug, cacheBust, isPremium }: { section: Section; slug?: string; cacheBust?: string; isPremium?: boolean }) {
+function RecipeSectionBlock({ section, slug, cacheBust, isPremium, userAffiliateId }: { section: Section; slug?: string; cacheBust?: string; isPremium?: boolean; userAffiliateId?: string | null }) {
   const placements = section.placements ?? [];
   if (!section.backgroundImage && placements.length === 0) return null;
   const bgSrc = isExternalUrl(section.backgroundImage ?? "")
@@ -312,7 +319,7 @@ function RecipeSectionBlock({ section, slug, cacheBust, isPremium }: { section: 
             >
               {p.image && (
                 <a
-                  href={p.link || "#"}
+                  href={aflHref(p.link, userAffiliateId)}
                   target="_blank"
                   rel="noopener noreferrer"
                   data-afl={p.link || undefined}
@@ -354,8 +361,9 @@ function RecipeSectionBlock({ section, slug, cacheBust, isPremium }: { section: 
   );
 }
 
-function SectionBlock({ section, cardDesignId, cardColor, slug, cacheBust, isPremium }: { section: Section; cardDesignId?: string; cardColor?: string; slug?: string; cacheBust?: string; isPremium?: boolean }) {
-  if (section.type === "recipe") return <RecipeSectionBlock section={section} slug={slug} cacheBust={cacheBust} isPremium={isPremium} />;
+function SectionBlock({ section, cardDesignId, cardColor, slug, cacheBust, isPremium, userAffiliateId }: { section: Section; cardDesignId?: string; cardColor?: string; slug?: string; cacheBust?: string; isPremium?: boolean; userAffiliateId?: string | null }) {
+  if (section.type === "recipe") return <RecipeSectionBlock section={section} slug={slug} cacheBust={cacheBust} isPremium={isPremium} userAffiliateId={userAffiliateId} />;
+
   const design = getCardDesign(cardDesignId);
   const { listClassName, productClassName, listImageClassName, productImageClassName } = design;
   const colorStyle = cardBgStyle(cardColor);
@@ -370,12 +378,12 @@ function SectionBlock({ section, cardDesignId, cardColor, slug, cacheBust, isPre
       <div>
         {section.type === "routine" && (
           <div className="flex flex-col gap-2">
-            {section.items.map((item) => <RoutineItem key={item.id} item={item} listClassName={listClassName} listImageClassName={listImageClassName} cardColorStyle={colorStyle} />)}
+            {section.items.map((item) => <RoutineItem key={item.id} item={item} listClassName={listClassName} listImageClassName={listImageClassName} cardColorStyle={colorStyle} userAffiliateId={userAffiliateId} />)}
           </div>
         )}
         {section.type === "products" && (
           <div className={cn("grid gap-3", section.columns === 1 ? "grid-cols-1" : "grid-cols-2")}>
-            {section.items.map((item) => <ProductCard key={item.id} item={item} productClassName={productClassName} productImageClassName={productImageClassName} cardColorStyle={colorStyle} />)}
+            {section.items.map((item) => <ProductCard key={item.id} item={item} productClassName={productClassName} productImageClassName={productImageClassName} cardColorStyle={colorStyle} userAffiliateId={userAffiliateId} />)}
           </div>
         )}
         {section.type === "heading" && (
@@ -394,7 +402,7 @@ function SectionBlock({ section, cardDesignId, cardColor, slug, cacheBust, isPre
             {section.items.map((item) => (
               <a
                 key={item.id}
-                href={item.link || "#"}
+                href={aflHref(item.link, userAffiliateId)}
                 target="_blank"
                 rel="noopener noreferrer"
                 data-afl={item.link || undefined}
@@ -460,7 +468,7 @@ export function PublicPageSSR({ username, profile, sections, themeVars, isPremiu
           <ProfileHeader username={username} profile={profile} />
 
           {sections.map((section) => (
-            <SectionBlock key={section.id} section={section} cardDesignId={profile?.cardDesignId} cardColor={profile?.cardColor} slug={username} cacheBust={cacheBust} isPremium={isPremium} />
+            <SectionBlock key={section.id} section={section} cardDesignId={profile?.cardDesignId} cardColor={profile?.cardColor} slug={username} cacheBust={cacheBust} isPremium={isPremium} userAffiliateId={profile?.rakutenAffiliateId} />
           ))}
 
           {!isPremium && <AdBanner className="w-full" />}
