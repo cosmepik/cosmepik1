@@ -189,20 +189,22 @@ async function fetchProducts(
   }
 }
 
-async function fetchIchibaItems(
+async function fetchIchibaByGenre(
   appId: string,
   accessKey: string,
   keyword: string,
   hits: number,
+  genreId: string,
 ): Promise<(CosmeItem & { _jan?: string })[]> {
   try {
     const params = new URLSearchParams({
       applicationId: appId,
       accessKey,
       keyword,
+      genreId,
       format: "json",
       formatVersion: "2",
-      hits: String(Math.min(hits * 2, 30)),
+      hits: String(hits),
     });
     const affiliateId = process.env.RAKUTEN_AFFILIATE_ID?.trim();
     if (affiliateId) params.set("affiliateId", affiliateId);
@@ -210,7 +212,7 @@ async function fetchIchibaItems(
       headers: buildHeaders(),
     });
     if (!res.ok) {
-      console.warn("[IchibaItem/Search] HTTP", res.status, await res.text().catch(() => ""));
+      console.warn(`[IchibaItem/Search genre=${genreId}] HTTP`, res.status);
       return [];
     }
     const data = await res.json().catch(() => ({}));
@@ -222,22 +224,28 @@ async function fetchIchibaItems(
         if (item) rawItems.push(item);
       }
     }
-    if (rawItems.length > 0) {
-      const sample = rawItems[0];
-      console.log("[IchibaItem/Search] sample item:", {
-        itemUrl: sample.itemUrl ?? "(missing)",
-        affiliateUrl: sample.affiliateUrl ?? "(missing)",
-        itemName: sample.itemName?.slice(0, 30),
-      });
-    }
-    const mapped = rawItems.map(mapIchibaItem);
-    return mapped.filter(
-      (item) => item.category && COSME_GENRES.test(item.category),
-    );
+    return rawItems.map(mapIchibaItem);
   } catch (e) {
-    console.error("[IchibaItem/Search] error:", e);
+    console.error(`[IchibaItem/Search genre=${genreId}] error:`, e);
     return [];
   }
+}
+
+const ICHIBA_GENRE_IDS = [
+  "100939",
+  "508384",
+];
+
+async function fetchIchibaItems(
+  appId: string,
+  accessKey: string,
+  keyword: string,
+  hits: number,
+): Promise<(CosmeItem & { _jan?: string })[]> {
+  const results = await Promise.all(
+    ICHIBA_GENRE_IDS.map((gid) => fetchIchibaByGenre(appId, accessKey, keyword, hits, gid)),
+  );
+  return results.flat();
 }
 
 /* ─── フォールバックキーワード生成 ─── */
