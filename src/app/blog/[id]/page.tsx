@@ -52,6 +52,7 @@ async function fetchPost(id: string): Promise<BlogPost | null> {
 type Props = { params: Promise<{ id: string }> };
 
 const COSMEPIK_URL_RE = /^https?:\/\/cosmepik\.me\/(?:p\/)?([a-zA-Z0-9_-]+)\s*$/;
+const BODY_IMAGE_RE = /^!\[([^\]]*)\]\(([^)]+)\)\s*$/;
 const URL_RE = /(https?:\/\/[^\s]+)/g;
 
 function renderLineWithLinks(text: string): React.ReactNode {
@@ -151,7 +152,16 @@ export default async function BlogDetailPage({ params }: Props) {
         {/* Body */}
         <div className="prose prose-sm max-w-none text-foreground">
           {post.body.split("\n").map((line, i) => {
-            const m = line.trim().match(COSMEPIK_URL_RE);
+            const trimmed = line.trim();
+            const imgMatch = trimmed.match(BODY_IMAGE_RE);
+            if (imgMatch) {
+              return (
+                <div key={i} className="my-4">
+                  <Image src={imgMatch[2]} alt={imgMatch[1] || ""} width={672} height={448} className="rounded-xl" style={{ width: "100%", height: "auto" }} />
+                </div>
+              );
+            }
+            const m = trimmed.match(COSMEPIK_URL_RE);
             if (m) {
               const profile = embeds.get(m[1]);
               if (profile) {
@@ -179,14 +189,20 @@ export default async function BlogDetailPage({ params }: Props) {
                       )}
                     </div>
                     <span className="shrink-0 rounded-full bg-primary px-3 py-1.5 text-[11px] font-bold text-white">
-                      見る
+                      メイクレシピを見る
                     </span>
                   </Link>
                 );
               }
             }
+            if (trimmed.startsWith("## ")) {
+              return <h2 key={i} className="mb-3 mt-8 text-lg font-bold text-foreground">{trimmed.slice(3)}</h2>;
+            }
+            if (trimmed.startsWith("### ")) {
+              return <h3 key={i} className="mb-2 mt-6 text-base font-bold text-foreground">{trimmed.slice(4)}</h3>;
+            }
             return (
-              <p key={i} className={line.trim() === "" ? "h-4" : "mb-4 leading-relaxed"}>
+              <p key={i} className={trimmed === "" ? "h-4" : "mb-4 leading-relaxed"}>
                 {renderLineWithLinks(line)}
               </p>
             );

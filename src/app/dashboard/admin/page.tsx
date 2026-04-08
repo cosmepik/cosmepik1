@@ -74,7 +74,48 @@ export default function AdminPage() {
   const [formPublished, setFormPublished] = useState(false);
   const [formSaving, setFormSaving] = useState(false);
   const [thumbnailUploading, setThumbnailUploading] = useState(false);
+  const [bodyImageUploading, setBodyImageUploading] = useState(false);
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
+  const bodyImageInputRef = useRef<HTMLInputElement>(null);
+  const bodyTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const insertAtCursor = useCallback((text: string) => {
+    const ta = bodyTextareaRef.current;
+    if (!ta) { setFormBody((prev) => prev + text); return; }
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const before = formBody.slice(0, start);
+    const after = formBody.slice(end);
+    const needsNewline = before.length > 0 && !before.endsWith("\n");
+    const insert = (needsNewline ? "\n" : "") + text;
+    setFormBody(before + insert + after);
+    requestAnimationFrame(() => {
+      const pos = start + insert.length;
+      ta.focus();
+      ta.setSelectionRange(pos, pos);
+    });
+  }, [formBody]);
+
+  const handleBodyImageSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !file.type.startsWith("image/")) return;
+    setBodyImageUploading(true);
+    try {
+      const reader = new FileReader();
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const url = await uploadImage(dataUrl, "blog", `body-${Date.now()}`);
+      insertAtCursor(`![image](${url})`);
+    } catch {
+      alert("画像のアップロードに失敗しました");
+    } finally {
+      setBodyImageUploading(false);
+    }
+  }, [insertAtCursor]);
 
   /* ── Fetch users ── */
   useEffect(() => {
@@ -385,7 +426,17 @@ export default function AdminPage() {
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-medium text-muted-foreground">本文</label>
-                    <textarea value={formBody} onChange={(e) => setFormBody(e.target.value)} rows={10} className="w-full rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20" placeholder="記事の本文を入力..." />
+                    <div className="flex items-center gap-1 rounded-t-lg border border-b-0 border-border bg-muted/30 px-2 py-1.5">
+                      <button type="button" onClick={() => insertAtCursor("## ")} className="rounded px-2 py-1 text-xs font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" title="大見出し">大見出し</button>
+                      <button type="button" onClick={() => insertAtCursor("### ")} className="rounded px-2 py-1 text-xs font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" title="小見出し">小見出し</button>
+                      <div className="mx-1 h-4 w-px bg-border" />
+                      <input ref={bodyImageInputRef} type="file" accept="image/*" onChange={handleBodyImageSelect} className="hidden" />
+                      <button type="button" onClick={() => bodyImageInputRef.current?.click()} disabled={bodyImageUploading} className="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50" title="画像を挿入">
+                        {bodyImageUploading ? <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary/30 border-t-primary" /> : <ImageIcon className="h-3.5 w-3.5" />}
+                        <span>画像</span>
+                      </button>
+                    </div>
+                    <textarea ref={bodyTextareaRef} value={formBody} onChange={(e) => setFormBody(e.target.value)} rows={10} className="w-full rounded-b-lg rounded-t-none border border-border px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20" placeholder={"記事の本文を入力...\n\n## 大見出し\n### 小見出し\nhttps://... でリンク化\nhttps://cosmepik.me/username でプロフィールカード"} />
                   </div>
                   <div className="flex items-center gap-2">
                     <input type="checkbox" id="published" checked={formPublished} onChange={(e) => setFormPublished(e.target.checked)} className="h-4 w-4 rounded border-border text-primary" />

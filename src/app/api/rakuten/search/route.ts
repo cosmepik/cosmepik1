@@ -126,6 +126,8 @@ function dedup(items: (CosmeItem & { _jan?: string })[]): CosmeItem[] {
   return result;
 }
 
+const COSME_GENRES = /コスメ|美容|化粧|香水|スキンケア|ヘアケア|ボディケア|メイク|ネイル|日焼け|UV|シャンプー|トリートメント|洗顔|クレンジング|美容液|乳液|化粧水|フェイスケア|リップ|アイ|ファンデ|下地|パウダー|チーク|マスカラ|コンシーラー|ハンドクリーム|ボディソープ|入浴剤|デオドラント|脱毛|除毛|コンタクト|カラコン/;
+
 /* ─── API 呼び出し ─── */
 
 function buildHeaders(): HeadersInit {
@@ -176,7 +178,6 @@ async function fetchProducts(
           "productName" in p ? p : (p as { Product?: RakutenProduct }).Product,
       ).filter(Boolean);
     }
-    const COSME_GENRES = /コスメ|美容|化粧|香水|スキンケア|ヘアケア|ボディケア|メイク|ネイル|日焼け|UV|シャンプー|トリートメント|洗顔|クレンジング|美容液|乳液|化粧水|フェイスケア|リップ|アイ|ファンデ|下地|パウダー|チーク|マスカラ|コンシーラー|ハンドクリーム|ボディソープ|入浴剤|デオドラント|脱毛|除毛/;
     const mapped = products.map(mapProduct);
     const filtered = mapped.filter(
       (item) => item.category && COSME_GENRES.test(item.category),
@@ -199,10 +200,9 @@ async function fetchIchibaItems(
       applicationId: appId,
       accessKey,
       keyword,
-      genreId: "100939",
       format: "json",
       formatVersion: "2",
-      hits: String(hits),
+      hits: String(Math.min(hits * 2, 30)),
     });
     const affiliateId = process.env.RAKUTEN_AFFILIATE_ID?.trim();
     if (affiliateId) params.set("affiliateId", affiliateId);
@@ -230,11 +230,50 @@ async function fetchIchibaItems(
         itemName: sample.itemName?.slice(0, 30),
       });
     }
-    return rawItems.map(mapIchibaItem);
+    const mapped = rawItems.map(mapIchibaItem);
+    return mapped.filter(
+      (item) => item.category && COSME_GENRES.test(item.category),
+    );
   } catch (e) {
     console.error("[IchibaItem/Search] error:", e);
     return [];
   }
+}
+
+/* ─── フォールバックキーワード生成 ─── */
+
+function relaxKeyword(kw: string): string | null {
+  const stripped = kw.replace(/\d{1,4}$/g, "").replace(/[#＃No.no.]+\d*/g, "").trim();
+  if (stripped !== kw && stripped.length >= 2) return stripped;
+
+  const words = kw.split(/\s+/);
+  if (words.length >= 2) {
+    const shorter = words.slice(0, -1).join(" ");
+    if (shorter.length >= 2) return shorter;
+  }
+
+  return null;
+}
+
+/* ─── 検索実行 ─── */
+
+async function searchRakuten(
+  productAppId: string,
+  productAccessKey: string,
+  appId: string,
+  accessKey: string,
+  keyword: string,
+  hits: number,
+): Promise<(CosmeItem & { _jan?: string })[]> {
+  const [products, ichibaItems] = await Promise.all([
+    fetchProducts(productAppId, productAccessKey, keyword, hits),
+    fetchIchibaItems(appId, accessKey, keyword, hits),
+  ]);
+  console.log(`[Search] keyword="${keyword}" products=${products.length} ichiba=${ichibaItems.length}`);
+  if (products.length >= 3) {
+    return [...products, ...ichibaItems];
+  }
+  return [...ichibaItems, ...products];
 }
 
 /* ─── GET ハンドラ ─── */
@@ -273,18 +312,17 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const [products, ichibaItems] = await Promise.all([
-      fetchProducts(productAppId!, productAccessKey!, keyword, hits),
-      fetchIchibaItems(appId, accessKey, keyword, hits),
-    ]);
+    const MIN_RESULTS = 3;
+    let merged = await searchRakuten(productAppId!, productAccessKey!, appId, accessKey, keyword, hits);
 
-    console.log(`[Search] keyword="${keyword}" products=${products.length} ichiba=${ichibaItems.length}`);
-
-    let merged: (CosmeItem & { _jan?: string })[];
-    if (products.length >= 3) {
-      merged = [...products, ...ichibaItems];
-    } else {
-      merged = [...ichibaItems, ...products];
+    if (dedup(merged).length < MIN_RESULTS) {
+      const relaxed = relaxKeyword(keyword);
+      if (relaxed) {
+        await new Promise((r) => setTimeout(r, 300));
+        const fallback = await searchRakuten(productAppId!, productAccessKey!, appId, accessKey, relaxed, hits);
+        merged = [...merged, ...fallback];
+        console.log(`[Search] fallback keyword="${relaxed}" +${fallback.length} items`);
+      }
     }
 
     const unique = dedup(merged);

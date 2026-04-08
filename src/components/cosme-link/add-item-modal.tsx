@@ -158,7 +158,7 @@ export function AddItemModal({
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
-        const res = await fetch(`/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=10`, {
+        const res = await fetch(`/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=15`, {
           signal: controller.signal,
         });
         clearTimeout(timeoutId);
@@ -178,7 +178,7 @@ export function AddItemModal({
           setSearchApiDebug(data?._debug ?? null);
           setSearchResults([]);
         } else if (res.ok && items.length === 0) {
-          setSearchApiError("該当する商品がありません（楽天API）");
+          setSearchApiError("商品が見つかりませんでした🙇\n3秒待ってもう一度検索ボタンを押してみて！");
           setSearchResults([]);
         }
       } catch (e) {
@@ -211,6 +211,18 @@ export function AddItemModal({
     handleClose();
   };
 
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.style.overflow = "hidden";
+    document.body.style.userSelect = "none";
+    document.body.style.webkitUserSelect = "none";
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.userSelect = "";
+      document.body.style.webkitUserSelect = "";
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const canAddCosme = ["routine", "products"].includes(sectionType);
@@ -228,13 +240,13 @@ export function AddItemModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
+    <div className="fixed inset-0 z-50 flex items-end justify-center" onTouchMove={(e) => e.stopPropagation()}>
       <div
-        className="absolute inset-0 bg-foreground/20 backdrop-blur-sm"
+        className="absolute inset-0 bg-foreground/20 backdrop-blur-sm select-none touch-none"
         onClick={handleClose}
         aria-hidden="true"
       />
-      <div className="relative z-10 flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-card shadow-xl animate-in slide-in-from-bottom duration-300">
+      <div className="relative z-10 flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-card shadow-xl animate-in slide-in-from-bottom duration-300 select-auto" style={{ WebkitUserSelect: "auto", userSelect: "auto" }}>
         <div className="flex shrink-0 items-center justify-between border-b border-border px-5 pb-2.5 pt-4">
           <h3 className="text-base font-bold text-card-foreground">
             {getTitle()}
@@ -322,7 +334,7 @@ export function AddItemModal({
               )}
               {searchApiError && (
                 <div className="mb-2 space-y-1">
-                  <p className="text-xs text-amber-600" title="原因追求用">
+                  <p className="whitespace-pre-line text-xs text-amber-600">
                     {searchApiError}
                   </p>
                   {searchApiDebug && (

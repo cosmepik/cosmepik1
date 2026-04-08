@@ -765,37 +765,40 @@ export default function DashboardHomePage() {
                       </div>
                     </div>
                     <div>
-                      <label
-                        htmlFor="create-name"
-                        className="mb-1.5 block text-sm font-medium text-foreground"
-                      >
-                        メイクレシピの名前
-                      </label>
+                      <div className="mb-1.5 flex items-baseline gap-1.5">
+                        <label
+                          htmlFor="create-name"
+                          className="text-sm font-medium text-foreground"
+                        >
+                          メイクレシピの名前
+                        </label>
+                        <span className="text-[10px] text-muted-foreground">（あとから変更できるよ）</span>
+                      </div>
+                      <p className="mb-2 text-xs text-muted-foreground">
+                        アイコンの下に表示される名前です
+                      </p>
                       <input
                         id="create-name"
                         type="text"
                         value={createName}
                         onChange={(e) => setCreateName(e.target.value)}
-                        placeholder="例：愛用コスメ"
-                        className="w-full rounded-xl border border-input bg-white px-4 py-3 text-sm text-card-foreground placeholder-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        placeholder="あなたの名前を入力"
+                        className="w-full rounded-xl border border-input bg-white px-4 py-3 text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                       />
                     </div>
                     <div>
                       <label
                         htmlFor="create-slug"
-                        className="mb-1.5 block text-sm font-medium text-foreground"
+                        className="mb-1 block text-sm font-medium text-foreground"
                       >
-                        あなた専用のURL
+                        コスメページのURLを決めましょう
                       </label>
                       <p className="mb-2 text-xs text-muted-foreground">
-                        英数字・ハイフン・アンダースコアで入力
+                        半角英数で入力してね（あとから変更できるよ）
                       </p>
                       <div className="flex overflow-hidden rounded-xl border-2 border-input bg-white transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
-                        <span className="flex items-center pl-4 text-sm font-medium text-muted-foreground shrink-0">
-                          {typeof window !== "undefined" &&
-                          window.location?.origin
-                            ? `${new URL(window.location.origin).host}/p/`
-                            : "cosmepik.com/p/"}
+                        <span className="flex items-center bg-muted/50 pl-4 pr-2 text-sm font-medium text-muted-foreground shrink-0 border-r border-input">
+                          cosmepik.me/
                         </span>
                         <input
                           id="create-slug"
@@ -837,8 +840,8 @@ export default function DashboardHomePage() {
                                 : null,
                             );
                           }}
-                          placeholder="あなたのID"
-                          className="min-w-0 flex-1 pl-1 pr-3 py-3 text-sm text-card-foreground placeholder-muted-foreground focus:outline-none"
+                          placeholder=""
+                          className="min-w-0 flex-1 border-0 bg-transparent py-3 pl-3 pr-3 text-foreground placeholder:text-muted-foreground focus:outline-none"
                         />
                       </div>
                       {slugInputError && (
