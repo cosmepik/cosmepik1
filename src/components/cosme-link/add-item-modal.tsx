@@ -43,6 +43,8 @@ export function AddItemModal({
   const [submittedKeyword, setSubmittedKeyword] = useState("");
   const [searchCount, setSearchCount] = useState(0);
   const [searchResults, setSearchResults] = useState<CosmeItem[]>([]);
+  const [visibleCount, setVisibleCount] = useState(15);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [isSearchPending, setIsSearchPending] = useState(false);
   const [searchApiError, setSearchApiError] = useState<string | null>(null);
   const [searchApiDebug, setSearchApiDebug] = useState<object | null>(null);
@@ -126,6 +128,34 @@ export function AddItemModal({
     if (!k) return;
     setSubmittedKeyword(k);
     setSearchCount((c) => c + 1);
+    setVisibleCount(15);
+  };
+
+  const handleLoadMore = async () => {
+    const k = submittedKeyword;
+    if (!k || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const nextPage = Math.floor(searchResults.length / 15) + 1;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      const res = await fetch(
+        `/api/rakuten/search?keyword=${encodeURIComponent(k)}&hits=15&page=${nextPage}`,
+        { signal: controller.signal },
+      );
+      clearTimeout(timeoutId);
+      const data = await res.json().catch(() => ({}));
+      const items: CosmeItem[] = Array.isArray(data?.items) ? data.items : [];
+      if (items.length > 0) {
+        const existingIds = new Set(searchResults.map((r) => r.id));
+        const newItems = items.filter((it) => !existingIds.has(it.id));
+        setSearchResults((prev) => [...prev, ...newItems]);
+        setVisibleCount((prev) => prev + 15);
+      }
+    } catch {
+    } finally {
+      setLoadingMore(false);
+    }
   };
 
   useEffect(() => {
@@ -347,7 +377,7 @@ export function AddItemModal({
               {searchResults.length > 0 && (
                 <div className="max-h-96 overflow-y-auto rounded-xl border border-border p-1.5">
                   <div className="grid grid-cols-3 gap-1.5">
-                    {searchResults.slice(0, 10).map((item) => (
+                    {searchResults.slice(0, visibleCount).map((item) => (
                       <div
                         key={item.id}
                         className="relative flex flex-col overflow-hidden rounded-xl bg-white shadow-sm"
@@ -383,6 +413,18 @@ export function AddItemModal({
                       </div>
                     ))}
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg py-2.5 text-xs font-medium text-primary transition-colors hover:bg-primary/5 disabled:opacity-50"
+                  >
+                    {loadingMore ? (
+                      <><div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary/30 border-t-primary" /> 読み込み中...</>
+                    ) : (
+                      "もっと見る"
+                    )}
+                  </button>
                 </div>
               )}
               <div className="mt-5 rounded-xl border border-dashed border-border/80 bg-muted/30 p-4">

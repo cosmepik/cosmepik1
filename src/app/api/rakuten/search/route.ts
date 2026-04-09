@@ -146,6 +146,7 @@ async function fetchProducts(
   accessKey: string,
   keyword: string,
   hits: number,
+  page = 1,
   retry = true,
 ): Promise<(CosmeItem & { _jan?: string })[]> {
   try {
@@ -156,6 +157,7 @@ async function fetchProducts(
       format: "json",
       formatVersion: "2",
       hits: String(hits),
+      page: String(page),
     });
     const affiliateId = process.env.RAKUTEN_AFFILIATE_ID?.trim();
     if (affiliateId) params.set("affiliateId", affiliateId);
@@ -164,7 +166,7 @@ async function fetchProducts(
     });
     if (res.status === 429 && retry) {
       await new Promise((r) => setTimeout(r, 1100));
-      return fetchProducts(appId, accessKey, keyword, hits, false);
+      return fetchProducts(appId, accessKey, keyword, hits, page, false);
     }
     if (!res.ok) {
       console.warn("[Product/Search] HTTP", res.status);
@@ -194,6 +196,7 @@ async function fetchIchibaItems(
   accessKey: string,
   keyword: string,
   hits: number,
+  page = 1,
   retry = true,
 ): Promise<(CosmeItem & { _jan?: string })[]> {
   try {
@@ -204,6 +207,7 @@ async function fetchIchibaItems(
       format: "json",
       formatVersion: "2",
       hits: String(hits),
+      page: String(page),
       sort: "standard",
     });
     const affiliateId = process.env.RAKUTEN_AFFILIATE_ID?.trim();
@@ -213,7 +217,7 @@ async function fetchIchibaItems(
     });
     if (res.status === 429 && retry) {
       await new Promise((r) => setTimeout(r, 1100));
-      return fetchIchibaItems(appId, accessKey, keyword, hits, false);
+      return fetchIchibaItems(appId, accessKey, keyword, hits, page, false);
     }
     if (!res.ok) {
       console.warn("[IchibaItem/Search] HTTP", res.status);
@@ -259,10 +263,11 @@ async function searchRakuten(
   accessKey: string,
   keyword: string,
   hits: number,
+  page = 1,
 ): Promise<(CosmeItem & { _jan?: string })[]> {
   const [products, ichibaItems] = await Promise.all([
-    fetchProducts(productAppId, productAccessKey, keyword, hits),
-    fetchIchibaItems(appId, accessKey, keyword, hits),
+    fetchProducts(productAppId, productAccessKey, keyword, hits, page),
+    fetchIchibaItems(appId, accessKey, keyword, hits, page),
   ]);
   console.log(`[Search] keyword="${keyword}" products=${products.length} ichiba=${ichibaItems.length}`);
   if (products.length >= 3) {
@@ -298,6 +303,7 @@ export async function GET(request: NextRequest) {
     Math.max(parseInt(searchParams.get("hits") ?? "10", 10), 1),
     30,
   );
+  const page = Math.max(parseInt(searchParams.get("page") ?? "1", 10), 1);
 
   if (!keyword || keyword.length < 2) {
     return NextResponse.json(
@@ -308,9 +314,9 @@ export async function GET(request: NextRequest) {
 
   try {
     const MIN_RESULTS = 3;
-    let merged = await searchRakuten(productAppId!, productAccessKey!, appId, accessKey, keyword, hits);
+    let merged = await searchRakuten(productAppId!, productAccessKey!, appId, accessKey, keyword, hits, page);
 
-    if (dedup(merged).length < MIN_RESULTS) {
+    if (page === 1 && dedup(merged).length < MIN_RESULTS) {
       const relaxed = relaxKeyword(keyword);
       if (relaxed) {
         await new Promise((r) => setTimeout(r, 300));
