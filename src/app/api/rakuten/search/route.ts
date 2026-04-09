@@ -189,30 +189,34 @@ async function fetchProducts(
   }
 }
 
-async function fetchIchibaByGenre(
+async function fetchIchibaItems(
   appId: string,
   accessKey: string,
   keyword: string,
   hits: number,
-  genreId: string,
+  retry = true,
 ): Promise<(CosmeItem & { _jan?: string })[]> {
   try {
     const params = new URLSearchParams({
       applicationId: appId,
       accessKey,
       keyword,
-      genreId,
       format: "json",
       formatVersion: "2",
       hits: String(hits),
+      sort: "standard",
     });
     const affiliateId = process.env.RAKUTEN_AFFILIATE_ID?.trim();
     if (affiliateId) params.set("affiliateId", affiliateId);
     const res = await fetch(`${ICHIBA_API_URL}?${params}`, {
       headers: buildHeaders(),
     });
+    if (res.status === 429 && retry) {
+      await new Promise((r) => setTimeout(r, 1100));
+      return fetchIchibaItems(appId, accessKey, keyword, hits, false);
+    }
     if (!res.ok) {
-      console.warn(`[IchibaItem/Search genre=${genreId}] HTTP`, res.status);
+      console.warn("[IchibaItem/Search] HTTP", res.status);
       return [];
     }
     const data = await res.json().catch(() => ({}));
@@ -226,26 +230,9 @@ async function fetchIchibaByGenre(
     }
     return rawItems.map(mapIchibaItem);
   } catch (e) {
-    console.error(`[IchibaItem/Search genre=${genreId}] error:`, e);
+    console.error("[IchibaItem/Search] error:", e);
     return [];
   }
-}
-
-const ICHIBA_GENRE_IDS = [
-  "100939",
-  "508384",
-];
-
-async function fetchIchibaItems(
-  appId: string,
-  accessKey: string,
-  keyword: string,
-  hits: number,
-): Promise<(CosmeItem & { _jan?: string })[]> {
-  const results = await Promise.all(
-    ICHIBA_GENRE_IDS.map((gid) => fetchIchibaByGenre(appId, accessKey, keyword, hits, gid)),
-  );
-  return results.flat();
 }
 
 /* ─── フォールバックキーワード生成 ─── */
