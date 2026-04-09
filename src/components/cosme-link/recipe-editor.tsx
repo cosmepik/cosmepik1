@@ -8,6 +8,7 @@ import { uploadImage } from "@/lib/storage";
 import type { Section, RecipePlacement } from "@/lib/sections";
 import { RecipeCanvas } from "./recipe-canvas";
 import { AddItemModal } from "./add-item-modal";
+import { OnboardingBubble } from "./onboarding-guide";
 
 function compressImage(file: File, maxWidth = 800, quality = 0.65): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -51,6 +52,7 @@ export function RecipeEditor() {
   const [tempComment, setTempComment] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const prevItemCountRef = useRef(0);
+  const [showEditTip, setShowEditTip] = useState(false);
 
   const backgroundImage = recipeSection?.backgroundImage || "";
   const placements = recipeSection?.placements ?? [];
@@ -85,6 +87,10 @@ export function RecipeEditor() {
       });
       if (newPlacements.length > 0) {
         setSelectedId(newPlacements[newPlacements.length - 1].id);
+        if (!localStorage.getItem("cosmetree:editTipShown")) {
+          localStorage.setItem("cosmetree:editTipShown", "1");
+          setTimeout(() => setShowEditTip(true), 600);
+        }
       }
     }
     prevItemCountRef.current = items.length;
@@ -169,6 +175,7 @@ export function RecipeEditor() {
 
   const startEditLabel = useCallback(() => {
     if (!selectedPlacement) return;
+    setShowEditTip(false);
     if (isCommentSelected) {
       setTempComment(selectedPlacement.comment ?? "");
       setEditingComment(true);
@@ -199,6 +206,7 @@ export function RecipeEditor() {
     if (!selectedId) {
       setEditingLabel(false);
       setEditingComment(false);
+      setShowEditTip(false);
     }
   }, [selectedId]);
 
@@ -212,19 +220,29 @@ export function RecipeEditor() {
         onChange={handleBackgroundUpload}
       />
 
-      <RecipeCanvas
-        backgroundImage={backgroundImage}
-        placements={placements}
-        editable
-        selectedId={selectedId}
-        onSelect={setSelectedId}
-        onMove={handleMove}
-        onBackgroundClick={() => fileInputRef.current?.click()}
-        onPinchScale={handleScale}
-      />
+      <div className="relative">
+        <RecipeCanvas
+          backgroundImage={backgroundImage}
+          placements={placements}
+          editable
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          onMove={handleMove}
+          onBackgroundClick={() => fileInputRef.current?.click()}
+          onPinchScale={handleScale}
+        />
+        <OnboardingBubble
+          stepIndex={0}
+          emoji="📸"
+          title="まずは写真をアップしよう！"
+          description="タップして顔写真をアップロードしてね"
+          arrow="none"
+          className="left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+        />
+      </div>
 
       {/* Toolbar */}
-      <div className="flex items-center justify-between gap-2">
+      <div className="relative flex items-center justify-between gap-2">
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
@@ -233,7 +251,7 @@ export function RecipeEditor() {
           <ImageIcon className="h-3.5 w-3.5" />
           写真変更
         </button>
-        <div className="flex items-center gap-2">
+        <div className="relative flex items-center gap-2">
           <button
             type="button"
             onClick={handleAddComment}
@@ -250,6 +268,15 @@ export function RecipeEditor() {
             <Plus className="h-4 w-4" />
             コスメを追加
           </button>
+          <OnboardingBubble
+            stepIndex={1}
+            emoji="💄"
+            title="コスメを追加してみよう！"
+            description={"追加後、タップで名前も編集できるよ ✏️"}
+            arrow="down"
+            arrowAlign="right"
+            className="bottom-full right-0 mb-3"
+          />
         </div>
       </div>
 
@@ -350,9 +377,30 @@ export function RecipeEditor() {
                 </button>
               ) : (
                 <>
-                  <button type="button" onClick={startEditLabel} className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95" aria-label="名前を編集">
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
+                  <div className="relative">
+                    <button type="button" onClick={startEditLabel} className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95" aria-label="名前を編集">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    {showEditTip && (
+                      <div
+                        className="absolute bottom-full right-0 z-50 mb-3 animate-in fade-in slide-in-from-bottom-2 duration-300"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex w-[220px] flex-col items-center gap-1.5 rounded-2xl bg-white px-5 py-4 shadow-xl ring-1 ring-black/[0.06]">
+                          <span className="text-2xl leading-none">✏️</span>
+                          <h3 className="text-sm font-bold text-foreground">コスメのタイトルを編集できるよ！</h3>
+                          <button
+                            type="button"
+                            onClick={() => setShowEditTip(false)}
+                            className="rounded-xl bg-primary px-5 py-2 text-xs font-bold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-[0.97]"
+                          >
+                            OK
+                          </button>
+                        </div>
+                        <div className="absolute -bottom-1.5 right-3 h-3 w-3 rotate-45 bg-white" />
+                      </div>
+                    )}
+                  </div>
                   <button type="button" onClick={() => handleScale(-0.15)} className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95" aria-label="縮小">
                     <ZoomOut className="h-3.5 w-3.5" />
                   </button>

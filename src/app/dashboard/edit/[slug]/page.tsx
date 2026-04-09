@@ -17,67 +17,12 @@ import { ProfileProvider, toProfile, useProfile, toInfluencerProfile } from "@/l
 import { ProfileThemeLoader } from "@/components/ProfileThemeLoader";
 import { ShareModal } from "@/components/ShareModal";
 import { useStylePickerOpen } from "@/components/cosme-link/style-picker";
-import { CosmepikLogo } from "@/components/cosmepik-logo";
 import { RecipeEditor } from "@/components/cosme-link/recipe-editor";
+import { OnboardingProvider } from "@/components/cosme-link/onboarding-guide";
 import { PublicProfileContent } from "@/components/PublicProfileContent";
 import { useTheme, applyTheme, applyBackground, applyFont, applyTextColor } from "@/lib/theme-context";
 import type { InfluencerProfile } from "@/types";
 
-const WELCOME_DISMISSED_KEY = "cosmepik-welcome-dismissed";
-
-function WelcomePopup() {
-  const [show, setShow] = useState(false);
-  const { openWithTab } = useStylePickerOpen();
-
-  useEffect(() => {
-    if (localStorage.getItem(WELCOME_DISMISSED_KEY) === "true") return;
-    setShow(true);
-  }, []);
-
-  if (!show) return null;
-
-  const handleStart = () => {
-    setShow(false);
-    localStorage.setItem(WELCOME_DISMISSED_KEY, "true");
-    openWithTab("background");
-  };
-
-  const handleClose = () => {
-    setShow(false);
-    localStorage.setItem(WELCOME_DISMISSED_KEY, "true");
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-foreground/30 backdrop-blur-sm"
-        onClick={handleClose}
-        aria-hidden="true"
-      />
-      <div className="relative z-10 flex w-full max-w-sm flex-col items-center gap-5 rounded-2xl border border-border bg-white p-8 shadow-xl animate-in fade-in zoom-in-95 duration-300">
-        <CosmepikLogo height={22} color="var(--primary)" />
-        <div className="flex flex-col items-center gap-2 text-center">
-          <h2 className="text-lg font-bold text-foreground">編集ページへようこそ！</h2>
-          <p className="text-sm text-muted-foreground">まずは、壁紙を設定しよう！</p>
-        </div>
-        <button
-          type="button"
-          onClick={handleStart}
-          className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground shadow-md transition-all hover:bg-primary/90 active:scale-[0.98]"
-        >
-          壁紙を選ぶ
-        </button>
-        <button
-          type="button"
-          onClick={handleClose}
-          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-        >
-          あとで設定する
-        </button>
-      </div>
-    </div>
-  );
-}
 
 function InlinePreview({ slug, onBack }: { slug: string; onBack: () => void }) {
   const { profile: ctxProfile } = useProfile();
@@ -419,7 +364,6 @@ function EditPageContent({ slug }: { slug: string }) {
       url={profileUrl}
       title="共有"
     />
-    <WelcomePopup />
     </div>
     </>
   );
@@ -429,7 +373,9 @@ function EditPageWithSections({ slug }: { slug: string }) {
   const { profile } = useProfile();
   return (
     <SectionProvider slug={slug} userAffiliateId={profile.rakutenAffiliateId || undefined} defaultEditMode>
-      <EditPageContent slug={slug} />
+      <OnboardingProvider>
+        <EditPageContent slug={slug} />
+      </OnboardingProvider>
     </SectionProvider>
   );
 }

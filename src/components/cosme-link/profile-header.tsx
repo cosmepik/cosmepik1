@@ -21,6 +21,7 @@ import { useSections } from "@/lib/section-context";
 import { useStylePickerOpen } from "@/components/cosme-link/style-picker";
 import { ProfileEditor } from "./profile-editor";
 import { SetupGuide } from "./setup-guide";
+import { OnboardingBubble } from "./onboarding-guide";
 
 function getSnsIcon(type: SnsLink["type"]) {
   switch (type) {
@@ -52,20 +53,42 @@ export function ProfileHeader() {
               <SetupGuide />
             </div>
             <div className="absolute right-0 top-0 z-10 flex flex-col items-end gap-2">
-              <button
-                onClick={() => setShowEditor(true)}
-                className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-md transition-all hover:bg-primary/90 active:scale-95"
-              >
-                <Pencil className="h-3 w-3" />
-                プロフィール編集
-              </button>
-              <button
-                onClick={() => openWithTab("theme")}
-                className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-md transition-all hover:bg-primary/90 active:scale-95"
-              >
-                <Palette className="h-3 w-3" />
-                デザイン編集
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setShowEditor(true)}
+                  className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-md transition-all hover:bg-primary/90 active:scale-95"
+                >
+                  <Pencil className="h-3 w-3" />
+                  プロフィール編集
+                </button>
+                <OnboardingBubble
+                  stepIndex={2}
+                  emoji="👤"
+                  title="プロフィールを編集しよう"
+                  description="名前やSNSリンクを設定しよう"
+                  arrow="up"
+                  arrowAlign="right"
+                  className="top-full right-0 mt-2"
+                />
+              </div>
+              <div className="relative">
+                <button
+                  onClick={() => openWithTab("theme")}
+                  className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-md transition-all hover:bg-primary/90 active:scale-95"
+                >
+                  <Palette className="h-3 w-3" />
+                  デザイン編集
+                </button>
+                <OnboardingBubble
+                  stepIndex={3}
+                  emoji="🎨"
+                  title="壁紙を設定しよう！"
+                  description="テーマやフォントも自由にカスタマイズ"
+                  arrow="up"
+                  arrowAlign="right"
+                  className="top-full right-0 mt-2"
+                />
+              </div>
             </div>
           </>
         )}
