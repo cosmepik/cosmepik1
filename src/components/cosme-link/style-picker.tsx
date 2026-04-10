@@ -21,7 +21,7 @@ import { uploadImage } from "@/lib/storage";
 import { designPresets } from "@/lib/design-presets";
 import { cardDesigns, type CardDesignId } from "@/lib/card-designs";
 import { fonts, getFontFamily, type FontId } from "@/lib/fonts";
-import { Palette, X, Check, Paintbrush, Upload, Plus, Type, LayoutTemplate, LayoutGrid } from "lucide-react";
+import { Palette, X, Check, Paintbrush, Upload, Plus, Type, LayoutGrid } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 
@@ -126,7 +126,7 @@ export function useStylePickerOpen() {
     : {
         open: false,
         setOpen: () => {},
-        openTab: "color" as TabType,
+        openTab: "theme" as TabType,
         setOpenTab: () => {},
         openWithTab: () => {},
         setIsRecipeMode: () => {},
@@ -300,6 +300,7 @@ function PresetGrid({
           currentBackgroundId === preset.backgroundId &&
           currentFontId === preset.fontId &&
           (!preset.cardDesignId || currentCardDesignId === preset.cardDesignId);
+        const theme = themes.find((t) => t.id === preset.themeId);
         return (
           <button
             key={preset.id}
@@ -323,17 +324,21 @@ function PresetGrid({
                 <Check className="h-3 w-3" />
               </div>
             )}
-            <div
-              className="h-10 w-full rounded-lg"
-              style={{
-                background: preset.previewColor,
-                opacity: 0.9,
-              }}
-            />
-            <div className="flex flex-col">
-              <span className="text-xs font-bold leading-tight text-card-foreground">{preset.nameJa}</span>
-              <span className="mt-0.5 text-[10px] leading-tight text-muted-foreground">{preset.description}</span>
+            <div className="flex items-center -space-x-1">
+              <div
+                className="h-7 w-7 rounded-full border-2 border-card shadow-sm"
+                style={{ backgroundColor: theme?.preview.primary ?? preset.previewColor }}
+              />
+              <div
+                className="h-7 w-7 rounded-full border-2 border-card shadow-sm"
+                style={{ backgroundColor: theme?.preview.secondary ?? "#f0f0f0" }}
+              />
+              <div
+                className="h-7 w-7 rounded-full border-2 border-card shadow-sm"
+                style={{ backgroundColor: theme?.preview.accent ?? "#e0e0e0" }}
+              />
             </div>
+            <span className="text-xs font-bold leading-tight text-card-foreground">{preset.nameJa}</span>
           </button>
         );
       })}
@@ -1118,21 +1123,8 @@ export function StylePicker() {
                     : "bg-secondary text-secondary-foreground hover:bg-accent"
                 )}
               >
-                <LayoutTemplate className="h-3.5 w-3.5 shrink-0" />
-                テーマ
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("color")}
-                className={cn(
-                  "flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors",
-                  activeTab === "color"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-secondary-foreground hover:bg-accent"
-                )}
-              >
                 <Palette className="h-3.5 w-3.5 shrink-0" />
-                カラー
+                テーマカラー
               </button>
               <button
                 type="button"
@@ -1203,19 +1195,6 @@ export function StylePicker() {
                         detail: { backgroundImageUrl: "" },
                       })
                     );
-                  }}
-                  onClose={() => setOpen(false)}
-                />
-              ) : activeTab === "color" ? (
-                <ThemeGrid
-                  currentThemeId={themeId}
-                  onSelect={(id) => {
-                    setThemeId(id as ThemeId);
-                    setProfile({
-                      username: slug,
-                      themeId: id,
-                      updatedAt: new Date().toISOString(),
-                    }).catch(() => {});
                   }}
                   onClose={() => setOpen(false)}
                 />

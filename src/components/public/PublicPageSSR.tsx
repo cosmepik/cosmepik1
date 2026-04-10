@@ -147,8 +147,8 @@ function ProfileHeader({ username, profile }: { username: string; profile: Influ
         {profile?.bioSub && <p className="text-xs text-muted-foreground">{profile.bioSub}</p>}
         {(skinType || personalColor) && (
           <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
-            {skinType && <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-medium text-secondary-foreground">{skinType}</span>}
-            {personalColor && <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-medium text-secondary-foreground">{personalColor}</span>}
+            {skinType && <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-medium text-secondary-foreground shadow-sm ring-1 ring-black/[0.06]">{skinType}</span>}
+            {personalColor && <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-medium text-secondary-foreground shadow-sm ring-1 ring-black/[0.06]">{personalColor}</span>}
           </div>
         )}
       </div>
@@ -307,6 +307,7 @@ function RecipeSectionBlock({ section, slug, cacheBust, isPremium, userAffiliate
             );
           }
           const scale = p.scale ?? 1;
+          const labelAlign = p.x > 75 ? "self-end" : p.x < 25 ? "self-start" : "self-center";
           return (
             <div
               key={p.id}
@@ -329,9 +330,9 @@ function RecipeSectionBlock({ section, slug, cacheBust, isPremium, userAffiliate
                 </a>
               )}
               {(p.brand || p.product) && (
-                <div className="max-w-[100px] bg-black/40 px-1.5 py-0.5 text-center" style={{ backdropFilter: "blur(2px)" }}>
+                <div className={`w-[100px] ${labelAlign} bg-black/40 px-1.5 py-0.5 text-center`} style={{ backdropFilter: "blur(2px)", fontFamily: "'Noto Sans JP', sans-serif" }}>
                   {p.brand && <p className="truncate text-[9px] font-bold text-white">{p.brand}</p>}
-                  {p.product && <p className="line-clamp-3 text-[8px] font-medium leading-tight text-white">{p.product}</p>}
+                  {p.product && <p className="line-clamp-4 text-[8px] font-medium leading-tight text-white">{p.product}</p>}
                 </div>
               )}
             </div>

@@ -26,7 +26,7 @@ export const designPresets: DesignPreset[] = [
     description: "シンプルで清潔感",
     themeId: "default",
     backgroundId: "solid-white",
-    fontId: "sans",
+    fontId: "mincho",
     cardDesignId: "default",
     previewColor: "#4a9e6e",
   },
@@ -36,7 +36,7 @@ export const designPresets: DesignPreset[] = [
     description: "爽やかなミント",
     themeId: "mint-sparkle",
     backgroundId: "gradient-mermaid",
-    fontId: "sans",
+    fontId: "mincho",
     previewColor: "#56c8c8",
   },
   {
@@ -45,7 +45,7 @@ export const designPresets: DesignPreset[] = [
     description: "ふんわりピンク",
     themeId: "peach-blossom",
     backgroundId: "gradient-sakura",
-    fontId: "rounded",
+    fontId: "mincho",
     previewColor: "#e8829a",
   },
   {
@@ -54,7 +54,7 @@ export const designPresets: DesignPreset[] = [
     description: "やさしいパープル",
     themeId: "lavender-haze",
     backgroundId: "gradient-lavender",
-    fontId: "rounded",
+    fontId: "mincho",
     previewColor: "#9b8ec4",
   },
   {
@@ -72,7 +72,7 @@ export const designPresets: DesignPreset[] = [
     description: "クールなブルー",
     themeId: "aqua-serum",
     backgroundId: "gradient-ocean",
-    fontId: "sans",
+    fontId: "mincho",
     previewColor: "#8bb5a2",
   },
   {
@@ -81,7 +81,7 @@ export const designPresets: DesignPreset[] = [
     description: "あたたかいオレンジ",
     themeId: "vitamin-glow",
     backgroundId: "gradient-sunset",
-    fontId: "rounded",
+    fontId: "mincho",
     previewColor: "#e8943a",
   },
   {
@@ -90,7 +90,7 @@ export const designPresets: DesignPreset[] = [
     description: "あたたかいイエロー",
     themeId: "honey-butter",
     backgroundId: "gradient-honey",
-    fontId: "rounded",
+    fontId: "mincho",
     previewColor: "#c9a84c",
   },
   {
@@ -99,7 +99,7 @@ export const designPresets: DesignPreset[] = [
     description: "シックなネイビー",
     themeId: "midnight-navy",
     backgroundId: "solid-cream",
-    fontId: "serif",
+    fontId: "mincho",
     previewColor: "#4a5e8a",
   },
   {
@@ -108,7 +108,7 @@ export const designPresets: DesignPreset[] = [
     description: "大胆なレッド",
     themeId: "cherry-red",
     backgroundId: "solid-blush",
-    fontId: "zen",
+    fontId: "mincho",
     previewColor: "#c94c4c",
   },
   {
@@ -117,7 +117,7 @@ export const designPresets: DesignPreset[] = [
     description: "幻想的なグラデ",
     themeId: "mint-sparkle",
     backgroundId: "gradient-aurora",
-    fontId: "zen-maru",
+    fontId: "mincho",
     previewColor: "#56c8c8",
   },
   {
@@ -126,7 +126,7 @@ export const designPresets: DesignPreset[] = [
     description: "ポップで楽しい",
     themeId: "lavender-haze",
     backgroundId: "gradient-unicorn",
-    fontId: "kosugi",
+    fontId: "mincho",
     previewColor: "#9b8ec4",
   },
 ];

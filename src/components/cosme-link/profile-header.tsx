@@ -124,13 +124,13 @@ export function ProfileHeader() {
           {(profile.skinType || profile.personalColor) && (
             <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
               {profile.skinType && skinTypeLabels[profile.skinType] && (
-                <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-medium text-secondary-foreground">
+                <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-medium text-secondary-foreground shadow-sm ring-1 ring-black/[0.06]">
                   {skinTypeLabels[profile.skinType]}
                 </span>
               )}
               {profile.personalColor &&
                 personalColorLabels[profile.personalColor] && (
-                  <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-medium text-secondary-foreground">
+                  <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-medium text-secondary-foreground shadow-sm ring-1 ring-black/[0.06]">
                     {personalColorLabels[profile.personalColor]}
                   </span>
                 )}

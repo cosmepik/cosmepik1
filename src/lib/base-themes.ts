@@ -77,7 +77,7 @@ export const BASE_THEMES: BaseTheme[] = [
     description: "華やかで女性らしい",
     themeId: "feminine",
     cardDesignId: "pop",
-    fontId: "kosugi",
+    fontId: "mincho",
   },
   {
     id: "fresh",

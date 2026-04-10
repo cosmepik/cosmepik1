@@ -293,7 +293,7 @@ function PlacementItem({
   );
 
   const labelElement = (placement.brand || placement.product) ? (
-    <div className={`w-[100px] ${labelAlign} bg-black/40 px-1.5 py-0.5 text-center backdrop-blur-[2px]`}>
+    <div className={`w-[100px] ${labelAlign} bg-black/40 px-1.5 py-0.5 text-center backdrop-blur-[2px]`} style={{ fontFamily: "'Noto Sans JP', sans-serif" }}>
       {placement.brand && (
         <p className="truncate text-[9px] font-bold text-white">{placement.brand}</p>
       )}

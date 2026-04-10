@@ -178,10 +178,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [cardColor, setCardColorState] = useState<string>("");
 
   useEffect(() => {
-    // 公開プロフィールページでは SSR の inline style が正しいテーマを提供する
     if (isPublicProfilePage(pathname)) return;
 
-    // テーマカラーは Mint Sparkle に固定（:root のインラインスタイルをリセット）
     resetTheme();
 
     const onEdit = isEditPage(pathname);

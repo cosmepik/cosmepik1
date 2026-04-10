@@ -1,9 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { AppHeader } from "@/components/AppHeader";
-import { createAdminClient } from "@/lib/supabase/admin";
 
 export const revalidate = 60;
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 interface BlogPost {
   id: string;
@@ -29,15 +31,19 @@ const catColor = (cat: string) => {
 };
 
 async function fetchAllPosts(): Promise<BlogPost[]> {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return [];
   try {
-    const admin = createAdminClient();
-    if (!admin) return [];
-    const { data } = await admin
-      .from("blog_posts")
-      .select("id, title, category, thumbnail_url, created_at")
-      .eq("published", true)
-      .order("created_at", { ascending: false });
-    return (data as BlogPost[]) ?? [];
+    const url = `${SUPABASE_URL}/rest/v1/blog_posts?published=eq.true&select=id,title,category,thumbnail_url,created_at&order=created_at.desc`;
+    const res = await fetch(url, {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        Accept: "application/json",
+      },
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return [];
+    return (await res.json()) as BlogPost[];
   } catch {
     return [];
   }

@@ -108,7 +108,6 @@ const FONT_URL_MAP: Partial<Record<FontId, string>> = {
   zen: "Zen+Kaku+Gothic+New:wght@400;500;700",
   "zen-maru": "Zen+Maru+Gothic:wght@400;500;700",
   "mplus-rounded": "M+PLUS+Rounded+1c:wght@400;500;700",
-  kosugi: "Kosugi+Maru",
   "noto-serif": "Noto+Serif+JP:wght@400;500;600;700",
 };
 

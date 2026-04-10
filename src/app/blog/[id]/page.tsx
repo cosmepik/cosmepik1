@@ -3,10 +3,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { fetchPublicPageData } from "@/lib/supabase-fetch";
 
 export const revalidate = 60;
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 interface BlogPost {
   id: string;
@@ -34,16 +35,19 @@ const catColor = (cat: string) => {
 };
 
 async function fetchPost(id: string): Promise<BlogPost | null> {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return null;
   try {
-    const admin = createAdminClient();
-    if (!admin) return null;
-    const { data } = await admin
-      .from("blog_posts")
-      .select("*")
-      .eq("id", id)
-      .eq("published", true)
-      .single();
-    return data as BlogPost | null;
+    const url = `${SUPABASE_URL}/rest/v1/blog_posts?id=eq.${encodeURIComponent(id)}&published=eq.true&select=id,title,body,thumbnail_url,category,published,created_at`;
+    const res = await fetch(url, {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        Accept: "application/vnd.pgrst.object+json",
+      },
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as BlogPost;
   } catch {
     return null;
   }
@@ -76,6 +80,32 @@ interface EmbedProfile {
   bio?: string;
 }
 
+async function fetchProfileLight(username: string): Promise<EmbedProfile | null> {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return null;
+  try {
+    const url = `${SUPABASE_URL}/rest/v1/profiles?username=eq.${encodeURIComponent(username)}&select=username,display_name,avatar_url,bio`;
+    const res = await fetch(url, {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        Accept: "application/vnd.pgrst.object+json",
+      },
+      next: { revalidate: 300 },
+    });
+    if (!res.ok) return null;
+    const d = await res.json();
+    if (!d?.username) return null;
+    return {
+      username: d.username,
+      displayName: d.display_name || d.username,
+      avatarUrl: d.avatar_url || undefined,
+      bio: d.bio || undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
 async function resolveEmbeds(body: string): Promise<Map<string, EmbedProfile>> {
   const lines = body.split("\n");
   const usernames = new Set<string>();
@@ -86,17 +116,8 @@ async function resolveEmbeds(body: string): Promise<Map<string, EmbedProfile>> {
   const map = new Map<string, EmbedProfile>();
   await Promise.all(
     [...usernames].map(async (u) => {
-      try {
-        const { profile } = await fetchPublicPageData(u);
-        if (profile) {
-          map.set(u, {
-            username: profile.username,
-            displayName: profile.displayName || profile.username,
-            avatarUrl: profile.avatarUrl,
-            bio: profile.bio,
-          });
-        }
-      } catch {}
+      const profile = await fetchProfileLight(u);
+      if (profile) map.set(u, profile);
     }),
   );
   return map;

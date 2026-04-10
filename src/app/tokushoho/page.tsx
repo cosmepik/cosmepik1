@@ -55,8 +55,8 @@ export default function TokushohoPage() {
                   メールアドレス
                 </th>
                 <td className="px-4 py-3.5 text-muted-foreground">
-                  <a href="mailto:cosmepik.team@gmail.com" className="font-medium text-green hover:underline">
-                    cosmepik.team@gmail.com
+                  <a href="mailto:info@cosmepik.me" className="font-medium text-green hover:underline">
+                    info@cosmepik.me
                   </a>
                 </td>
               </tr>

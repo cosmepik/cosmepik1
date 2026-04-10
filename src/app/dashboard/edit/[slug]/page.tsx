@@ -21,6 +21,7 @@ import { RecipeEditor } from "@/components/cosme-link/recipe-editor";
 import { OnboardingProvider } from "@/components/cosme-link/onboarding-guide";
 import { PublicProfileContent } from "@/components/PublicProfileContent";
 import { useTheme, applyTheme, applyBackground, applyFont, applyTextColor } from "@/lib/theme-context";
+import { getFontFamily } from "@/lib/fonts";
 import type { InfluencerProfile } from "@/types";
 
 
@@ -109,6 +110,7 @@ function EditPageContent({ slug }: { slug: string }) {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const editScrollRef = useRef(0);
   const previewRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const { themeId, backgroundId, fontId, textColor } = useTheme();
 
   useEffect(() => {
@@ -118,6 +120,20 @@ function EditPageContent({ slug }: { slug: string }) {
     applyFont(fontId);
     if (textColor) applyTextColor(textColor);
   }, [isPreviewMode, themeId, backgroundId, fontId, textColor]);
+
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    applyTheme(themeId, el);
+    el.style.setProperty("--font-body", getFontFamily(fontId));
+    if (textColor) {
+      el.style.setProperty("--foreground", textColor);
+      el.style.setProperty("--card-foreground", textColor);
+    } else {
+      el.style.removeProperty("--foreground");
+      el.style.removeProperty("--card-foreground");
+    }
+  }, [themeId, fontId, textColor]);
 
   const enterPreview = useCallback(() => {
     editScrollRef.current = window.scrollY;
@@ -201,7 +217,15 @@ function EditPageContent({ slug }: { slug: string }) {
 
     {/* Edit layer */}
     <div style={{ display: isPreviewMode ? "none" : "block" }}>
-    <main className="relative min-h-screen">
+    <main
+      className="relative min-h-screen"
+      style={{
+        backgroundColor: "var(--page-bg, var(--background))",
+        backgroundImage: "var(--page-bg-image, none)",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
       {backgroundImageUrl && !usePreset && (
         <div
           className="fixed inset-0 z-0"
@@ -331,7 +355,7 @@ function EditPageContent({ slug }: { slug: string }) {
             <p className="text-sm text-muted-foreground animate-pulse">読み込み中...</p>
           </div>
         ) : (
-          <>
+          <div ref={contentRef}>
             <ProfileHeader />
 
             <div className="mx-auto mt-3 flex max-w-[400px] flex-col gap-2">
@@ -353,7 +377,7 @@ function EditPageContent({ slug }: { slug: string }) {
                 </>
               )}
             </div>
-          </>
+          </div>
         )}
       </div>
       </div>

@@ -76,12 +76,12 @@ export function ProfileHeaderView({ username, profile }: ProfileHeaderViewProps)
         {(skinType || personalColor) && (
           <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
             {skinType && (
-              <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-medium text-secondary-foreground">
+              <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-medium text-secondary-foreground shadow-sm ring-1 ring-black/[0.06]">
                 {skinType}
               </span>
             )}
             {personalColor && (
-              <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-medium text-secondary-foreground">
+              <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-medium text-secondary-foreground shadow-sm ring-1 ring-black/[0.06]">
                 {personalColor}
               </span>
             )}

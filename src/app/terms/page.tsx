@@ -11,7 +11,7 @@ export default function TermsPage() {
       </AppHeader>
       <div className="mx-auto max-w-3xl px-4 py-12">
         <h1 className="mb-8 text-2xl font-bold text-foreground">利用規約</h1>
-        <p className="mb-8 text-sm text-muted-foreground">最終更新日：2026年3月</p>
+        <p className="mb-8 text-sm text-muted-foreground">最終更新日：2026年4月</p>
 
         <div className="space-y-8 rounded-xl bg-white p-6 shadow-sm text-sm text-foreground">
 
@@ -214,11 +214,30 @@ export default function TermsPage() {
           <section>
             <h2 className="mb-4 text-lg font-bold text-foreground">第7章 個人情報</h2>
 
-            <div>
-              <h3 className="mb-2 text-base font-semibold text-foreground">第14条（個人情報の取扱い）</h3>
-              <p className="leading-relaxed text-muted-foreground">
-                運営者は、<Link href="/privacy" className="font-medium text-primary underline underline-offset-2 hover:opacity-80">プライバシーポリシー</Link>に従い、ユーザーの個人情報を適切に取り扱います。ユーザーは、本サービスの利用にあたり、プライバシーポリシーに同意するものとします。
-              </p>
+            <div className="space-y-4">
+              <div>
+                <h3 className="mb-2 text-base font-semibold text-foreground">第14条（個人情報の取扱い）</h3>
+                <ol className="list-decimal pl-6 space-y-1 text-muted-foreground leading-relaxed">
+                  <li>運営者は、<Link href="/privacy" className="font-medium text-primary underline underline-offset-2 hover:opacity-80">プライバシーポリシー</Link>に従い、ユーザーの個人情報を適切に取り扱います。</li>
+                  <li>ユーザーは、本サービスの利用登録を完了した時点で、プライバシーポリシーおよび本規約の内容に同意したものとみなされます。</li>
+                  <li>本サービスでは、ユーザーがアップロードしたプロフィール画像、メイクレシピ用写真その他の画像データを、サービス提供に必要な範囲で保存・利用します。</li>
+                </ol>
+              </div>
+
+              <div>
+                <h3 className="mb-2 text-base font-semibold text-foreground">第15条（管理者によるデータへのアクセス）</h3>
+                <ol className="list-decimal pl-6 space-y-1 text-muted-foreground leading-relaxed">
+                  <li>運営者は、本サービスの運営・管理・改善、不正行為への対応、およびユーザーサポートの目的で、管理画面を通じてユーザーデータ（プロフィール情報、アップロードされた画像、コスメリスト、閲覧数・クリック数等の利用状況を含みます。）にアクセスすることがあります。</li>
+                  <li>管理画面へのアクセスは、運営者が指定した管理者アカウントに限定されており、前項に定める目的以外の利用は行いません。</li>
+                </ol>
+              </div>
+
+              <div>
+                <h3 className="mb-2 text-base font-semibold text-foreground">第16条（外部サービスへのデータ送信）</h3>
+                <p className="leading-relaxed text-muted-foreground">
+                  本サービスの提供にあたり、認証・データ保存（Supabase）、商品検索（楽天API）、決済処理（Stripe）、アクセス解析（Google Analytics）、広告配信（Google AdSense）等の外部サービスにユーザーデータが送信される場合があります。各外部サービスにおけるデータの取扱いについては、それぞれのプライバシーポリシーが適用されます。
+                </p>
+              </div>
             </div>
           </section>
 
@@ -228,14 +247,14 @@ export default function TermsPage() {
 
             <div className="space-y-4">
               <div>
-                <h3 className="mb-2 text-base font-semibold text-foreground">第15条（通知）</h3>
+                <h3 className="mb-2 text-base font-semibold text-foreground">第17条（通知）</h3>
                 <p className="leading-relaxed text-muted-foreground">
                   運営者からユーザーへの通知は、本サービス上での表示、登録されたメールアドレスへの送信、その他運営者が適切と判断する方法により行います。
                 </p>
               </div>
 
               <div>
-                <h3 className="mb-2 text-base font-semibold text-foreground">第16条（本規約の変更）</h3>
+                <h3 className="mb-2 text-base font-semibold text-foreground">第18条（本規約の変更）</h3>
                 <ol className="list-decimal pl-6 space-y-1 text-muted-foreground leading-relaxed">
                   <li>運営者は、必要に応じて本規約を変更することができます。変更後の規約は、本サービス上での掲示その他適切な方法で周知します。</li>
                   <li>変更後も本サービスの利用を継続した場合、ユーザーは変更後の規約に同意したものとみなされます。</li>
@@ -243,21 +262,21 @@ export default function TermsPage() {
               </div>
 
               <div>
-                <h3 className="mb-2 text-base font-semibold text-foreground">第17条（権利義務の譲渡禁止）</h3>
+                <h3 className="mb-2 text-base font-semibold text-foreground">第19条（権利義務の譲渡禁止）</h3>
                 <p className="leading-relaxed text-muted-foreground">
                   ユーザーは、運営者の事前の承諾なく、本規約上の地位または権利義務を第三者に譲渡してはなりません。
                 </p>
               </div>
 
               <div>
-                <h3 className="mb-2 text-base font-semibold text-foreground">第18条（分離可能性）</h3>
+                <h3 className="mb-2 text-base font-semibold text-foreground">第20条（分離可能性）</h3>
                 <p className="leading-relaxed text-muted-foreground">
                   本規約のいずれかの条項が無効または執行不能と判断された場合であっても、残りの条項は引き続き有効に存続するものとします。
                 </p>
               </div>
 
               <div>
-                <h3 className="mb-2 text-base font-semibold text-foreground">第19条（準拠法および裁判管轄）</h3>
+                <h3 className="mb-2 text-base font-semibold text-foreground">第21条（準拠法および裁判管轄）</h3>
                 <ol className="list-decimal pl-6 space-y-1 text-muted-foreground leading-relaxed">
                   <li>本規約は、日本法に準拠し解釈されるものとします。</li>
                   <li>本規約に関する紛争については、東京地方裁判所を第一審の専属的合意管轄裁判所とします。</li>
@@ -267,7 +286,7 @@ export default function TermsPage() {
           </section>
 
           <p className="text-xs text-muted-foreground pt-4 border-t border-border">
-            2026年3月 制定・施行
+            2026年4月 改定
           </p>
         </div>
       </div>
