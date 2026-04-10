@@ -53,6 +53,7 @@ export type FontId =
   | "sans"
   | "serif"
   | "rounded"
+  | "mincho"
   | "noto-sans"
   | "shippori"
   | "zen"
