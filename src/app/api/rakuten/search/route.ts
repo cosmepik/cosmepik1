@@ -326,7 +326,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const unique = dedup(merged);
+    const unique = dedup(merged).filter(
+      (item) => item.imageUrl && item.imageUrl !== PLACEHOLDER_IMG,
+    );
     const items = unique.slice(0, hits);
 
     return NextResponse.json({ items });

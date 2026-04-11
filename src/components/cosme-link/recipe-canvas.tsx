@@ -1,25 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
+import { toPng } from "html-to-image";
 import type { RecipePlacement } from "@/lib/sections";
-
-const HANDWRITING_FONT = "Yomogi, cursive";
-const FONT_LINK = "https://fonts.googleapis.com/css2?family=Yomogi&display=swap";
 
 function buildFallbackLink(p: RecipePlacement): string {
   if (p.link) return p.link;
   if (p.product) return `https://search.rakuten.co.jp/search/mall/${encodeURIComponent(p.product)}/?l-id=cosmetree`;
   return "";
-}
-
-function useHandwritingFont() {
-  useEffect(() => {
-    if (document.querySelector(`link[href="${FONT_LINK}"]`)) return;
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = FONT_LINK;
-    document.head.appendChild(link);
-  }, []);
 }
 
 interface RecipeCanvasProps {
@@ -43,7 +31,7 @@ export function RecipeCanvas({
   onBackgroundClick,
   onPinchScale,
 }: RecipeCanvasProps) {
-  useHandwritingFont();
+
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const onPinchScaleRef = useRef(onPinchScale);
@@ -88,7 +76,34 @@ export function RecipeCanvas({
     };
   }, [editable]);
 
+  const [saving, setSaving] = useState(false);
+
+  const handleDownload = useCallback(async () => {
+    const el = canvasRef.current;
+    if (!el || saving) return;
+    setSaving(true);
+    try {
+      const dataUrl = await toPng(el, {
+        pixelRatio: 3,
+        filter: (node) => {
+          if (node instanceof HTMLElement && node.dataset.downloadHide === "true") return false;
+          return true;
+        },
+      });
+      const link = document.createElement("a");
+      link.download = `cosmepik-recipe-${Date.now()}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch {
+      /* ignore */
+    } finally {
+      setSaving(false);
+    }
+  }, [saving]);
+
   if (!editable && !backgroundImage && placements.length === 0) return null;
+
+  const showDownload = !!backgroundImage && placements.length > 0;
 
   return (
     <div
@@ -120,17 +135,7 @@ export function RecipeCanvas({
         </div>
       ) : null}
 
-      {placements.map((p) =>
-        p.type === "comment" ? (
-          <CommentItem
-            key={p.id}
-            placement={p}
-            editable={editable}
-            isSelected={selectedId === p.id}
-            onSelect={() => onSelect?.(p.id)}
-            onMove={(x, y) => onMove?.(p.id, x, y)}
-          />
-        ) : (
+      {placements.filter((p) => p.type !== "comment").map((p) => (
           <PlacementItem
             key={p.id}
             placement={p}
@@ -139,8 +144,7 @@ export function RecipeCanvas({
             onSelect={() => onSelect?.(p.id)}
             onMove={(x, y) => onMove?.(p.id, x, y)}
           />
-        ),
-      )}
+      ))}
 
       {/* cosmepik ロゴ */}
       <span
@@ -160,6 +164,27 @@ export function RecipeCanvas({
           WebkitMaskPosition: "center",
         }}
       />
+
+      {showDownload && (
+        <button
+          type="button"
+          data-download-hide="true"
+          onClick={handleDownload}
+          disabled={saving}
+          className="absolute right-2 top-2 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-all hover:bg-black/60 active:scale-90 disabled:opacity-50"
+          aria-label="画像を保存"
+        >
+          {saving ? (
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+          )}
+        </button>
+      )}
     </div>
   );
 }
@@ -206,61 +231,6 @@ function useDrag(
     document.addEventListener("mousemove", onDragMove);
     document.addEventListener("mouseup", onDragEnd);
   };
-}
-
-function CommentItem({
-  placement,
-  editable,
-  isSelected,
-  onSelect,
-  onMove,
-}: {
-  placement: RecipePlacement;
-  editable: boolean;
-  isSelected: boolean;
-  onSelect: () => void;
-  onMove: (x: number, y: number) => void;
-}) {
-  const scale = placement.scale ?? 1;
-  const color = placement.color || "#333";
-  const rotation = placement.rotation ?? 0;
-  const handleDrag = useDrag(editable, onSelect, onMove);
-
-  const textStyle: React.CSSProperties = {
-    fontFamily: HANDWRITING_FONT,
-    color,
-    fontSize: `${Math.round(13 * scale)}px`,
-    lineHeight: 1.4,
-    transform: rotation ? `rotate(${rotation}deg)` : undefined,
-    textShadow: "0 1px 3px rgba(255,255,255,0.8), 0 0 1px rgba(255,255,255,0.6)",
-    whiteSpace: "pre-wrap",
-    wordBreak: "break-word",
-  };
-
-  return (
-    <div
-      className={`absolute z-10 max-w-[60%] ${editable ? "cursor-grab active:cursor-grabbing" : ""} ${isSelected ? "z-20" : ""}`}
-      style={{
-        left: `${placement.x}%`,
-        top: `${placement.y}%`,
-        transform: "translate(-50%, -50%)",
-        touchAction: editable ? "none" : undefined,
-      }}
-      onTouchStart={handleDrag}
-      onMouseDown={handleDrag}
-      onClick={(e) => {
-        e.stopPropagation();
-        if (editable) onSelect();
-      }}
-    >
-      {isSelected && editable && (
-        <div className="absolute -inset-1.5 rounded-lg border-2 border-primary/60 bg-primary/5" />
-      )}
-      <p className="relative select-none" style={textStyle}>
-        {placement.comment || "コメント"}
-      </p>
-    </div>
-  );
 }
 
 function PlacementItem({

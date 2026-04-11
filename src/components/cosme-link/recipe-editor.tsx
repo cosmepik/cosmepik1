@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Plus, Trash2, ZoomIn, ZoomOut, ImageIcon, Pencil, Check, MessageCircle } from "lucide-react";
+import { Plus, Trash2, ZoomIn, ZoomOut, ImageIcon, Pencil, Check } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useSections } from "@/lib/section-context";
 import { uploadImage } from "@/lib/storage";
@@ -48,8 +48,6 @@ export function RecipeEditor() {
   const [editingLabel, setEditingLabel] = useState(false);
   const [tempProduct, setTempProduct] = useState("");
   const [tempBrand, setTempBrand] = useState("");
-  const [editingComment, setEditingComment] = useState(false);
-  const [tempComment, setTempComment] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const prevItemCountRef = useRef(0);
   const [showEditTip, setShowEditTip] = useState(false);
@@ -154,58 +152,28 @@ export function RecipeEditor() {
   );
 
   const selectedPlacement = placements.find((p) => p.id === selectedId);
-  const isCommentSelected = selectedPlacement?.type === "comment";
-
-  const handleAddComment = useCallback(() => {
-    const id = `comment-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    const newComment: RecipePlacement = {
-      id,
-      type: "comment",
-      comment: "コメント",
-      x: 50,
-      y: 50,
-      scale: 1,
-      color: "#333",
-    };
-    updateRecipe({ placements: [...placements, newComment] });
-    setSelectedId(id);
-    setTempComment("コメント");
-    setEditingComment(true);
-  }, [placements, updateRecipe]);
 
   const startEditLabel = useCallback(() => {
     if (!selectedPlacement) return;
     setShowEditTip(false);
-    if (isCommentSelected) {
-      setTempComment(selectedPlacement.comment ?? "");
-      setEditingComment(true);
-    } else {
-      setTempProduct(selectedPlacement.product ?? "");
-      setTempBrand(selectedPlacement.brand ?? "");
-      setEditingLabel(true);
-    }
-  }, [selectedPlacement, isCommentSelected]);
+    setTempProduct(selectedPlacement.product ?? "");
+    setTempBrand(selectedPlacement.brand ?? "");
+    setEditingLabel(true);
+  }, [selectedPlacement]);
 
   const saveLabel = useCallback(() => {
     if (!selectedId) return;
-    if (isCommentSelected) {
-      updatePlacement(selectedId, { comment: tempComment.trim() || "コメント" });
-      setEditingComment(false);
-    } else {
-      updatePlacement(selectedId, {
-        product: tempProduct.trim(),
-        brand: tempBrand.trim(),
-      });
-      setEditingLabel(false);
-    }
-  }, [selectedId, isCommentSelected, tempProduct, tempBrand, tempComment, updatePlacement]);
+    updatePlacement(selectedId, {
+      product: tempProduct.trim(),
+      brand: tempBrand.trim(),
+    });
+    setEditingLabel(false);
+  }, [selectedId, tempProduct, tempBrand, updatePlacement]);
 
-  const COMMENT_COLORS = ["#333", "#e11d48", "#2563eb", "#16a34a", "#d97706", "#fff"];
 
   useEffect(() => {
     if (!selectedId) {
       setEditingLabel(false);
-      setEditingComment(false);
       setShowEditTip(false);
     }
   }, [selectedId]);
@@ -254,14 +222,6 @@ export function RecipeEditor() {
         <div className="relative flex items-center gap-2">
           <button
             type="button"
-            onClick={handleAddComment}
-            className="flex items-center gap-1.5 rounded-full border border-border bg-white px-3 py-2 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-muted/50 active:scale-95"
-          >
-            <MessageCircle className="h-3.5 w-3.5" />
-            コメント
-          </button>
-          <button
-            type="button"
             onClick={() => setShowAddModal(true)}
             className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-md transition-all hover:bg-primary/90 active:scale-95"
           >
@@ -280,74 +240,8 @@ export function RecipeEditor() {
         </div>
       </div>
 
-      {/* Selected item controls — comment */}
-      {selectedPlacement && isCommentSelected && (
-        <div className="flex flex-col gap-2.5 rounded-xl border border-border bg-white p-3 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-200">
-          {editingComment ? (
-            <div className="flex items-start gap-2">
-              <textarea
-                value={tempComment}
-                onChange={(e) => setTempComment(e.target.value)}
-                placeholder="コメントを入力"
-                rows={2}
-                className="min-w-0 flex-1 resize-none rounded-lg border border-input bg-white px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                style={{ fontFamily: "Yomogi, cursive" }}
-                autoFocus
-              />
-              <button
-                type="button"
-                onClick={saveLabel}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90 active:scale-95"
-                aria-label="保存"
-              >
-                <Check className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between">
-              <p
-                className="min-w-0 flex-1 cursor-pointer truncate text-xs text-foreground"
-                style={{ fontFamily: "Yomogi, cursive" }}
-                onClick={startEditLabel}
-              >
-                {selectedPlacement.comment || "コメント"}
-              </p>
-              <div className="flex shrink-0 items-center gap-1">
-                <button type="button" onClick={startEditLabel} className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95" aria-label="編集">
-                  <Pencil className="h-3.5 w-3.5" />
-                </button>
-                <button type="button" onClick={() => handleScale(-0.15)} className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95" aria-label="縮小">
-                  <ZoomOut className="h-3.5 w-3.5" />
-                </button>
-                <button type="button" onClick={() => handleScale(0.15)} className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95" aria-label="拡大">
-                  <ZoomIn className="h-3.5 w-3.5" />
-                </button>
-                <button type="button" onClick={handleDelete} className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 text-destructive transition-colors hover:bg-destructive/20 active:scale-95" aria-label="削除">
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </div>
-          )}
-          {!editingComment && (
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] text-muted-foreground">色:</span>
-              {COMMENT_COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => updatePlacement(selectedId!, { color: c })}
-                  className={`h-6 w-6 rounded-full border-2 transition-transform active:scale-90 ${selectedPlacement.color === c ? "border-primary scale-110" : "border-border"}`}
-                  style={{ backgroundColor: c }}
-                  aria-label={c}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Selected item controls — product */}
-      {selectedPlacement && !isCommentSelected && (
+      {/* Selected item controls */}
+      {selectedPlacement && (
         <div className="flex flex-col gap-2 rounded-xl border border-border bg-white p-3 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-200">
           <div className="flex items-center justify-between">
             <div className="flex min-w-0 items-center gap-2.5">

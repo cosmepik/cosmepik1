@@ -266,12 +266,8 @@ function RecipeSectionBlock({ section, slug, cacheBust, isPremium, userAffiliate
     : slug
       ? `/api/recipe-bg/${encodeURIComponent(slug)}${cacheBust ? `?v=${cacheBust}` : ""}`
       : section.backgroundImage;
-  const hasComments = placements.some((p) => p.type === "comment");
   return (
     <section className="relative">
-      {hasComments && (
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Yomogi&display=swap" />
-      )}
       {section.backgroundImage && bgSrc && (
         <link rel="preload" as="image" href={bgSrc} />
       )}
@@ -279,33 +275,7 @@ function RecipeSectionBlock({ section, slug, cacheBust, isPremium, userAffiliate
         {section.backgroundImage && (
           <img src={bgSrc} alt="" className="absolute inset-0 h-full w-full object-cover" loading="eager" fetchPriority="high" />
         )}
-        {placements.map((p) => {
-          if (p.type === "comment") {
-            const scale = p.scale ?? 1;
-            const rotation = p.rotation ?? 0;
-            return (
-              <div
-                key={p.id}
-                className="absolute z-10 max-w-[60%]"
-                style={{ left: `${p.x}%`, top: `${p.y}%`, transform: "translate(-50%, -50%)" }}
-              >
-                <p
-                  style={{
-                    fontFamily: "Yomogi, cursive",
-                    color: p.color || "#333",
-                    fontSize: `${Math.round(13 * scale)}px`,
-                    lineHeight: 1.4,
-                    transform: rotation ? `rotate(${rotation}deg)` : undefined,
-                    textShadow: "0 1px 3px rgba(255,255,255,0.8), 0 0 1px rgba(255,255,255,0.6)",
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-word",
-                  }}
-                >
-                  {p.comment}
-                </p>
-              </div>
-            );
-          }
+        {placements.filter((p) => p.type !== "comment").map((p) => {
           const scale = p.scale ?? 1;
           const labelAlign = p.x > 75 ? "self-end" : p.x < 25 ? "self-start" : "self-center";
           return (

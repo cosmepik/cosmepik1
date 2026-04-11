@@ -312,7 +312,6 @@ export default function DashboardHomePage() {
   const [blogPosts, setBlogPosts] = useState<{ id: string; title: string; category: string; thumbnail_url?: string; created_at: string }[]>([]);
 
   useEffect(() => {
-    if (!dashUser) return;
     fetch("/api/analytics/views")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -325,7 +324,7 @@ export default function DashboardHomePage() {
         if (data?.posts) setBlogPosts(data.posts.slice(0, 4));
       })
       .catch(() => {});
-  }, [dashUser]);
+  }, []);
 
   const [showWelcome, setShowWelcome] = useState(false);
   useEffect(() => {
