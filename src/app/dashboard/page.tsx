@@ -151,7 +151,7 @@ export default function DashboardHomePage() {
     setCreateFormError(null);
     setCreateError(null);
     setSlugInputError(null);
-    setCreateMode("simple");
+    setCreateMode("recipe");
   }, []);
 
   const handleCreateSet = async (e: React.FormEvent) => {
@@ -619,7 +619,7 @@ export default function DashboardHomePage() {
             {createError && (
               <p className="mt-4 text-sm text-destructive">{createError}</p>
             )}
-            {canCreateMore ? (
+            {canCreateMore && (
               <button
                 type="button"
                 onClick={openCreateModal}
@@ -628,7 +628,8 @@ export default function DashboardHomePage() {
                 <Plus className="h-4 w-4" />
                 新しいメイクレシピを作成
               </button>
-            ) : (
+            )}
+            {!isAdmin && !isPremium && (
               <Link
                 href="/dashboard/premium"
                 className="mt-4 flex w-full items-center gap-3 overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 px-4 py-3 transition-all hover:shadow-md hover:shadow-amber-100/50"
