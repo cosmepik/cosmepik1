@@ -103,7 +103,7 @@ export function RecipeCanvas({
 
   if (!editable && !backgroundImage && placements.length === 0) return null;
 
-  const showDownload = !!backgroundImage && placements.length > 0;
+  const showDownload = editable && !!backgroundImage && placements.length > 0;
 
   return (
     <div
@@ -153,7 +153,7 @@ export function RecipeCanvas({
         style={{
           width: 112,
           height: 28,
-          backgroundColor: "rgba(255,255,255,0.6)",
+          backgroundColor: "#ffffff",
           maskImage: "url(/logo.svg)",
           maskSize: "contain",
           maskRepeat: "no-repeat",
