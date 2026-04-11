@@ -131,7 +131,7 @@ export default function DashboardHomePage() {
     }
   }, [loading, dashUser, sets.length, router]);
 
-  const canCreateMore = isAdmin || isPremium || sets.length < 1;
+  const canCreateMore = isAdmin || isPremium || sets.length < 2;
 
   const handleDeleteSet = useCallback(
     async (set: CosmeSet) => {
