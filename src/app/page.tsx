@@ -172,8 +172,9 @@ export default async function LandingPage() {
                 <Image
                   src="/hero-mockup.png"
                   alt="cosmepikのプロフィール画面"
-                  width={440}
-                  height={880}
+                  width={854}
+                  height={1931}
+                  quality={90}
                   className="w-full h-auto block"
                   style={{ objectFit: "cover", objectPosition: "center" }}
                   priority

@@ -18,7 +18,7 @@ const notoSans = Noto_Sans_JP({
 
 export const metadata: Metadata = {
   title: "#cosmepik(コスメピック)",
-  description: "インフルエンサーの愛用コスメをまとめたリンクツリー",
+  description: "メイクレシピを簡単に作成、収益化しよう",
   icons: {
     icon: [
       { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
