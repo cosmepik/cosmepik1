@@ -343,7 +343,7 @@ export default function DashboardHomePage() {
   ];
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-rose-50/40 via-background to-background">
+    <main className="min-h-screen bg-gradient-to-b from-rose-50/40 via-background to-background" style={{ fontFamily: "'Shippori Mincho', serif" }}>
       <SideMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <DashboardHeader onMenuClick={() => setSidebarOpen(true)} />
 
@@ -638,7 +638,7 @@ export default function DashboardHomePage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-foreground">プレミアムプランで複数作成</p>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">無料プランではメイクレシピは1つまでです</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">無料プランではメイクレシピは2つまでです</p>
                 </div>
               </Link>
             )}

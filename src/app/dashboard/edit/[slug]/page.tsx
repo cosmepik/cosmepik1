@@ -262,6 +262,7 @@ function EditPageContent({ slug }: { slug: string }) {
           </div>
         }
       />
+      <PremiumBanner />
 
       <div className="mx-auto max-w-md px-4 pt-0 pb-5">
 
@@ -390,6 +391,26 @@ function EditPageContent({ slug }: { slug: string }) {
     />
     </div>
     </>
+  );
+}
+
+function PremiumBanner() {
+  const [isPremium, setIsPremium] = useState(true);
+  useEffect(() => {
+    fetch("/api/dashboard")
+      .then((r) => r.json())
+      .then((data) => setIsPremium(!!data.premium))
+      .catch(() => {});
+  }, []);
+  if (isPremium) return null;
+  return (
+    <Link
+      href="/dashboard/premium"
+      className="block px-4 py-2.5 text-center text-[12px] font-bold text-white transition-opacity hover:opacity-90"
+      style={{ backgroundColor: "#B7D3FF" }}
+    >
+      ✨ プレミアムプランは、ロゴと広告が非表示になるよ👍
+    </Link>
   );
 }
 
