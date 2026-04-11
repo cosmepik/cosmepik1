@@ -315,7 +315,7 @@ function RecipeSectionBlock({ section, slug, cacheBust, isPremium, userAffiliate
             style={{
               width: 112,
               height: 28,
-              backgroundColor: "rgba(255,255,255,0.6)",
+              backgroundColor: "#ffffff",
               maskImage: "url(/logo.svg)",
               maskSize: "contain",
               maskRepeat: "no-repeat",

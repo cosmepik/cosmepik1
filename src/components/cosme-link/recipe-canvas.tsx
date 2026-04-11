@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback, useState } from "react";
-import { toPng } from "html-to-image";
+import { useEffect, useRef, useCallback } from "react";
 import type { RecipePlacement } from "@/lib/sections";
 
 function buildFallbackLink(p: RecipePlacement): string {
@@ -76,34 +75,7 @@ export function RecipeCanvas({
     };
   }, [editable]);
 
-  const [saving, setSaving] = useState(false);
-
-  const handleDownload = useCallback(async () => {
-    const el = canvasRef.current;
-    if (!el || saving) return;
-    setSaving(true);
-    try {
-      const dataUrl = await toPng(el, {
-        pixelRatio: 3,
-        filter: (node) => {
-          if (node instanceof HTMLElement && node.dataset.downloadHide === "true") return false;
-          return true;
-        },
-      });
-      const link = document.createElement("a");
-      link.download = `cosmepik-recipe-${Date.now()}.png`;
-      link.href = dataUrl;
-      link.click();
-    } catch {
-      /* ignore */
-    } finally {
-      setSaving(false);
-    }
-  }, [saving]);
-
   if (!editable && !backgroundImage && placements.length === 0) return null;
-
-  const showDownload = editable && !!backgroundImage && placements.length > 0;
 
   return (
     <div
@@ -165,26 +137,6 @@ export function RecipeCanvas({
         }}
       />
 
-      {showDownload && (
-        <button
-          type="button"
-          data-download-hide="true"
-          onClick={handleDownload}
-          disabled={saving}
-          className="absolute right-2 top-2 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-all hover:bg-black/60 active:scale-90 disabled:opacity-50"
-          aria-label="画像を保存"
-        >
-          {saving ? (
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-          )}
-        </button>
-      )}
     </div>
   );
 }
