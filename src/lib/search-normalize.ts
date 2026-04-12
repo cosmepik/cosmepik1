@@ -83,8 +83,8 @@ const REMOVE_PHRASES = [
   "楽天一位",
 ];
 
-/** 括弧付き【】[] のプロモーション文言を除去する正規表現 */
-const BRACKET_PATTERN = /[【\[]([^】\]]*)[】\]]/g;
+/** 括弧付き【】[]「」のプロモーション文言を除去する正規表現 */
+const BRACKET_PATTERN = /[【\[「]([^】\]」]*)[】\]」]/g;
 
 /** 《》の括弧付き文言を除去 */
 const ANGLE_BRACKET_PATTERN = /《[^》]*》/g;
