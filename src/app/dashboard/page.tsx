@@ -27,6 +27,7 @@ import {
   updateCosmeSetName,
   seedProfileCache,
   getSections,
+  setProfile,
 } from "@/lib/store";
 import type { CosmeSet, CosmeSetMode, InfluencerProfile } from "@/types";
 
@@ -180,6 +181,11 @@ export default function DashboardHomePage() {
       );
       const newSet = await Promise.race([createPromise, timeoutPromise]);
       if (newSet) {
+        await setProfile({
+          username: slug,
+          displayName: name,
+          updatedAt: new Date().toISOString(),
+        });
         setCreateModalOpen(false);
         router.push(`/dashboard/edit/${newSet.slug}`);
       } else {
@@ -343,7 +349,7 @@ export default function DashboardHomePage() {
   ];
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-rose-50/40 via-background to-background" style={{ fontFamily: "'Shippori Mincho', serif" }}>
+    <main className="min-h-screen bg-gradient-to-b from-rose-50/40 via-background to-background" style={{ fontFamily: "'Noto Sans JP', sans-serif" }}>
       <SideMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <DashboardHeader onMenuClick={() => setSidebarOpen(true)} />
 
@@ -471,7 +477,7 @@ export default function DashboardHomePage() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-semibold text-foreground">
-                            {set.name}
+                            {set.name} さんのメイクレシピ{i + 1}
                           </p>
                           <p className="mt-0.5 text-xs text-muted-foreground">
                             {set.itemCount ?? 0} 件のコスメ
@@ -566,7 +572,7 @@ export default function DashboardHomePage() {
                             className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-muted/50"
                           >
                             <Pencil className="h-4 w-4 shrink-0 text-muted-foreground" />
-                            名前を変更
+                            メイクレシピの名前を変更
                           </button>
                           <button
                             type="button"
@@ -684,14 +690,14 @@ export default function DashboardHomePage() {
             {/* Create Modal */}
             {createModalOpen && (
               <div
-                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-[2px]"
+                className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4 bg-black/30 backdrop-blur-[2px]"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="create-modal-title"
                 onClick={() => setCreateModalOpen(false)}
               >
                 <div
-                  className="w-full max-w-md overflow-hidden rounded-3xl border border-border bg-white shadow-2xl shadow-black/10"
+                  className="my-auto w-full max-w-md overflow-hidden rounded-3xl border border-border bg-white shadow-2xl shadow-black/10"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {/* Modal Header */}
@@ -770,7 +776,7 @@ export default function DashboardHomePage() {
                           htmlFor="create-name"
                           className="text-sm font-medium text-foreground"
                         >
-                          メイクレシピの名前
+                          ユーザーネーム
                         </label>
                         <span className="text-[10px] text-muted-foreground">（あとから変更できるよ）</span>
                       </div>

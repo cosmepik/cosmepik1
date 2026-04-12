@@ -91,10 +91,11 @@ export function LandingHeader() {
         style={{ background: NAV_BLUE, minHeight: "34px" }}
       >
         {[
-          { label: "2つのモード", href: "#modes" },
           { label: "cosmepikとは", href: "#about" },
+          { label: "2つのモード", href: "#modes" },
+          { label: "収益化", href: "#monetize" },
+          { label: "#cosmepik編集部", href: "#features" },
           { label: "使い方", href: "#howto" },
-          { label: "収益化", href: "/guide/rakuten-affiliate" },
           { label: "FAQ", href: "/faq" },
         ].map((item) => (
           <Link

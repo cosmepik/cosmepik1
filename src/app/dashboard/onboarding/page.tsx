@@ -109,7 +109,7 @@ export default function OnboardingPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-4">
       <div className="w-full max-w-md">
-        <div className="mb-8 flex justify-center">
+        <div className="mb-8 mt-8 flex justify-center">
           <Link href="/" className="flex justify-center hover:opacity-80">
             <CosmepikLogo className="h-7" height={30} />
           </Link>
@@ -188,7 +188,7 @@ export default function OnboardingPage() {
                   htmlFor="display-name"
                   className="text-sm font-medium text-foreground"
                 >
-                  あなたの名前
+                  ユーザーネーム
                 </label>
                 <span className="text-[10px] text-muted-foreground">（あとから変更できるよ）</span>
               </div>

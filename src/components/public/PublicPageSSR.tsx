@@ -4,6 +4,7 @@
  * テーマ CSS 変数は wrapper の style 属性で注入し、
  * アフィリエイトクリックは data-afl 属性 + AffiliateClickHandler で処理。
  */
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { getCardDesign } from "@/lib/card-designs";
 import { AdBanner } from "@/components/AdSense";
@@ -266,16 +267,42 @@ function RecipeSectionBlock({ section, slug, cacheBust, isPremium, userAffiliate
     : slug
       ? `/api/recipe-bg/${encodeURIComponent(slug)}${cacheBust ? `?v=${cacheBust}` : ""}`
       : section.backgroundImage;
+  const useNextImage = bgSrc && isExternalUrl(bgSrc);
   return (
     <section className="relative">
-      {section.backgroundImage && bgSrc && (
-        <link rel="preload" as="image" href={bgSrc} />
-      )}
       <div className="relative w-full overflow-hidden" style={{ aspectRatio: "3 / 4" }}>
-        {section.backgroundImage && (
-          <img src={bgSrc} alt="" className="absolute inset-0 h-full w-full object-cover" loading="eager" fetchPriority="high" />
+        {section.backgroundImage && bgSrc && (
+          useNextImage ? (
+            <Image src={bgSrc} alt="" fill className="object-cover" sizes="(max-width: 448px) 100vw, 448px" quality={85} priority />
+          ) : (
+            <img src={bgSrc} alt="" className="absolute inset-0 h-full w-full object-cover" loading="eager" fetchPriority="high" />
+          )
         )}
-        {placements.filter((p) => p.type !== "comment").map((p) => {
+        {placements.map((p) => {
+          if (p.type === "comment") {
+            const scale = p.scale ?? 1;
+            const color = p.color || "#333";
+            return (
+              <div
+                key={p.id}
+                className="absolute z-10 max-w-[60%]"
+                style={{
+                  left: `${p.x}%`,
+                  top: `${p.y}%`,
+                  transform: "translate(-50%, -50%)",
+                }}
+              >
+                <p style={{
+                  fontFamily: "'HuiFontP29', cursive",
+                  color,
+                  fontSize: `${Math.round(20 * scale)}px`,
+                  lineHeight: 1.4,
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                }}>{p.comment || ""}</p>
+              </div>
+            );
+          }
           const scale = p.scale ?? 1;
           const labelAlign = p.x > 75 ? "self-end" : p.x < 25 ? "self-start" : "self-center";
           return (

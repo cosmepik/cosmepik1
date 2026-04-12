@@ -337,7 +337,7 @@ export function ProfileEditor({ isOpen, onClose }: ProfileEditorProps) {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="@username"
+                placeholder="あなたの名前"
                 className="rounded-xl border-2 border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
               />
             </div>

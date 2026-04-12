@@ -159,11 +159,15 @@ export async function setProfile(
   }
   try {
     await db.saveProfile(profile);
-    fetch("/api/revalidate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: profile.username }),
-    }).catch((e) => console.warn("[revalidate] failed:", e));
+    try {
+      await fetch("/api/revalidate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: profile.username }),
+      });
+    } catch (e) {
+      console.warn("[revalidate] failed:", e);
+    }
   } catch (err) {
     console.error("[setProfile] DB保存失敗:", err);
     throw err;
@@ -270,12 +274,14 @@ const _debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
 const _pendingData = new Map<string, import("@/lib/sections").Section[]>();
 
 function doSave(s: string, sections: import("@/lib/sections").Section[]): Promise<void> {
-  const p = db.saveSections(s, sections).then(() => {
-    fetch("/api/revalidate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: s }),
-    }).catch(() => {});
+  const p = db.saveSections(s, sections).then(async () => {
+    try {
+      await fetch("/api/revalidate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: s }),
+      });
+    } catch { /* ignore */ }
   });
   _pendingSave = p;
   p.finally(() => { if (_pendingSave === p) _pendingSave = null; });

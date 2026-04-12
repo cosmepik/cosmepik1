@@ -3,6 +3,18 @@
 import { useEffect, useRef, useCallback } from "react";
 import type { RecipePlacement } from "@/lib/sections";
 
+const COMMENT_FONT = "'HuiFontP29', cursive";
+
+function useCommentFont() {
+  useEffect(() => {
+    if (document.querySelector("style[data-hui-font]")) return;
+    const style = document.createElement("style");
+    style.setAttribute("data-hui-font", "");
+    style.textContent = `@font-face { font-family: 'HuiFontP29'; src: url('/fonts/HuiFontP29.ttf') format('truetype'); font-display: swap; }`;
+    document.head.appendChild(style);
+  }, []);
+}
+
 function buildFallbackLink(p: RecipePlacement): string {
   if (p.link) return p.link;
   if (p.product) return `https://search.rakuten.co.jp/search/mall/${encodeURIComponent(p.product)}/?l-id=cosmetree`;
@@ -16,6 +28,7 @@ interface RecipeCanvasProps {
   selectedId?: string | null;
   onSelect?: (id: string | null) => void;
   onMove?: (id: string, x: number, y: number) => void;
+  onDelete?: (id: string) => void;
   onBackgroundClick?: () => void;
   onPinchScale?: (delta: number) => void;
 }
@@ -27,10 +40,11 @@ export function RecipeCanvas({
   selectedId,
   onSelect,
   onMove,
+  onDelete,
   onBackgroundClick,
   onPinchScale,
 }: RecipeCanvasProps) {
-
+  useCommentFont();
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const onPinchScaleRef = useRef(onPinchScale);
@@ -107,7 +121,18 @@ export function RecipeCanvas({
         </div>
       ) : null}
 
-      {placements.filter((p) => p.type !== "comment").map((p) => (
+      {placements.map((p) =>
+        p.type === "comment" ? (
+          <CommentItem
+            key={p.id}
+            placement={p}
+            editable={editable}
+            isSelected={selectedId === p.id}
+            onSelect={() => onSelect?.(p.id)}
+            onMove={(x, y) => onMove?.(p.id, x, y)}
+            onDelete={() => onDelete?.(p.id)}
+          />
+        ) : (
           <PlacementItem
             key={p.id}
             placement={p}
@@ -115,8 +140,10 @@ export function RecipeCanvas({
             isSelected={selectedId === p.id}
             onSelect={() => onSelect?.(p.id)}
             onMove={(x, y) => onMove?.(p.id, x, y)}
+            onDelete={() => onDelete?.(p.id)}
           />
-      ))}
+        ),
+      )}
 
       {/* cosmepik ロゴ */}
       <span
@@ -191,12 +218,14 @@ function PlacementItem({
   isSelected,
   onSelect,
   onMove,
+  onDelete,
 }: {
   placement: RecipePlacement;
   editable: boolean;
   isSelected: boolean;
   onSelect: () => void;
   onMove: (x: number, y: number) => void;
+  onDelete: () => void;
 }) {
   const scale = placement.scale ?? 1;
   const handleDrag = useDrag(editable, onSelect, onMove);
@@ -264,10 +293,88 @@ function PlacementItem({
       }}
     >
       {isSelected && editable && (
-        <div className="absolute -inset-2 rounded-xl border-2 border-primary/60 bg-primary/5" />
+        <>
+          <div className="absolute -inset-2 rounded-xl border-2 border-primary/60 bg-primary/5" />
+          <button
+            type="button"
+            className="absolute -left-3 -top-3 z-30 flex h-5 w-5 items-center justify-center rounded-full bg-gray-400 text-white shadow-md active:scale-90"
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            onTouchStart={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" className="h-3 w-3">
+              <line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" />
+            </svg>
+          </button>
+        </>
       )}
       {imageElement}
       {labelElement}
+    </div>
+  );
+}
+
+function CommentItem({
+  placement,
+  editable,
+  isSelected,
+  onSelect,
+  onMove,
+  onDelete,
+}: {
+  placement: RecipePlacement;
+  editable: boolean;
+  isSelected: boolean;
+  onSelect: () => void;
+  onMove: (x: number, y: number) => void;
+  onDelete: () => void;
+}) {
+  const scale = placement.scale ?? 1;
+  const color = placement.color || "#333";
+  const handleDrag = useDrag(editable, onSelect, onMove);
+
+  const textStyle: React.CSSProperties = {
+    fontFamily: COMMENT_FONT,
+    color,
+    fontSize: `${Math.round(20 * scale)}px`,
+    lineHeight: 1.4,
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-word",
+  };
+
+  return (
+    <div
+      className={`absolute z-10 max-w-[60%] ${editable ? "cursor-grab active:cursor-grabbing" : ""} ${isSelected ? "z-20" : ""}`}
+      style={{
+        left: `${placement.x}%`,
+        top: `${placement.y}%`,
+        transform: "translate(-50%, -50%)",
+        touchAction: editable ? "none" : undefined,
+      }}
+      onTouchStart={handleDrag}
+      onMouseDown={handleDrag}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (editable) onSelect();
+      }}
+    >
+      {isSelected && editable && (
+        <>
+          <div className="absolute -inset-1.5 rounded-lg border-2 border-primary/60 bg-primary/5" />
+          <button
+            type="button"
+            className="absolute -left-3 -top-3 z-30 flex h-5 w-5 items-center justify-center rounded-full bg-gray-400 text-white shadow-md active:scale-90"
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            onTouchStart={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" className="h-3 w-3">
+              <line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" />
+            </svg>
+          </button>
+        </>
+      )}
+      <p style={placement.comment ? textStyle : { ...textStyle, color: "#9ca3af" }}>{placement.comment || "コメントを入力"}</p>
     </div>
   );
 }

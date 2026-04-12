@@ -28,6 +28,7 @@ export default async function PublicPageByUsername({ params }: Props) {
   return (
     <>
       {fontUrl && <link rel="stylesheet" href={fontUrl} />}
+      <style dangerouslySetInnerHTML={{ __html: `@font-face { font-family: 'HuiFontP29'; src: url('/fonts/HuiFontP29.ttf') format('truetype'); font-display: swap; }` }} />
       <AnalyticsBeacon username={username} />
       <AffiliateClickHandler slug={username} userAffiliateId={profile?.rakutenAffiliateId} />
       <PublicPageSSR

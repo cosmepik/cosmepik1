@@ -19,6 +19,19 @@ const notoSans = Noto_Sans_JP({
 export const metadata: Metadata = {
   title: "#cosmepik(コスメピック)",
   description: "メイクレシピを簡単に作成、収益化しよう",
+  metadataBase: new URL("https://cosmepik.me"),
+  openGraph: {
+    title: "#cosmepik(コスメピック)",
+    description: "メイクレシピを簡単に作成、収益化しよう",
+    images: [{ url: "/og-image.png", width: 1024, height: 764 }],
+    siteName: "cosmepik",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "#cosmepik(コスメピック)",
+    description: "メイクレシピを簡単に作成、収益化しよう",
+    images: ["/og-image.png"],
+  },
   icons: {
     icon: [
       { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
