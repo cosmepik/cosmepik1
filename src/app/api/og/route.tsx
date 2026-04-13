@@ -127,7 +127,7 @@ export async function GET(request: Request) {
                   whiteSpace: "nowrap",
                 }}
               >
-                {displayName}
+                {displayName} さんのメイクレシピ
               </div>
               <div style={{ display: "flex", fontSize: 20, color: "#1a6b66" }}>
                 @{username}
