@@ -440,6 +440,7 @@ export function PublicPageSSR({ username, profile, sections, themeVars, isPremiu
     backgroundImage: "var(--page-bg-image, none)",
     backgroundSize: "cover",
     backgroundPosition: "center",
+    fontFamily: "var(--font-body, 'Noto Sans JP', sans-serif)",
   };
 
   return (
