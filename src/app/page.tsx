@@ -133,11 +133,11 @@ export default async function LandingPage() {
         <section className="relative overflow-hidden px-3 pt-4">
 
           <div
-            className="relative flex flex-col items-center rounded-2xl px-5 pt-10 pb-8"
-            style={{ background: "rgba(242, 196, 212, 0.45)", boxShadow: "0 8px 32px rgba(242, 196, 212, 0.4), 0 2px 8px rgba(0,0,0,0.06)" }}
+            className="relative flex flex-col items-center rounded-2xl px-5 pt-10 pb-8 overflow-hidden"
+            style={{ background: "rgba(242, 196, 212, 0.45)" }}
           >
             {/* キャッチコピー */}
-            <div className="mb-8 flex flex-col items-center">
+            <div className="relative z-10 mb-8 flex flex-col items-center">
               <CosmepikLogo height={36} color={NAV_BLUE} />
               <div className="relative mt-4 rounded-2xl bg-white px-5 py-4 shadow-sm" style={{ border: "1.5px solid #eee" }}>
                 <p className="text-[15px] font-bold leading-relaxed text-center" style={{ color: TEXT_DARK }}>
@@ -160,7 +160,7 @@ export default async function LandingPage() {
             </div>
 
             {/* スマホモック */}
-            <div className="relative w-[220px] mx-auto mb-8 flex justify-center">
+            <div className="relative z-10 w-[220px] mx-auto mb-8 flex justify-center">
               <div
                 className="relative overflow-hidden"
                 style={{
@@ -188,7 +188,7 @@ export default async function LandingPage() {
             </div>
 
             {/* CTAボタン */}
-            <div className="flex flex-col gap-2.5 w-full max-w-xs">
+            <div className="relative z-10 flex flex-col gap-2.5 w-full max-w-xs">
               <Link
                 href="/register"
                 className="flex items-center justify-center rounded-full py-3.5 text-sm font-bold text-white tracking-wide transition-opacity hover:opacity-90"

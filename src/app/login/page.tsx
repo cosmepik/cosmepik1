@@ -70,7 +70,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-10 bg-white">
+    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-4 bg-white">
       <div className="w-full max-w-md rounded-xl border border-border bg-white p-6 shadow-sm">
         {/* 戻るボタン */}
         <div className="mb-6">
@@ -93,9 +93,9 @@ export default function LoginPage() {
         </div>
 
         <h1 className="mb-4 text-center text-lg font-semibold text-foreground">ログイン</h1>
-        <div className="mb-6 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-center">
-          <p className="text-xs font-bold text-amber-700">プレリリース中</p>
-          <p className="mt-0.5 text-[11px] text-amber-600">現在、招待コードをお持ちの方のみご利用いただけます</p>
+        <div className="mb-6 rounded-lg bg-sky-50 border border-sky-200 px-4 py-3 text-center">
+          <p className="text-xs font-bold text-sky-500">先行ユーザー様招待制</p>
+          <p className="mt-0.5 text-[11px] text-rose-400">現在、招待コードをお持ちの方のみご利用いただけます</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

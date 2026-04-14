@@ -81,7 +81,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4">
+    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-4 bg-white">
       <div className="w-full max-w-md rounded-xl border border-border bg-white p-6 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
           <Link
@@ -100,9 +100,9 @@ export default function RegisterPage() {
           </Link>
         </div>
         <h1 className="mb-4 text-center text-lg font-semibold text-foreground">新規登録</h1>
-        <div className="mb-6 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-center">
-          <p className="text-xs font-bold text-amber-700">プレリリース中</p>
-          <p className="mt-0.5 text-[11px] text-amber-600">現在、招待コードをお持ちの方のみご登録いただけます</p>
+        <div className="mb-6 rounded-lg bg-sky-50 border border-sky-200 px-4 py-3 text-center">
+          <p className="text-xs font-bold text-sky-500">先行ユーザー様招待制</p>
+          <p className="mt-0.5 text-[11px] text-rose-400">現在、招待コードをお持ちの方のみご登録いただけます</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
