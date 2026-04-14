@@ -425,7 +425,7 @@ export default function AdminPage() {
             </div>
             <p className="mt-3 text-right text-xs text-muted-foreground">{filtered.length} 件表示 / 全 {users.length} 件</p>
           </>
-        ) : (
+        ) : tab === "blog" ? (
           /* ═══════ Blog Tab ═══════ */
           <>
             <div className="mb-4 flex items-center justify-between">
@@ -567,7 +567,7 @@ export default function AdminPage() {
               </div>
             )}
           </>
-        ) : (
+        ) : tab === "invite" ? (
           /* ═══════ Invite Tab ═══════ */
           <>
             <div className="mb-4 flex items-center justify-between">
@@ -645,7 +645,7 @@ export default function AdminPage() {
               </div>
             )}
           </>
-        )}
+        ) : null}
       </div>
     </main>
   );
