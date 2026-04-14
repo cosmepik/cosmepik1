@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
   if (!isAdmin) {
     const { count, error: countError } = await supabase
-      .from("invite_codes")
+      .from("user_invite_codes")
       .select("id", { count: "exact", head: true })
       .eq("created_by", username);
 
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
   for (let i = 0; i < maxAttempts; i++) {
     const code = generateCode();
     const { data, error } = await supabase
-      .from("invite_codes")
+      .from("user_invite_codes")
       .insert({ code, created_by: username })
       .select("code")
       .single();

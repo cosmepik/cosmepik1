@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   }
 
   const { data, error } = await supabase
-    .from("invite_codes")
+    .from("user_invite_codes")
     .update({ used_by: username, used_at: new Date().toISOString() })
     .eq("code", code)
     .is("used_by", null)
