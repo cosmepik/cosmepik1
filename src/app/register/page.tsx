@@ -1,17 +1,60 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { CosmepikLogo } from "@/components/cosmepik-logo";
 import { createClient } from "@/lib/supabase/client";
 import { supabase as supabaseFallback } from "@/lib/supabase";
-/** 新規登録：UIBASE 完全準拠 */
+import { Ticket } from "lucide-react";
+
 export default function RegisterPage() {
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
   const [emailSent, setEmailSent] = useState(false);
+
+  const [inviteCode, setInviteCode] = useState("");
+  const [inviteVerified, setInviteVerified] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteChecking, setInviteChecking] = useState(false);
+
+  useEffect(() => {
+    const urlCode = searchParams.get("invite") ?? "";
+    if (/^\d{5}$/.test(urlCode)) {
+      setInviteCode(urlCode);
+    }
+  }, [searchParams]);
+
+  const handleVerifyInvite = async () => {
+    setInviteError(null);
+    const code = inviteCode.trim();
+    if (!/^\d{5}$/.test(code)) {
+      setInviteError("招待コードは数字5桁です");
+      return;
+    }
+    setInviteChecking(true);
+    try {
+      const res = await fetch("/api/invite/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        setInviteVerified(true);
+        sessionStorage.setItem("cosmepik-invite-code", code);
+      } else {
+        setInviteError("このコードは無効か、既に使用されています");
+      }
+    } catch {
+      setInviteError("確認に失敗しました。もう一度お試しください");
+    } finally {
+      setInviteChecking(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +73,6 @@ export default function RegisterPage() {
         options: callbackUrl ? { emailRedirectTo: callbackUrl } : undefined,
       });
       if (error) throw error;
-      // 既存ユーザー: identities が空の場合は登録済み
       if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
         setMessage({
           type: "error",
@@ -80,6 +122,97 @@ export default function RegisterPage() {
       setLoading(false);
     }
   };
+
+  if (!inviteVerified) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center px-4">
+        <div className="w-full max-w-md rounded-xl border border-border bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <Link
+              href="/login"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              aria-label="ログインに戻る"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+            </Link>
+          </div>
+          <div className="mb-6 flex justify-center">
+            <Link href="/" className="flex justify-center hover:opacity-80">
+              <CosmepikLogo className="h-7" height={30} />
+            </Link>
+          </div>
+
+          <div className="mb-5 flex flex-col items-center text-center">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
+              <Ticket className="h-6 w-6 text-primary" />
+            </div>
+            <h1 className="text-lg font-bold text-foreground">招待コードを入力</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              cosmepik は現在、招待制です
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label
+                htmlFor="invite-code"
+                className="mb-1.5 block text-sm font-medium text-foreground"
+              >
+                招待コード（数字5桁）
+              </label>
+              <input
+                id="invite-code"
+                type="text"
+                inputMode="numeric"
+                pattern="\d{5}"
+                maxLength={5}
+                value={inviteCode}
+                onChange={(e) => {
+                  const v = e.target.value.replace(/\D/g, "").slice(0, 5);
+                  setInviteCode(v);
+                  setInviteError(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleVerifyInvite();
+                  }
+                }}
+                placeholder="12345"
+                className="w-full rounded-lg border border-input bg-white px-4 py-3 text-center text-2xl font-bold tracking-[0.3em] text-foreground placeholder:text-muted-foreground/40 placeholder:tracking-[0.3em] transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                autoFocus
+              />
+            </div>
+
+            {inviteError && (
+              <p className="text-sm text-destructive">{inviteError}</p>
+            )}
+
+            <button
+              type="button"
+              onClick={handleVerifyInvite}
+              disabled={inviteChecking || inviteCode.length !== 5}
+              className="w-full rounded-lg bg-primary py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:opacity-90 disabled:opacity-50"
+            >
+              {inviteChecking ? "確認中..." : "確認して登録へ進む"}
+            </button>
+
+            <p className="text-center text-xs text-muted-foreground">
+              招待コードは既存ユーザーから受け取れます
+            </p>
+          </div>
+
+          <p className="mt-4 text-center">
+            <Link href="/login" className="text-sm text-green hover:underline">
+              すでにアカウントをお持ちの方はログイン
+            </Link>
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-4">
