@@ -19,8 +19,6 @@ import {
   Newspaper,
   UserPlus,
   Check,
-  Share2,
-  Link2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SideMenu } from "@/components/cosme-link/side-menu";
@@ -374,14 +372,6 @@ export default function DashboardHomePage() {
     setCopiedCodeId(id);
     toast.success("コードをコピーしました");
     setTimeout(() => setCopiedCodeId(null), 2000);
-  }, []);
-
-  const handleShareInviteLink = useCallback((code: string) => {
-    const link = typeof window !== "undefined"
-      ? `${window.location.origin}/register?invite=${code}`
-      : `https://cosmepik.me/register?invite=${code}`;
-    navigator.clipboard.writeText(link);
-    toast.success("招待リンクをコピーしました");
   }, []);
 
   useEffect(() => {
@@ -999,14 +989,6 @@ export default function DashboardHomePage() {
                               <Copy className="h-4 w-4" />
                             )}
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => handleShareInviteLink(ic.code)}
-                            className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-                            aria-label="招待リンクをコピー"
-                          >
-                            <Link2 className="h-4 w-4" />
-                          </button>
                         </div>
                       )}
                     </li>
@@ -1039,11 +1021,6 @@ export default function DashboardHomePage() {
                 </div>
               )}
             </div>
-            {myInviteCodes.some((c) => !c.used_by) && (
-              <p className="mt-2 text-center text-[11px] text-muted-foreground">
-                招待リンク: cosmepik.me/register?invite=コード
-              </p>
-            )}
           </div>
         )}
 
