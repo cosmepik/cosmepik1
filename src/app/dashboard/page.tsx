@@ -422,7 +422,7 @@ export default function DashboardHomePage() {
         {/* Total Views */}
         {totalViews !== null && (
           <div
-            className="mb-5 flex items-center gap-4 rounded-2xl bg-white px-5 py-2.5 shadow-sm"
+            className="mb-5 flex items-center gap-4 rounded-lg bg-white px-5 py-2.5 shadow-sm"
             style={{ border: "1.5px solid #eee" }}
           >
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-500">
@@ -515,7 +515,7 @@ export default function DashboardHomePage() {
                     ) : (
                       <Link
                         href={`/dashboard/edit/${set.slug}`}
-                        className={`flex min-w-0 flex-1 items-center gap-4 rounded-2xl border bg-white p-4 shadow-sm transition-all hover:shadow-md hover:border-rose-200/60 ${showWelcome && i === 0 ? "border-primary ring-2 ring-primary/30 ring-offset-2" : "border-border"}`}
+                        className={`flex min-w-0 flex-1 items-center gap-4 rounded-lg border bg-white p-4 shadow-sm transition-all hover:shadow-md hover:border-rose-200/60 ${showWelcome && i === 0 ? "border-primary ring-2 ring-primary/30 ring-offset-2" : "border-border"}`}
                       >
                         <div
                           className={`flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br ${setCardGradients[i % setCardGradients.length]} shadow-sm`}
@@ -559,7 +559,7 @@ export default function DashboardHomePage() {
                             prev === set.id ? null : set.id,
                           );
                         }}
-                        className="flex items-center justify-center rounded-2xl border border-border bg-white p-3 text-muted-foreground shadow-sm transition-colors hover:bg-rose-50 hover:text-foreground hover:border-rose-200/60"
+                        className="flex items-center justify-center rounded-lg border border-border bg-white p-3 text-muted-foreground shadow-sm transition-colors hover:bg-rose-50 hover:text-foreground hover:border-rose-200/60"
                         aria-label="メニュー"
                         aria-expanded={openMenuSetId === set.id}
                       >
@@ -686,7 +686,7 @@ export default function DashboardHomePage() {
               <button
                 type="button"
                 onClick={openCreateModal}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-primary/40 bg-primary/5 py-5 text-sm font-medium text-muted-foreground transition-all hover:border-primary/60 hover:bg-primary/10 hover:text-foreground"
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-primary/40 bg-primary/5 py-5 text-sm font-medium text-muted-foreground transition-all hover:border-primary/60 hover:bg-primary/10 hover:text-foreground"
               >
                 <Plus className="h-4 w-4" />
                 新しいメイクレシピを作成
@@ -946,9 +946,9 @@ export default function DashboardHomePage() {
           <div className="mt-8">
             <div className="mb-3 flex items-center gap-2">
               <UserPlus className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-bold text-foreground">友達を招待</h2>
+              <h2 className="text-sm font-bold text-foreground">友達を招待しよう（３人まで）</h2>
             </div>
-            <div className="overflow-hidden rounded-2xl border border-border bg-white shadow-sm">
+            <div className="overflow-hidden rounded-lg border border-border bg-white shadow-sm">
               {myInviteCodes.length > 0 ? (
                 <ul className="divide-y divide-border">
                   {myInviteCodes.map((ic) => (

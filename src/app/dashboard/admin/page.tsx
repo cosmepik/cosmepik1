@@ -402,17 +402,17 @@ export default function AdminPage() {
                       <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">{search ? "該当するユーザーがいません" : "まだユーザーがいません"}</td></tr>
                     ) : filtered.map((u) => (
                       <tr key={u.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                        <td className="px-4 py-3 font-medium text-foreground">{u.slug}</td>
-                        <td className="px-4 py-3 text-muted-foreground">{u.name}</td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-3 py-1.5 font-medium text-foreground">{u.slug}</td>
+                        <td className="px-3 py-1.5 text-muted-foreground">{u.name}</td>
+                        <td className="px-3 py-1.5 text-center">
                           <span className="inline-block rounded-full px-2 py-0.5 text-[10px] font-bold text-white" style={{ background: u.mode === "recipe" ? "#e8729a" : "#9b8ec4" }}>
                             {u.mode === "recipe" ? "レシピ" : "シンプル"}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-right tabular-nums font-medium">{u.views.toLocaleString()}</td>
-                        <td className="px-4 py-3 text-right tabular-nums font-medium">{u.clicks.toLocaleString()}</td>
-                        <td className="px-4 py-3 text-right text-xs text-muted-foreground tabular-nums">{u.createdAt ? new Date(u.createdAt).toLocaleDateString("ja-JP") : "-"}</td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-3 py-1.5 text-right tabular-nums font-medium">{u.views.toLocaleString()}</td>
+                        <td className="px-3 py-1.5 text-right tabular-nums font-medium">{u.clicks.toLocaleString()}</td>
+                        <td className="px-3 py-1.5 text-right text-xs text-muted-foreground tabular-nums">{u.createdAt ? new Date(u.createdAt).toLocaleDateString("ja-JP") : "-"}</td>
+                        <td className="px-3 py-1.5 text-center">
                           <a href={`/${u.slug}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs text-primary transition-colors hover:bg-primary/5">
                             <ExternalLink className="h-3 w-3" />見る
                           </a>
