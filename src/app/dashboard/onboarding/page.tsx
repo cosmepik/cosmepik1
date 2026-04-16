@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { CosmepikLogo } from "@/components/cosmepik-logo";
 import { createCosmeSet, setProfile } from "@/lib/store";
-import { Sparkles, Ticket } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import type { CosmeSetMode } from "@/types";
 
 export default function OnboardingPage() {
@@ -19,19 +19,6 @@ export default function OnboardingPage() {
   const [agreed, setAgreed] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [mode, setMode] = useState<CosmeSetMode>("recipe");
-
-  const [inviteCode, setInviteCode] = useState("");
-  const [inviteVerified, setInviteVerified] = useState(false);
-  const [inviteError, setInviteError] = useState<string | null>(null);
-  const [inviteChecking, setInviteChecking] = useState(false);
-
-  useEffect(() => {
-    const saved = sessionStorage.getItem("cosmepik-invite-code");
-    if (saved && /^\d{5}$/.test(saved)) {
-      setInviteCode(saved);
-      setInviteVerified(true);
-    }
-  }, []);
 
   useEffect(() => {
     fetch("/api/dashboard")
@@ -71,34 +58,6 @@ export default function OnboardingPage() {
     [],
   );
 
-  const handleVerifyInvite = async () => {
-    setInviteError(null);
-    const code = inviteCode.trim();
-    if (!/^\d{5}$/.test(code)) {
-      setInviteError("招待コードは数字5桁です");
-      return;
-    }
-    setInviteChecking(true);
-    try {
-      const res = await fetch("/api/invite/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code }),
-      });
-      const data = await res.json();
-      if (data.valid) {
-        setInviteVerified(true);
-        sessionStorage.setItem("cosmepik-invite-code", code);
-      } else {
-        setInviteError("このコードは無効か、既に使用されています");
-      }
-    } catch {
-      setInviteError("確認に失敗しました。もう一度お試しください");
-    } finally {
-      setInviteChecking(false);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -134,15 +93,6 @@ export default function OnboardingPage() {
         updatedAt: new Date().toISOString(),
       });
 
-      if (inviteCode.trim()) {
-        fetch("/api/invite/use", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code: inviteCode.trim(), username: normalizedSlug }),
-        }).catch(() => {});
-        sessionStorage.removeItem("cosmepik-invite-code");
-      }
-
       sessionStorage.setItem("cosmepik-show-welcome", "1");
       router.push("/dashboard");
     } catch (err) {
@@ -155,87 +105,6 @@ export default function OnboardingPage() {
       setSubmitting(false);
     }
   };
-
-  if (!inviteVerified) {
-    return (
-      <main className="flex min-h-screen flex-col items-center justify-center px-4">
-        <div className="w-full max-w-md">
-          <div className="mb-8 mt-8 flex justify-center">
-            <Link href="/" className="flex justify-center hover:opacity-80">
-              <CosmepikLogo className="h-7" height={30} />
-            </Link>
-          </div>
-
-          <div className="overflow-hidden rounded-3xl border border-border bg-white shadow-lg">
-            <div className="relative overflow-hidden bg-primary/5 px-6 pb-5 pt-6">
-              <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-primary/10 blur-2xl" />
-              <div className="relative flex flex-col items-center text-center">
-                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
-                  <Ticket className="h-6 w-6 text-primary" />
-                </div>
-                <h1 className="text-lg font-bold text-foreground">
-                  招待コードを入力
-                </h1>
-                <p className="mt-1.5 text-sm text-muted-foreground">
-                  cosmepik は現在、招待制です
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-5 px-6 pb-6 pt-5">
-              <div>
-                <label
-                  htmlFor="invite-code"
-                  className="mb-1.5 block text-sm font-medium text-foreground"
-                >
-                  招待コード（数字5桁）
-                </label>
-                <input
-                  id="invite-code"
-                  type="text"
-                  inputMode="numeric"
-                  pattern="\d{5}"
-                  maxLength={5}
-                  value={inviteCode}
-                  onChange={(e) => {
-                    const v = e.target.value.replace(/\D/g, "").slice(0, 5);
-                    setInviteCode(v);
-                    setInviteError(null);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleVerifyInvite();
-                    }
-                  }}
-                  placeholder="12345"
-                  className="w-full rounded-xl border border-input bg-white px-4 py-3 text-center text-2xl font-bold tracking-[0.3em] text-foreground placeholder:text-muted-foreground/40 placeholder:tracking-[0.3em] transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  autoFocus
-                />
-              </div>
-
-              {inviteError && (
-                <p className="text-sm text-destructive">{inviteError}</p>
-              )}
-
-              <button
-                type="button"
-                onClick={handleVerifyInvite}
-                disabled={inviteChecking || inviteCode.length !== 5}
-                className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:opacity-90 disabled:opacity-50"
-              >
-                {inviteChecking ? "確認中..." : "確認"}
-              </button>
-
-              <p className="text-center text-xs text-muted-foreground">
-                招待コードは既存ユーザーから受け取れます
-              </p>
-            </div>
-          </div>
-        </div>
-      </main>
-    );
-  }
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-4">

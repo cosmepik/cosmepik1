@@ -99,11 +99,7 @@ export default function RegisterPage() {
             <CosmepikLogo className="h-7" height={30} />
           </Link>
         </div>
-        <h1 className="mb-4 text-center text-lg font-semibold text-foreground">新規登録</h1>
-        <div className="mb-6 rounded-lg bg-sky-50 border border-sky-200 px-4 py-3 text-center">
-          <p className="text-xs font-bold text-sky-500">先行ユーザー様招待制</p>
-          <p className="mt-0.5 text-[11px] text-rose-400">現在、招待コードをお持ちの方のみご登録いただけます</p>
-        </div>
+        <h1 className="mb-6 text-center text-lg font-semibold text-foreground">新規登録</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="email" className="mb-1 block text-sm font-medium text-card-foreground">メールアドレス</label>

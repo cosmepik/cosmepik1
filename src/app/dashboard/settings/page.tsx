@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Crown, Ticket } from "lucide-react";
+import { Crown } from "lucide-react";
 import { toast } from "sonner";
 import { SideMenu } from "@/components/cosme-link/side-menu";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -15,10 +15,6 @@ export default function SettingsPage() {
   const { user } = useUser();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isPremium, setIsPremium] = useState<boolean | null>(null);
-  const [inviteCode, setInviteCode] = useState("");
-  const [claiming, setClaiming] = useState(false);
-  const [claimError, setClaimError] = useState<string | null>(null);
-
   useEffect(() => {
     fetch("/api/premium/me")
       .then((res) => res.json())
@@ -94,70 +90,6 @@ export default function SettingsPage() {
             <li>限定壁紙の解放</li>
           </ul>
         </div>
-
-{/* 招待コード入力 */}
-        <section className="mt-8 rounded-xl border border-border bg-muted/20 p-4">
-          <h2 className="mb-2 flex items-center gap-2 text-lg font-semibold text-foreground">
-            <Ticket className="h-5 w-5 text-primary" />
-            招待コード
-          </h2>
-          <p className="mb-3 text-sm text-muted-foreground">
-            招待コード（数字6桁）を入力して、メイクレシピを受け取ります。
-          </p>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={6}
-              value={inviteCode}
-              onChange={(e) => {
-                setInviteCode(e.target.value.replace(/\D/g, "").slice(0, 6));
-                setClaimError(null);
-              }}
-              placeholder="000000"
-              className="w-full max-w-[200px] rounded-lg border border-input bg-background px-3 py-2 font-mono text-lg tracking-widest placeholder:text-muted-foreground"
-              disabled={claiming}
-            />
-            <button
-              type="button"
-              onClick={async () => {
-                if (inviteCode.length !== 6) {
-                  setClaimError("6桁の数字を入力してください");
-                  return;
-                }
-                setClaimError(null);
-                setClaiming(true);
-                try {
-                  const res = await fetch("/api/invite/claim", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ code: inviteCode }),
-                  });
-                  const data = await res.json().catch(() => ({}));
-                  if (!res.ok) {
-                    setClaimError(data.error ?? "適用に失敗しました");
-                    return;
-                  }
-                  setInviteCode("");
-                  toast.success("メイクレシピが反映されました！");
-                  router.refresh();
-                } catch {
-                  setClaimError("適用に失敗しました");
-                } finally {
-                  setClaiming(false);
-                }
-              }}
-              disabled={claiming}
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-            >
-              {claiming ? "適用中..." : "適用"}
-            </button>
-          </div>
-          {claimError && (
-            <p className="mt-2 text-sm text-destructive">{claimError}</p>
-          )}
-        </section>
 
         {/* 退会 */}
         <section className="mt-12 border-t border-border pt-8">

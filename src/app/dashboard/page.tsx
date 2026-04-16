@@ -5,7 +5,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
-  Ticket,
   Copy,
   Crown,
   Plus,
@@ -17,7 +16,6 @@ import {
   ChevronRight,
   Eye,
   Newspaper,
-  UserPlus,
   Check,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -206,34 +204,7 @@ export default function DashboardHomePage() {
   const [openMenuSetId, setOpenMenuSetId] = useState<string | null>(null);
   const [editingSet, setEditingSet] = useState<CosmeSet | null>(null);
   const [editingName, setEditingName] = useState("");
-  const [generatingCodeFor, setGeneratingCodeFor] = useState<string | null>(
-    null,
-  );
-  const [inviteCodesBySlug, setInviteCodesBySlug] = useState<
-    Record<string, { claim_code: string; is_claimed: boolean }>
-  >({});
   const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!isAdmin || sets.length === 0) return;
-    fetch("/api/invite/codes")
-      .then((res) => res.json())
-      .then((data) => {
-        const bySlug: Record<
-          string,
-          { claim_code: string; is_claimed: boolean }
-        > = {};
-        for (const c of data.codes ?? []) {
-          if (c.slug)
-            bySlug[c.slug] = {
-              claim_code: c.claim_code,
-              is_claimed: c.is_claimed,
-            };
-        }
-        setInviteCodesBySlug(bySlug);
-      })
-      .catch(() => {});
-  }, [isAdmin, sets.length]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -285,94 +256,9 @@ export default function DashboardHomePage() {
     setEditingName("");
   }, []);
 
-  const handleGenerateInviteCode = useCallback(
-    async (set: CosmeSet) => {
-      setOpenMenuSetId(null);
-      setGeneratingCodeFor(set.id);
-      try {
-        const res = await fetch("/api/invite/create", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ slug: set.slug }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          toast.error(data.error ?? "コードの生成に失敗しました");
-          return;
-        }
-        const code = data.claim_code;
-        setInviteCodesBySlug((prev) => ({
-          ...prev,
-          [set.slug]: { claim_code: code, is_claimed: false },
-        }));
-        navigator.clipboard.writeText(code);
-        toast.success(`招待コード ${code} をコピーしました`);
-      } catch {
-        toast.error("コードの生成に失敗しました");
-      } finally {
-        setGeneratingCodeFor(null);
-      }
-    },
-    [],
-  );
-
   const [totalViews, setTotalViews] = useState<number | null>(null);
   const [blogPosts, setBlogPosts] = useState<{ id: string; title: string; category: string; thumbnail_url?: string; created_at: string }[]>([]);
 
-  interface MyInviteCode {
-    id: string;
-    code: string;
-    used_by: string | null;
-    used_at: string | null;
-    created_at: string;
-  }
-  const [myInviteCodes, setMyInviteCodes] = useState<MyInviteCode[]>([]);
-  const [generatingInvite, setGeneratingInvite] = useState(false);
-  const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
-
-  const myUsername = sets[0]?.slug ?? null;
-
-  const loadMyInviteCodes = useCallback(() => {
-    if (!myUsername) return;
-    fetch(`/api/invite/my-codes?username=${encodeURIComponent(myUsername)}`)
-      .then((r) => r.json())
-      .then((data) => setMyInviteCodes(data.codes ?? []))
-      .catch(() => {});
-  }, [myUsername]);
-
-  useEffect(() => {
-    if (myUsername) loadMyInviteCodes();
-  }, [myUsername, loadMyInviteCodes]);
-
-  const handleGenerateMyInviteCode = useCallback(async () => {
-    if (!myUsername) return;
-    setGeneratingInvite(true);
-    try {
-      const res = await fetch("/api/invite/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: myUsername }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error ?? "コードの生成に失敗しました");
-        return;
-      }
-      toast.success(`招待コード ${data.code} を発行しました`);
-      loadMyInviteCodes();
-    } catch {
-      toast.error("コードの生成に失敗しました");
-    } finally {
-      setGeneratingInvite(false);
-    }
-  }, [myUsername, loadMyInviteCodes]);
-
-  const handleCopyInviteCode = useCallback((code: string, id: string) => {
-    navigator.clipboard.writeText(code);
-    setCopiedCodeId(id);
-    toast.success("コードをコピーしました");
-    setTimeout(() => setCopiedCodeId(null), 2000);
-  }, []);
 
   useEffect(() => {
     fetch("/api/analytics/views")
@@ -568,58 +454,6 @@ export default function DashboardHomePage() {
 
                       {openMenuSetId === set.id && (
                         <div className="absolute right-0 top-full z-50 mt-1.5 min-w-[220px] overflow-hidden rounded-2xl border border-border bg-white/95 py-1.5 shadow-xl shadow-black/5 backdrop-blur-md">
-                          {isAdmin &&
-                            inviteCodesBySlug[set.slug] && (
-                              <div className="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-2.5">
-                                <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                                  招待コード
-                                </span>
-                                <div className="flex items-center gap-1.5">
-                                  <code className="font-mono text-xs font-bold tracking-wider text-foreground">
-                                    {
-                                      inviteCodesBySlug[set.slug]
-                                        .claim_code
-                                    }
-                                  </code>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      navigator.clipboard.writeText(
-                                        inviteCodesBySlug[set.slug]
-                                          .claim_code,
-                                      );
-                                      toast.success("コピーしました");
-                                    }}
-                                    className="rounded-md p-1 hover:bg-muted"
-                                    aria-label="コピー"
-                                  >
-                                    <Copy className="h-3 w-3" />
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          {isAdmin && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleGenerateInviteCode(set);
-                              }}
-                              disabled={
-                                generatingCodeFor === set.id ||
-                                !!inviteCodesBySlug[set.slug]
-                              }
-                              className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-muted/50 disabled:opacity-40"
-                            >
-                              <Ticket className="h-4 w-4 shrink-0 text-muted-foreground" />
-                              {generatingCodeFor === set.id
-                                ? "生成中..."
-                                : inviteCodesBySlug[set.slug]
-                                  ? "招待コード発行済み"
-                                  : "招待コードを発行"}
-                            </button>
-                          )}
                           <button
                             type="button"
                             onClick={(e) => {
@@ -939,89 +773,6 @@ export default function DashboardHomePage() {
               </div>
             )}
           </>
-        )}
-
-        {/* Invite Friends Section */}
-        {!loading && myUsername && (
-          <div className="mt-8">
-            <div className="mb-3 flex items-center gap-2">
-              <UserPlus className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-bold text-foreground">友達を招待しよう（３人まで）</h2>
-            </div>
-            <div className="overflow-hidden rounded-lg border border-border bg-white shadow-sm">
-              {myInviteCodes.length > 0 ? (
-                <ul className="divide-y divide-border">
-                  {myInviteCodes.map((ic) => (
-                    <li key={ic.id} className="flex items-center gap-3 px-4 py-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <code className="text-lg font-bold tracking-wider text-foreground">
-                            {ic.code}
-                          </code>
-                          {ic.used_by ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                              <Check className="h-3 w-3" />
-                              使用済み
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-600">
-                              未使用
-                            </span>
-                          )}
-                        </div>
-                        {ic.used_by && (
-                          <p className="mt-0.5 text-[11px] text-muted-foreground">
-                            使用者: {ic.used_by}
-                          </p>
-                        )}
-                      </div>
-                      {!ic.used_by && (
-                        <div className="flex shrink-0 items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => handleCopyInviteCode(ic.code, ic.id)}
-                            className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-                            aria-label="コードをコピー"
-                          >
-                            {copiedCodeId === ic.id ? (
-                              <Check className="h-4 w-4 text-emerald-500" />
-                            ) : (
-                              <Copy className="h-4 w-4" />
-                            )}
-                          </button>
-                        </div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="px-4 py-5 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    招待コードを発行して友達をcosmepikに招待しよう
-                  </p>
-                </div>
-              )}
-
-              {(isAdmin || myInviteCodes.length < 3) && (
-                <div className="border-t border-border px-4 py-3">
-                  <button
-                    type="button"
-                    onClick={handleGenerateMyInviteCode}
-                    disabled={generatingInvite}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary/10 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary/20 disabled:opacity-50"
-                  >
-                    <Ticket className="h-4 w-4" />
-                    {generatingInvite ? "発行中..." : "招待コードを発行"}
-                    {!isAdmin && (
-                      <span className="text-xs text-primary/60">
-                        ({myInviteCodes.length}/3)
-                      </span>
-                    )}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
         )}
 
         {/* Blog Section */}

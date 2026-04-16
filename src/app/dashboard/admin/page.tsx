@@ -8,7 +8,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { uploadImage } from "@/lib/storage";
 import {
   Eye, MousePointerClick, Users, ExternalLink, ArrowUpDown, Search,
-  FileText, Plus, Pencil, Trash2, Check, X, ImageIcon, Ticket, Copy,
+  FileText, Plus, Pencil, Trash2, Check, X, ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -43,17 +43,8 @@ interface BlogPost {
   updated_at: string;
 }
 
-interface InviteCode {
-  id: string;
-  code: string;
-  created_by: string;
-  used_by: string | null;
-  used_at: string | null;
-  created_at: string;
-}
-
 type SortKey = "views" | "clicks" | "createdAt" | "slug";
-type Tab = "users" | "blog" | "invite";
+type Tab = "users" | "blog";
 
 const CATEGORIES = ["特集", "ビューティー", "スキンケア", "レシピ", "コスメ", "連載", "収益化", "使い方", "新機能"];
 
@@ -88,54 +79,6 @@ export default function AdminPage() {
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const bodyImageInputRef = useRef<HTMLInputElement>(null);
   const bodyTextareaRef = useRef<HTMLTextAreaElement>(null);
-
-  /* ── Invite state ── */
-  const [inviteCodes, setInviteCodes] = useState<InviteCode[]>([]);
-  const [inviteLoading, setInviteLoading] = useState(false);
-  const [generatingInvite, setGeneratingInvite] = useState(false);
-  const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
-
-  const fetchInviteCodes = useCallback(() => {
-    setInviteLoading(true);
-    fetch("/api/invite/my-codes?all=1")
-      .then((r) => r.json())
-      .then((d) => setInviteCodes(d.codes ?? []))
-      .catch(() => {})
-      .finally(() => setInviteLoading(false));
-  }, []);
-
-  useEffect(() => {
-    if (tab === "invite" && inviteCodes.length === 0) fetchInviteCodes();
-  }, [tab, inviteCodes.length, fetchInviteCodes]);
-
-  const handleGenerateInviteCode = useCallback(async () => {
-    setGeneratingInvite(true);
-    try {
-      const res = await fetch("/api/invite/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: "admin" }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "発行に失敗しました");
-        return;
-      }
-      toast.success(`招待コード ${data.code} を発行しました`);
-      fetchInviteCodes();
-    } catch {
-      toast.error("発行に失敗しました");
-    } finally {
-      setGeneratingInvite(false);
-    }
-  }, [fetchInviteCodes]);
-
-  const handleCopyCode = useCallback((code: string, id: string) => {
-    navigator.clipboard.writeText(code);
-    setCopiedCodeId(id);
-    toast.success("コードをコピーしました");
-    setTimeout(() => setCopiedCodeId(null), 2000);
-  }, []);
 
   const insertAtCursor = useCallback((text: string) => {
     const ta = bodyTextareaRef.current;
@@ -331,14 +274,6 @@ export default function AdminPage() {
           >
             <FileText className="h-4 w-4" />
             ブログ
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab("invite")}
-            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${tab === "invite" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-          >
-            <Ticket className="h-4 w-4" />
-            招待コード
           </button>
         </div>
 
@@ -564,84 +499,6 @@ export default function AdminPage() {
                     </div>
                   </div>
                 ))}
-              </div>
-            )}
-          </>
-        ) : tab === "invite" ? (
-          /* ═══════ Invite Tab ═══════ */
-          <>
-            <div className="mb-4 flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">{inviteCodes.length} 件の招待コード</p>
-              <button
-                type="button"
-                onClick={handleGenerateInviteCode}
-                disabled={generatingInvite}
-                className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
-              >
-                <Plus className="h-4 w-4" />
-                {generatingInvite ? "発行中..." : "新規発行"}
-              </button>
-            </div>
-
-            {inviteLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-              </div>
-            ) : inviteCodes.length === 0 ? (
-              <div className="rounded-xl border border-border bg-white p-12 text-center text-sm text-muted-foreground">
-                まだ招待コードがありません
-              </div>
-            ) : (
-              <div className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
-                <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/30">
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">コード</th>
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">発行者</th>
-                      <th className="px-4 py-3 text-center font-medium text-muted-foreground">ステータス</th>
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">使用者</th>
-                      <th className="px-4 py-3 text-right font-medium text-muted-foreground">発行日</th>
-                      <th className="px-4 py-3 text-center font-medium text-muted-foreground">コピー</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {inviteCodes.map((ic) => (
-                      <tr key={ic.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                        <td className="px-4 py-3 font-mono font-bold tracking-widest text-foreground">{ic.code}</td>
-                        <td className="px-4 py-3 text-muted-foreground">{ic.created_by}</td>
-                        <td className="px-4 py-3 text-center">
-                          <span
-                            className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold text-white ${ic.used_by ? "bg-gray-400" : "bg-emerald-500"}`}
-                          >
-                            {ic.used_by ? "使用済み" : "未使用"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">{ic.used_by ?? "—"}</td>
-                        <td className="px-4 py-3 text-right text-xs text-muted-foreground tabular-nums">
-                          {new Date(ic.created_at).toLocaleDateString("ja-JP")}
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          {!ic.used_by && (
-                            <button
-                              type="button"
-                              onClick={() => handleCopyCode(ic.code, ic.id)}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-                              aria-label="コードをコピー"
-                            >
-                              {copiedCodeId === ic.id ? (
-                                <Check className="h-3.5 w-3.5 text-emerald-500" />
-                              ) : (
-                                <Copy className="h-3.5 w-3.5" />
-                              )}
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                </div>
               </div>
             )}
           </>
