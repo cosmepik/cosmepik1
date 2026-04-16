@@ -54,8 +54,15 @@ function getGreeting(): string {
   return "こんばんは";
 }
 
+function useGreeting(): string {
+  const [greeting, setGreeting] = useState("");
+  useEffect(() => { setGreeting(getGreeting()); }, []);
+  return greeting;
+}
+
 export default function DashboardHomePage() {
   const router = useRouter();
+  const greeting = useGreeting();
   const [dashUser, setDashUser] = useState<DashboardUser | null>(null);
   const userId = dashUser?.id ?? "demo";
   const isAdmin = dashUser?.email === ADMIN_EMAIL;
@@ -299,7 +306,7 @@ export default function DashboardHomePage() {
       <div className="mx-auto max-w-md px-4 pb-12 pt-6">
         {/* Greeting */}
         <div className="mb-6">
-          <p className="text-sm text-muted-foreground">{getGreeting()}</p>
+          {greeting && <p className="text-sm text-muted-foreground">{greeting}</p>}
           <h1 className="mt-0.5 text-xl font-bold tracking-tight text-foreground">
             {displayName ? `${displayName} さん` : "マイページ"}
           </h1>

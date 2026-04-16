@@ -233,7 +233,7 @@ function PlacementItem({
   const labelAlign = placement.x > 75 ? "self-end" : placement.x < 25 ? "self-start" : "self-center";
 
   const imageElement = placement.image && (
-    <div className="relative h-14 w-14 overflow-hidden rounded-lg border-2 border-white/80 bg-white shadow-lg">
+    <div className="relative h-14 w-14 overflow-hidden border-2 border-white/80 bg-white shadow-lg">
       <img
         src={placement.image}
         alt={placement.product || ""}
