@@ -321,7 +321,7 @@ function RecipeSectionBlock({ section, slug, cacheBust, isPremium, userAffiliate
                   target="_blank"
                   rel="noopener noreferrer"
                   data-afl={p.link || undefined}
-                  className="block h-14 w-14 overflow-hidden rounded-lg border-2 border-white/80 bg-white shadow-lg"
+                  className="block h-14 w-14 overflow-hidden border-2 border-white/80 bg-white shadow-lg"
                 >
                   <SafeImage src={p.image} alt={p.product || ""} className="h-full w-full object-contain" />
                 </a>
