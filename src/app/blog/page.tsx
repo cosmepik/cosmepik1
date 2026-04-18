@@ -1,8 +1,21 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { AppHeader } from "@/components/AppHeader";
 
 export const revalidate = 60;
+
+export const metadata: Metadata = {
+  title: "#cosmepik編集部 - メイクレシピ・コスメ情報",
+  description:
+    "cosmepik編集部がお届けするメイクレシピの作り方、おすすめコスメ、スキンケア情報。あなたのメイクをもっと楽しくするヒントが満載です。",
+  openGraph: {
+    title: "#cosmepik編集部 - メイクレシピ・コスメ情報",
+    description:
+      "cosmepik編集部がお届けするメイクレシピの作り方、おすすめコスメ、スキンケア情報。",
+    siteName: "cosmepik",
+  },
+};
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";

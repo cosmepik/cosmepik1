@@ -8,7 +8,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { uploadImage } from "@/lib/storage";
 import {
   Eye, MousePointerClick, Users, ExternalLink, ArrowUpDown, Search,
-  FileText, Plus, Pencil, Trash2, Check, X, ImageIcon,
+  FileText, Plus, Pencil, Trash2, Check, X, ImageIcon, Gift, Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -43,8 +43,15 @@ interface BlogPost {
   updated_at: string;
 }
 
+interface TransferCode {
+  id: string;
+  code: string;
+  source_slug: string;
+  created_at: string;
+}
+
 type SortKey = "views" | "clicks" | "createdAt" | "slug";
-type Tab = "users" | "blog";
+type Tab = "users" | "blog" | "transfer";
 
 const CATEGORIES = ["特集", "ビューティー", "スキンケア", "レシピ", "コスメ", "連載", "収益化", "使い方", "新機能"];
 
@@ -79,6 +86,57 @@ export default function AdminPage() {
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const bodyImageInputRef = useRef<HTMLInputElement>(null);
   const bodyTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  /* ── Transfer code state ── */
+  const [transferCodes, setTransferCodes] = useState<TransferCode[]>([]);
+  const [transferLoading, setTransferLoading] = useState(false);
+  const [transferSlug, setTransferSlug] = useState("");
+  const [transferGenerating, setTransferGenerating] = useState(false);
+
+  const fetchTransferCodes = useCallback(() => {
+    setTransferLoading(true);
+    fetch("/api/admin/transfer-code")
+      .then((r) => r.json())
+      .then((d) => setTransferCodes(d.codes ?? []))
+      .catch(() => {})
+      .finally(() => setTransferLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (tab === "transfer" && transferCodes.length === 0) fetchTransferCodes();
+  }, [tab, transferCodes.length, fetchTransferCodes]);
+
+  const handleGenerateCode = async () => {
+    const slug = transferSlug.trim();
+    if (!slug) return;
+    setTransferGenerating(true);
+    try {
+      const res = await fetch("/api/admin/transfer-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sourceSlug: slug }),
+      });
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error || "コード発行に失敗"); return; }
+      toast.success(`コード ${data.code} を発行しました`);
+      setTransferSlug("");
+      fetchTransferCodes();
+    } catch {
+      toast.error("通信エラー");
+    } finally {
+      setTransferGenerating(false);
+    }
+  };
+
+  const handleDeleteCode = async (id: string) => {
+    if (!confirm("このコードを削除しますか？")) return;
+    await fetch("/api/admin/transfer-code", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    fetchTransferCodes();
+  };
 
   const insertAtCursor = useCallback((text: string) => {
     const ta = bodyTextareaRef.current;
@@ -274,6 +332,14 @@ export default function AdminPage() {
           >
             <FileText className="h-4 w-4" />
             ブログ
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("transfer")}
+            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${tab === "transfer" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            <Gift className="h-4 w-4" />
+            譲渡コード
           </button>
         </div>
 
@@ -501,6 +567,98 @@ export default function AdminPage() {
                 ))}
               </div>
             )}
+          </>
+        ) : tab === "transfer" ? (
+          /* ═══════ Transfer Code Tab ═══════ */
+          <>
+            <div className="mb-6 rounded-xl border border-border bg-white p-5 shadow-sm">
+              <h3 className="mb-3 text-sm font-bold text-foreground">コード発行</h3>
+              <p className="mb-4 text-xs text-muted-foreground">
+                コピー元のメイクレシピのスラッグ（URL識別子）を入力して、5桁の受け取りコードを発行します。
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={transferSlug}
+                  onChange={(e) => setTransferSlug(e.target.value)}
+                  placeholder="例: karen1214"
+                  className="flex-1 rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+                />
+                <button
+                  type="button"
+                  onClick={handleGenerateCode}
+                  disabled={transferGenerating || !transferSlug.trim()}
+                  className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+                >
+                  <Plus className="h-4 w-4" />
+                  {transferGenerating ? "発行中..." : "発行"}
+                </button>
+              </div>
+            </div>
+
+            {transferLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+              </div>
+            ) : transferCodes.length === 0 ? (
+              <div className="rounded-xl border border-border bg-white p-12 text-center text-sm text-muted-foreground">
+                発行済みのコードはありません
+              </div>
+            ) : (
+              <div className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/30">
+                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">コード</th>
+                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">コピー元slug</th>
+                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">発行日</th>
+                      <th className="px-4 py-3 text-center font-medium text-muted-foreground">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {transferCodes.map((tc) => (
+                      <tr key={tc.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-base font-bold tracking-wider text-foreground">{tc.code}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(tc.code);
+                                toast.success("コピーしました");
+                              }}
+                              className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+                              title="コードをコピー"
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <a href={`/${tc.source_slug}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                            {tc.source_slug}
+                          </a>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground tabular-nums">
+                          {new Date(tc.created_at).toLocaleDateString("ja-JP")}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCode(tc.id)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs text-rose-500 transition-colors hover:bg-rose-50"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            削除
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <p className="mt-3 text-right text-xs text-muted-foreground">{transferCodes.length} 件</p>
           </>
         ) : null}
       </div>

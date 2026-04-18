@@ -1,4 +1,5 @@
 import type React from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -54,6 +55,42 @@ async function fetchPost(id: string): Promise<BlogPost | null> {
 }
 
 type Props = { params: Promise<{ id: string }> };
+
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://cosmepik.me";
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const post = await fetchPost(id);
+  if (!post) return { title: "記事が見つかりません | cosmepik" };
+
+  const description = post.body
+    .replace(/[#![\]()]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 120);
+  const url = `${SITE_URL}/blog/${post.id}`;
+
+  return {
+    title: `${post.title} | #cosmepik編集部`,
+    description,
+    openGraph: {
+      title: `${post.title} | #cosmepik編集部`,
+      description,
+      url,
+      siteName: "cosmepik",
+      type: "article",
+      ...(post.thumbnail_url
+        ? { images: [{ url: post.thumbnail_url, width: 1200, height: 630 }] }
+        : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${post.title} | #cosmepik編集部`,
+      description,
+      ...(post.thumbnail_url ? { images: [post.thumbnail_url] } : {}),
+    },
+  };
+}
 
 const COSMEPIK_URL_RE = /^https?:\/\/cosmepik\.me\/(?:p\/)?([a-zA-Z0-9_-]+)\s*$/;
 const BODY_IMAGE_RE = /^!\[([^\]]*)\]\(([^)]+)\)\s*$/;

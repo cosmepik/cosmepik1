@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { X, Globe, Home, BarChart2, Settings, LogOut, ChevronRight, DollarSign, Crown, Shield } from "lucide-react";
+import { X, Globe, Home, BarChart2, Settings, LogOut, ChevronRight, DollarSign, Crown, Shield, Gift } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useProfile } from "@/lib/profile-context";
 import { useUser } from "@/hooks/use-user";
@@ -56,6 +56,13 @@ const revenueItem = {
   label: "収益化（ベータ版）",
   href: "/dashboard/revenue",
   description: "楽天アフィリエイトID設定",
+};
+
+const claimItem = {
+  icon: Gift,
+  label: "メイクレシピを受け取る",
+  href: "/dashboard/claim",
+  description: "コードでレシピを追加",
 };
 
 const ADMIN_EMAIL = "cosmepik.team@gmail.com";
@@ -186,6 +193,22 @@ export function SideMenu({ isOpen, onClose }: SideMenuProps) {
                 <div className="flex flex-1 flex-col items-start text-left">
                   <span className="text-sm font-medium text-foreground">{revenueItem.label}</span>
                   <span className="text-[11px] text-muted-foreground">{revenueItem.description}</span>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            </li>
+            <li>
+              <Link
+                href={claimItem.href}
+                onClick={onClose}
+                className="group flex items-center gap-3.5 rounded-xl px-3 py-3 transition-all hover:bg-accent"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                  <claimItem.icon className="h-4.5 w-4.5" strokeWidth={1.75} />
+                </div>
+                <div className="flex flex-1 flex-col items-start text-left">
+                  <span className="text-sm font-medium text-foreground">{claimItem.label}</span>
+                  <span className="text-[11px] text-muted-foreground">{claimItem.description}</span>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5" />
               </Link>
