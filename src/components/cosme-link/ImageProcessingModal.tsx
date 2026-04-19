@@ -87,7 +87,8 @@ export function ImageProcessingModal({
     if (!croppedPixels) return;
     setManualBusy(true);
     try {
-      const dataUrl = await cropImageToDataUrl(sourceUrl, croppedPixels, "image/png");
+      const cropSource = autoResult ?? sourceUrl;
+      const dataUrl = await cropImageToDataUrl(cropSource, croppedPixels, "image/png");
       onConfirm(dataUrl);
     } catch (e) {
       console.error("[ImageProcessingModal] manual crop failed", e);
@@ -176,11 +177,14 @@ export function ImageProcessingModal({
                   {error}
                 </p>
               )}
-              <div className="relative mx-auto aspect-square w-full overflow-hidden rounded-xl bg-muted">
+              <div className="relative mx-auto aspect-square w-full overflow-hidden rounded-xl bg-[conic-gradient(at_top_left,_#f3f4f6_25%,_#e5e7eb_25%_50%,_#f3f4f6_50%_75%,_#e5e7eb_75%)] bg-[length:20px_20px]">
                 <Cropper
-                  image={sourceUrl.startsWith("data:") || sourceUrl.startsWith("blob:")
-                    ? sourceUrl
-                    : `/api/image-proxy?url=${encodeURIComponent(sourceUrl)}`}
+                  image={(() => {
+                    const src = autoResult ?? sourceUrl;
+                    return src.startsWith("data:") || src.startsWith("blob:")
+                      ? src
+                      : `/api/image-proxy?url=${encodeURIComponent(src)}`;
+                  })()}
                   crop={crop}
                   zoom={zoom}
                   aspect={undefined}
