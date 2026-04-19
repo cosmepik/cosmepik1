@@ -58,7 +58,8 @@ export function ImageProcessingModal({
       } catch (e) {
         console.error("[ImageProcessingModal] auto removal failed", e);
         if (cancelled) return;
-        setError("自動処理に失敗しました。手動で調整してください。");
+        const detail = e instanceof Error ? e.message : String(e);
+        setError(`自動処理に失敗しました。手動で調整してください。\n詳細: ${detail}`);
         setStage("manual");
       }
     })();
@@ -173,7 +174,7 @@ export function ImageProcessingModal({
           {stage === "manual" && (
             <div className="flex flex-col gap-3 p-5">
               {error && (
-                <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                <p className="whitespace-pre-wrap break-words rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
                   {error}
                 </p>
               )}
