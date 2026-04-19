@@ -15,6 +15,7 @@ import { type SectionItem, type SectionType } from "@/lib/sections";
 import { searchMockCosme } from "@/lib/mock-data";
 import { CosmeImage } from "@/components/CosmeImage";
 import { uploadImage } from "@/lib/storage";
+import { ImageProcessingModal } from "@/components/cosme-link/ImageProcessingModal";
 import type { CosmeItem } from "@/types";
 
 interface AddItemModalProps {
@@ -50,11 +51,15 @@ export function AddItemModal({
   const [searchApiDebug, setSearchApiDebug] = useState<object | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [originalImage, setOriginalImage] = useState<string>("");
+
+  // 画像処理モーダル状態
+  const [processingSource, setProcessingSource] = useState<string | null>(null);
+  const [processingPending, setProcessingPending] = useState<CosmeItem | null>(null);
 
   const handleImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setImageUploading(true);
     try {
       const reader = new FileReader();
       const dataUrl = await new Promise<string>((resolve, reject) => {
@@ -62,9 +67,64 @@ export function AddItemModal({
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
-      setImagePreview(dataUrl);
-      const url = await uploadImage(dataUrl, "cosme-items", `manual-${Date.now()}`);
+      // 画像処理モーダルを開く（自動背景除去 → プレビュー → 手動クロップ）
+      setProcessingPending(null); // 手動フォーム用
+      setProcessingSource(dataUrl);
+    } catch {
+      setImage("");
+      setImagePreview(null);
+    } finally {
+      // ファイル入力をリセットして同じファイルを再選択できるようにする
+      e.target.value = "";
+    }
+  };
+
+  /** 画像処理モーダルで確定された data URL を処理 */
+  const handleProcessedImage = async (processedDataUrl: string) => {
+    const sourceUrl = processingSource;
+    const pendingItem = processingPending;
+    setProcessingSource(null);
+    setProcessingPending(null);
+
+    if (pendingItem) {
+      // 検索結果から追加するフロー
+      setImageUploading(true);
+      try {
+        const uploadedUrl = await uploadImage(
+          processedDataUrl,
+          "cosme-items",
+          `processed-${Date.now()}`,
+        );
+        const newItem: SectionItem = {
+          id: `item-${Date.now()}`,
+          product: pendingItem.name,
+          image: uploadedUrl,
+          originalImage: pendingItem.imageUrl,
+          link: pendingItem.rakutenUrl ?? pendingItem.amazonUrl,
+        };
+        if (sectionType === "routine") {
+          addItemToSection(sectionId, { ...newItem });
+        } else if (sectionType === "products") {
+          addItemToSection(sectionId, { ...newItem, rating: 0, reviewCount: 0 });
+        }
+        handleClose();
+      } finally {
+        setImageUploading(false);
+      }
+      return;
+    }
+
+    // 手動追加フォーム用: アップロードして state に反映
+    setImageUploading(true);
+    try {
+      setImagePreview(processedDataUrl);
+      const url = await uploadImage(
+        processedDataUrl,
+        "cosme-items",
+        `manual-${Date.now()}`,
+      );
       setImage(url);
+      if (sourceUrl) setOriginalImage(sourceUrl);
     } catch {
       setImage("");
       setImagePreview(null);
@@ -86,12 +146,14 @@ export function AddItemModal({
       newItem.label = label.trim() || undefined;
       newItem.link = link.trim() || undefined;
       newItem.image = image.trim() || undefined;
+      newItem.originalImage = originalImage.trim() || undefined;
     } else if (sectionType === "products") {
       if (!product.trim()) return;
       newItem.product = product.trim();
       newItem.price = price.trim() || undefined;
       newItem.link = link.trim() || undefined;
       newItem.image = image.trim() || undefined;
+      newItem.originalImage = originalImage.trim() || undefined;
       newItem.badge = badge || undefined;
       newItem.rating = 0;
       newItem.reviewCount = 0;
@@ -120,6 +182,9 @@ export function AddItemModal({
     setIsSearchPending(false);
     setSearchApiError(null);
     setSearchApiDebug(null);
+    setOriginalImage("");
+    setProcessingSource(null);
+    setProcessingPending(null);
     onClose();
   };
 
@@ -227,18 +292,14 @@ export function AddItemModal({
   }, [submittedKeyword, searchCount]);
 
   const handleAddFromSearch = (item: CosmeItem) => {
-    const newItem: SectionItem = {
-      id: `item-${Date.now()}`,
-      product: item.name,
-      image: item.imageUrl,
-      link: item.rakutenUrl ?? item.amazonUrl,
-    };
-    if (sectionType === "routine") {
-      addItemToSection(sectionId, { ...newItem });
-    } else if (sectionType === "products") {
-      addItemToSection(sectionId, { ...newItem, rating: 0, reviewCount: 0 });
-    }
-    handleClose();
+    // 画像処理モーダルを開く（自動背景除去 → プレビュー or 手動調整）
+    setProcessingPending(item);
+    setProcessingSource(item.imageUrl);
+  };
+
+  const handleProcessingCancel = () => {
+    setProcessingSource(null);
+    setProcessingPending(null);
   };
 
   useEffect(() => {
@@ -529,6 +590,15 @@ export function AddItemModal({
           ) : null}
         </div>
       </div>
+
+      {processingSource && (
+        <ImageProcessingModal
+          isOpen={true}
+          sourceUrl={processingSource}
+          onCancel={handleProcessingCancel}
+          onConfirm={handleProcessedImage}
+        />
+      )}
     </div>
   );
 }

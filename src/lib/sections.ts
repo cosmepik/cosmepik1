@@ -6,6 +6,8 @@ export interface SectionItem {
   product?: string;
   brand?: string;
   image?: string;
+  /** 元画像URL（再編集・再クロップ用に保持） */
+  originalImage?: string;
   link?: string;
   price?: string;
   rating?: number;
@@ -22,6 +24,8 @@ export interface RecipePlacement {
   product?: string;
   brand?: string;
   image?: string;
+  /** 元画像URL（再編集・再クロップ用に保持） */
+  originalImage?: string;
   link?: string;
   /** 0–100 (%) horizontal position on background */
   x: number;
