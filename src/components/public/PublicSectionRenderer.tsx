@@ -216,49 +216,76 @@ export function PublicSectionRenderer({ section, slug, userAffiliateId, cardDesi
             const labelScale = p.labelScale ?? 1;
             const hasLabel = Boolean(p.brand || p.product);
             const effectiveLink = buildFallbackLink(p);
-            const linkProps = effectiveLink
-              ? {
-                  href: effectiveLink,
-                  target: "_blank" as const,
-                  rel: "noopener noreferrer",
-                  onClick: (e: React.MouseEvent) => { e.preventDefault(); onClick(effectiveLink, p.id); },
+            // リンクありのときだけクリックハンドラを生やすための共通 handler。
+            // 以前は `{...linkProps}` を "a" | "div" の両方に spread していたが、
+            // onClick の型引数が HTMLAnchorElement / HTMLDivElement で噛み合わず
+            // TypeScript のビルドが落ちたため、<a> と <div> を明示的に分岐して
+            // それぞれに合った props のみ渡すようにした。
+            const handleLinkClick = effectiveLink
+              ? (e: React.MouseEvent) => {
+                  e.preventDefault();
+                  onClick(effectiveLink, p.id);
                 }
-              : {};
-            const ImgWrapper = effectiveLink ? "a" : "div";
-            const LabelWrapper = effectiveLink ? "a" : "div";
+              : undefined;
+            const imgStyle = {
+              left: `${p.x}%`,
+              top: `${p.y}%`,
+              transform: `translate(-50%, -50%) scale(${scale})`,
+              filter: "drop-shadow(0 4px 6px rgba(0,0,0,0.25))",
+            } as const;
+            const labelStyle = {
+              left: `${p.x + labelOffsetX}%`,
+              top: `${p.y + labelOffsetY}%`,
+              transform: `translate(-50%, -50%) scale(${labelScale})`,
+            } as const;
+            const imgInner = p.image ? (
+              <div className="relative h-full w-full">
+                <CosmeImage src={p.image} alt={p.product || ""} fill className="object-contain" sizes="56px" />
+              </div>
+            ) : null;
+            const labelInner = (
+              <div className="w-[120px] bg-black/40 px-1.5 py-0.5 text-center" style={{ backdropFilter: "blur(2px)" }}>
+                {p.brand && <p className="truncate text-[11px] font-bold text-white">{p.brand}</p>}
+                {p.product && <p className="line-clamp-3 text-[10px] font-medium leading-tight text-white">{p.product}</p>}
+              </div>
+            );
             return (
               <div key={p.id}>
                 {p.image && (
-                  <ImgWrapper
-                    {...(linkProps as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
-                    className="absolute z-10 block h-20 w-20"
-                    style={{
-                      left: `${p.x}%`,
-                      top: `${p.y}%`,
-                      transform: `translate(-50%, -50%) scale(${scale})`,
-                      filter: "drop-shadow(0 4px 6px rgba(0,0,0,0.25))",
-                    }}
-                  >
-                    <div className="relative h-full w-full">
-                      <CosmeImage src={p.image} alt={p.product || ""} fill className="object-contain" sizes="56px" />
+                  effectiveLink ? (
+                    <a
+                      href={effectiveLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={handleLinkClick}
+                      className="absolute z-10 block h-20 w-20"
+                      style={imgStyle}
+                    >
+                      {imgInner}
+                    </a>
+                  ) : (
+                    <div className="absolute z-10 block h-20 w-20" style={imgStyle}>
+                      {imgInner}
                     </div>
-                  </ImgWrapper>
+                  )
                 )}
                 {hasLabel && (
-                  <LabelWrapper
-                    {...(linkProps as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
-                    className="absolute z-10 block"
-                    style={{
-                      left: `${p.x + labelOffsetX}%`,
-                      top: `${p.y + labelOffsetY}%`,
-                      transform: `translate(-50%, -50%) scale(${labelScale})`,
-                    }}
-                  >
-                    <div className="w-[120px] bg-black/40 px-1.5 py-0.5 text-center" style={{ backdropFilter: "blur(2px)" }}>
-                      {p.brand && <p className="truncate text-[11px] font-bold text-white">{p.brand}</p>}
-                      {p.product && <p className="line-clamp-3 text-[10px] font-medium leading-tight text-white">{p.product}</p>}
+                  effectiveLink ? (
+                    <a
+                      href={effectiveLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={handleLinkClick}
+                      className="absolute z-10 block"
+                      style={labelStyle}
+                    >
+                      {labelInner}
+                    </a>
+                  ) : (
+                    <div className="absolute z-10 block" style={labelStyle}>
+                      {labelInner}
                     </div>
-                  </LabelWrapper>
+                  )
                 )}
               </div>
             );
