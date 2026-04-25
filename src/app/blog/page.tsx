@@ -5,15 +5,31 @@ import { AppHeader } from "@/components/AppHeader";
 
 export const revalidate = 60;
 
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://cosmepik.me";
+
 export const metadata: Metadata = {
-  title: "#cosmepik編集部 - メイクレシピ・コスメ情報",
+  title: "#cosmepik編集部 - メイクレシピの作り方・コスメ情報",
   description:
     "cosmepik編集部がお届けするメイクレシピの作り方、おすすめコスメ、スキンケア情報。あなたのメイクをもっと楽しくするヒントが満載です。",
+  keywords: [
+    "メイクレシピ",
+    "メイクレシピ 作り方",
+    "メイクレシピ 共有",
+    "コスメ",
+    "スキンケア",
+    "cosmepik",
+    "コスメピック",
+  ],
+  alternates: {
+    canonical: `${SITE_URL}/blog`,
+  },
   openGraph: {
-    title: "#cosmepik編集部 - メイクレシピ・コスメ情報",
+    title: "#cosmepik編集部 - メイクレシピの作り方・コスメ情報",
     description:
       "cosmepik編集部がお届けするメイクレシピの作り方、おすすめコスメ、スキンケア情報。",
+    url: `${SITE_URL}/blog`,
     siteName: "cosmepik",
+    type: "website",
   },
 };
 
@@ -65,6 +81,30 @@ async function fetchAllPosts(): Promise<BlogPost[]> {
 export default async function BlogListPage() {
   const posts = await fetchAllPosts();
 
+  // ItemList の構造化データ。ブログ一覧が記事の集合体であることを Google に伝える。
+  // 上位 20 件まで載せれば Google には十分。
+  const itemListJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "#cosmepik編集部 記事一覧",
+    itemListElement: posts.slice(0, 20).map((p, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      url: `${SITE_URL}/blog/${p.id}`,
+      name: p.title,
+    })),
+  };
+
+  // パンくず
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "ホーム", item: `${SITE_URL}/` },
+      { "@type": "ListItem", position: 2, name: "#cosmepik編集部", item: `${SITE_URL}/blog` },
+    ],
+  };
+
   return (
     <main
       className="min-h-screen"
@@ -74,6 +114,14 @@ export default async function BlogListPage() {
         backgroundSize: "24px 24px",
       }}
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <AppHeader />
 
       <div className="mx-auto max-w-2xl px-4 py-8">

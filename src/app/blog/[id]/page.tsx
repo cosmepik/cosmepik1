@@ -54,6 +54,32 @@ async function fetchPost(id: string): Promise<BlogPost | null> {
   }
 }
 
+/**
+ * 同じカテゴリーの最新記事を最大4件取得（自分自身は除外）。
+ * 関連記事セクションでの内部リンク（SEO の「サイト内リンクグラフ」を強化する）に使う。
+ */
+async function fetchRelatedPosts(
+  category: string,
+  excludeId: string,
+): Promise<{ id: string; title: string; category: string; thumbnail_url: string | null; created_at: string }[]> {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return [];
+  try {
+    const url = `${SUPABASE_URL}/rest/v1/blog_posts?published=eq.true&category=eq.${encodeURIComponent(category)}&id=neq.${encodeURIComponent(excludeId)}&select=id,title,category,thumbnail_url,created_at&order=created_at.desc&limit=4`;
+    const res = await fetch(url, {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        Accept: "application/json",
+      },
+      next: { revalidate: 300 },
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
 type Props = { params: Promise<{ id: string }> };
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://cosmepik.me";
@@ -70,15 +96,39 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .slice(0, 120);
   const url = `${SITE_URL}/blog/${post.id}`;
 
+  // 「メイクレシピ」関連を必ずキーワードに含めて、サイト全体のテーマを Google に明示する。
+  // カテゴリーごとの追加キーワードも併記。
+  const keywordsByCategory: Record<string, string[]> = {
+    レシピ: ["メイクレシピ", "メイクレシピ 作り方", "メイク 手順"],
+    ビューティー: ["メイク", "ビューティー", "メイクレシピ"],
+    スキンケア: ["スキンケア", "美容"],
+    コスメ: ["コスメ", "化粧品 おすすめ"],
+    特集: ["メイクレシピ", "コスメ 特集"],
+    使い方: ["cosmepik 使い方", "メイクレシピ 共有"],
+    新機能: ["cosmepik", "新機能"],
+    収益化: ["楽天アフィリエイト", "コスメ 収益化"],
+  };
+  const keywords = [
+    "cosmepik",
+    "コスメピック",
+    ...(keywordsByCategory[post.category] ?? ["メイクレシピ"]),
+    post.category,
+  ];
+
   return {
     title: `${post.title} | #cosmepik編集部`,
     description,
+    keywords,
+    alternates: {
+      canonical: url,
+    },
     openGraph: {
       title: `${post.title} | #cosmepik編集部`,
       description,
       url,
       siteName: "cosmepik",
       type: "article",
+      publishedTime: post.created_at,
       ...(post.thumbnail_url
         ? { images: [{ url: post.thumbnail_url, width: 1200, height: 630 }] }
         : {}),
@@ -165,7 +215,58 @@ export default async function BlogDetailPage({ params }: Props) {
   const post = await fetchPost(id);
   if (!post) notFound();
 
-  const embeds = await resolveEmbeds(post.body);
+  const [embeds, related] = await Promise.all([
+    resolveEmbeds(post.body),
+    fetchRelatedPosts(post.category, post.id),
+  ]);
+
+  // Article 構造化データ。Google の検索結果でリッチな表示（日付・著者など）を出す手助けになる。
+  // description は generateMetadata と同じロジック。
+  const description = post.body
+    .replace(/[#![\]()]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 160);
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: post.title,
+    description,
+    image: post.thumbnail_url ? [post.thumbnail_url] : undefined,
+    datePublished: post.created_at,
+    dateModified: post.created_at,
+    author: {
+      "@type": "Organization",
+      name: "#cosmepik編集部",
+      url: SITE_URL,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "cosmepik",
+      url: SITE_URL,
+      logo: {
+        "@type": "ImageObject",
+        url: `${SITE_URL}/og-image.png`,
+      },
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": `${SITE_URL}/blog/${post.id}`,
+    },
+    articleSection: post.category,
+    inLanguage: "ja-JP",
+  };
+
+  // パンくずリスト構造化データ。検索結果のパンくず表示に使われる。
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "ホーム", item: `${SITE_URL}/` },
+      { "@type": "ListItem", position: 2, name: "#cosmepik編集部", item: `${SITE_URL}/blog` },
+      { "@type": "ListItem", position: 3, name: post.title, item: `${SITE_URL}/blog/${post.id}` },
+    ],
+  };
 
   return (
     <main
@@ -176,6 +277,16 @@ export default async function BlogDetailPage({ params }: Props) {
         backgroundSize: "24px 24px",
       }}
     >
+      {/* JSON-LD: Article + BreadcrumbList */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+
       <AppHeader />
 
       <article className="mx-auto max-w-2xl px-4 py-8">
@@ -187,6 +298,16 @@ export default async function BlogDetailPage({ params }: Props) {
           >
             {post.category}
           </span>
+          <time
+            dateTime={post.created_at}
+            className="text-[11px] text-muted-foreground"
+          >
+            {new Date(post.created_at).toLocaleDateString("ja-JP", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+          </time>
         </div>
 
         {/* Title */}
@@ -266,6 +387,46 @@ export default async function BlogDetailPage({ params }: Props) {
             );
           })}
         </div>
+
+        {/* Related articles - 内部リンクを増やして SEO のサイト構造を強化 */}
+        {related.length > 0 && (
+          <aside className="mt-12 border-t border-border pt-6">
+            <h2 className="mb-4 text-base font-bold text-foreground">
+              関連記事
+            </h2>
+            <div style={{ border: "1.5px dashed #333" }}>
+              {related.map((rp, i) => (
+                <Link
+                  key={rp.id}
+                  href={`/blog/${rp.id}`}
+                  className="group flex items-center gap-3 px-3 py-2 transition-all hover:opacity-80"
+                  style={i > 0 ? { borderTop: "1.5px dashed #333" } : undefined}
+                >
+                  {rp.thumbnail_url ? (
+                    <div className="relative h-[64px] w-[64px] shrink-0 overflow-hidden rounded-lg">
+                      <Image src={rp.thumbnail_url} alt="" fill className="object-cover" sizes="64px" />
+                    </div>
+                  ) : (
+                    <div className="flex h-[64px] w-[64px] shrink-0 items-center justify-center rounded-lg bg-pink-50">
+                      <span className="text-xl">📝</span>
+                    </div>
+                  )}
+                  <div className="flex min-w-0 flex-1 flex-col justify-center">
+                    <span
+                      className="text-[10px] font-bold"
+                      style={{ color: catColor(rp.category) }}
+                    >
+                      {rp.category}
+                    </span>
+                    <p className="mt-0.5 text-[12px] font-bold leading-[1.45] text-foreground line-clamp-2">
+                      {rp.title}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </aside>
+        )}
 
         {/* Back links */}
         <div className="mt-12 flex flex-col gap-3 border-t border-border pt-6">
