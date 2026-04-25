@@ -33,10 +33,25 @@ import type { CosmeSet, CosmeSetMode, InfluencerProfile } from "@/types";
 
 const ADMIN_EMAIL = "cosmepik.team@gmail.com";
 
+/**
+ * ダッシュボード API レスポンスの localStorage キャッシュキー。
+ * 2回目以降の訪問で /api/dashboard の応答を待たずに即時描画するために使う。
+ * v1 はレスポンスの shape（user / sets / premium / profiles）と紐づく。
+ * shape が変わったら数字を上げてキャッシュを無効化すること。
+ */
+const DASHBOARD_CACHE_KEY = "cosmepik-dashboard-cache-v1";
+
 interface DashboardUser {
   id: string;
   email?: string;
   metadata?: Record<string, unknown>;
+}
+
+interface DashboardApiResponse {
+  user?: DashboardUser | null;
+  sets?: CosmeSet[];
+  premium?: boolean;
+  profiles?: Record<string, Record<string, unknown>>;
 }
 
 function normalizeSlug(raw: string): string {
@@ -86,48 +101,88 @@ export default function DashboardHomePage() {
   const [slugInputError, setSlugInputError] = useState<string | null>(null);
   const [createMode, setCreateMode] = useState<CosmeSetMode>("recipe");
 
+  // API 応答（キャッシュ or fresh）を state に適用する共通処理。
+  // fresh 取得時に data.user が null で返ってくるケースでは dashUser を上書きしないのが元挙動なので維持する。
+  const applyDashboardData = useCallback((data: DashboardApiResponse) => {
+    if (data.user) setDashUser(data.user);
+    setSets(data.sets ?? []);
+    setIsPremium(!!data.premium);
+    if (data.profiles) {
+      for (const [slug, p] of Object.entries(data.profiles)) {
+        const raw = p as Record<string, unknown>;
+        seedProfileCache(slug, {
+          username: raw.username as string,
+          displayName: (raw.display_name as string) ?? "",
+          avatarUrl: (raw.avatar_url as string) ?? undefined,
+          backgroundImageUrl: (raw.background_image_url as string) ?? undefined,
+          usePreset: (raw.use_preset as boolean) ?? undefined,
+          themeId: (raw.theme_id as string) ?? undefined,
+          backgroundId: (raw.background_id as string) ?? undefined,
+          fontId: (raw.font_id as string) ?? undefined,
+          cardDesignId: (raw.card_design_id as string) ?? undefined,
+          bio: (raw.bio as string) ?? undefined,
+          bioSub: (raw.bio_sub as string) ?? undefined,
+          skinType: (raw.skin_type as string) ?? undefined,
+          personalColor: (raw.personal_color as string) ?? undefined,
+          snsLinks: raw.sns_links as InfluencerProfile["snsLinks"],
+          rakutenAffiliateId: (raw.rakuten_affiliate_id as string) ?? undefined,
+          list: [],
+          updatedAt: (raw.updated_at as string) ?? new Date().toISOString(),
+        });
+      }
+    }
+  }, []);
+
   const load = useCallback(() => {
+    // 1. 前回取得したレスポンスが localStorage にあれば即時描画してスピナーを消す。
+    //    2回目以降の訪問は体感ゼロ秒になる。裏で fresh を取り直して state を上書きするので
+    //    データは必ず最新に置き換わる。
+    let cacheApplied = false;
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem(DASHBOARD_CACHE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw) as DashboardApiResponse;
+          if (parsed && typeof parsed === "object") {
+            applyDashboardData(parsed);
+            cacheApplied = true;
+            setLoading(false);
+          }
+        }
+      } catch {
+        // キャッシュ壊れや quota エラーは握りつぶして通常フローに移行
+      }
+    }
+
+    // 2. バックグラウンドで最新を取得し、成功したら state と localStorage を更新。
     const timeout = setTimeout(() => setLoading(false), 10000);
     fetch("/api/dashboard")
       .then((r) => r.json())
-      .then((data) => {
-        if (data.user) setDashUser(data.user);
-        setSets(data.sets ?? []);
-        setIsPremium(!!data.premium);
-        const slugs: string[] = [];
-        if (data.profiles) {
-          for (const [slug, p] of Object.entries(data.profiles)) {
-            slugs.push(slug);
-            const raw = p as Record<string, unknown>;
-            seedProfileCache(slug, {
-              username: raw.username as string,
-              displayName: (raw.display_name as string) ?? "",
-              avatarUrl: (raw.avatar_url as string) ?? undefined,
-              backgroundImageUrl: (raw.background_image_url as string) ?? undefined,
-              usePreset: (raw.use_preset as boolean) ?? undefined,
-              themeId: (raw.theme_id as string) ?? undefined,
-              backgroundId: (raw.background_id as string) ?? undefined,
-              fontId: (raw.font_id as string) ?? undefined,
-              cardDesignId: (raw.card_design_id as string) ?? undefined,
-              bio: (raw.bio as string) ?? undefined,
-              bioSub: (raw.bio_sub as string) ?? undefined,
-              skinType: (raw.skin_type as string) ?? undefined,
-              personalColor: (raw.personal_color as string) ?? undefined,
-              snsLinks: raw.sns_links as InfluencerProfile["snsLinks"],
-              rakutenAffiliateId: (raw.rakuten_affiliate_id as string) ?? undefined,
-              list: [],
-              updatedAt: (raw.updated_at as string) ?? new Date().toISOString(),
-            });
-          }
-        }
+      .then((data: DashboardApiResponse) => {
+        applyDashboardData(data);
+        const slugs = (data.sets ?? []).map((s) => s.slug);
         for (const s of slugs) getSections(s).catch(() => {});
+
+        try {
+          if (data.user) {
+            localStorage.setItem(DASHBOARD_CACHE_KEY, JSON.stringify(data));
+          } else {
+            // ログアウト状態の応答はキャッシュしない（次回ログイン時に他ユーザーのデータが残るのを防ぐ）
+            localStorage.removeItem(DASHBOARD_CACHE_KEY);
+          }
+        } catch {
+          // localStorage が使えない / quota 超過時は諦める（表示には影響しない）
+        }
       })
-      .catch(() => setSets([]))
+      .catch(() => {
+        // ネットワーク失敗時: キャッシュ描画済みならその表示を維持、未描画なら空表示にフォールバック
+        if (!cacheApplied) setSets([]);
+      })
       .finally(() => {
         clearTimeout(timeout);
         setLoading(false);
       });
-  }, []);
+  }, [applyDashboardData]);
 
   useEffect(() => {
     load();

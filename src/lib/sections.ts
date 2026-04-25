@@ -39,7 +39,20 @@ export interface RecipePlacement {
   color?: string;
   /** comment rotation in degrees */
   rotation?: number;
+  /** label horizontal offset from image center in % of canvas width (default 0) */
+  labelOffsetX?: number;
+  /** label vertical offset from image center in % of canvas height (default 6.5) */
+  labelOffsetY?: number;
+  /** label independent scale multiplier (default 1) */
+  labelScale?: number;
 }
+
+/** タイトルボックス位置・サイズのデフォルト値 */
+export const LABEL_DEFAULT = {
+  offsetX: 0,
+  offsetY: 6.5,
+  scale: 1,
+} as const;
 
 export interface Section {
   id: string;

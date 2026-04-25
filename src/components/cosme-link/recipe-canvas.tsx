@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import type { RecipePlacement } from "@/lib/sections";
+import { LABEL_DEFAULT } from "@/lib/sections";
 
 const COMMENT_FONT = "'HuiFontP29', cursive";
 
@@ -28,6 +29,7 @@ interface RecipeCanvasProps {
   selectedId?: string | null;
   onSelect?: (id: string | null) => void;
   onMove?: (id: string, x: number, y: number) => void;
+  onLabelMove?: (id: string, offsetX: number, offsetY: number) => void;
   onDelete?: (id: string) => void;
   onBackgroundClick?: () => void;
   onPinchScale?: (delta: number) => void;
@@ -40,6 +42,7 @@ export function RecipeCanvas({
   selectedId,
   onSelect,
   onMove,
+  onLabelMove,
   onDelete,
   onBackgroundClick,
   onPinchScale,
@@ -94,6 +97,7 @@ export function RecipeCanvas({
   return (
     <div
       ref={canvasRef}
+      data-recipe-canvas
       className="relative w-full overflow-hidden bg-muted/30"
       style={{ aspectRatio: "3 / 4", touchAction: editable ? "pan-y" : undefined }}
     >
@@ -140,6 +144,7 @@ export function RecipeCanvas({
             isSelected={selectedId === p.id}
             onSelect={() => onSelect?.(p.id)}
             onMove={(x, y) => onMove?.(p.id, x, y)}
+            onLabelMove={(ox, oy) => onLabelMove?.(p.id, ox, oy)}
             onDelete={() => onDelete?.(p.id)}
           />
         ),
@@ -179,7 +184,11 @@ function useDrag(
     startEvt.stopPropagation();
     onSelect();
 
-    const canvas = (startEvt.currentTarget as HTMLElement).parentElement!;
+    // canvas は祖先のどこか（画像／ラベルが別ラッパーになった為、直近の親とは限らない）
+    const canvas = (startEvt.currentTarget as HTMLElement).closest<HTMLElement>(
+      "[data-recipe-canvas]",
+    );
+    if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
 
     const getClientPos = (e: TouchEvent | MouseEvent) => {
@@ -218,6 +227,7 @@ function PlacementItem({
   isSelected,
   onSelect,
   onMove,
+  onLabelMove,
   onDelete,
 }: {
   placement: RecipePlacement;
@@ -225,92 +235,154 @@ function PlacementItem({
   isSelected: boolean;
   onSelect: () => void;
   onMove: (x: number, y: number) => void;
+  onLabelMove: (offsetX: number, offsetY: number) => void;
   onDelete: () => void;
 }) {
   const scale = placement.scale ?? 1;
-  const handleDrag = useDrag(editable, onSelect, onMove);
+  const labelOffsetX = placement.labelOffsetX ?? LABEL_DEFAULT.offsetX;
+  const labelOffsetY = placement.labelOffsetY ?? LABEL_DEFAULT.offsetY;
+  const labelScale = placement.labelScale ?? LABEL_DEFAULT.scale;
 
-  const labelAlign = placement.x > 75 ? "self-end" : placement.x < 25 ? "self-start" : "self-center";
+  const handleDragImage = useDrag(editable, onSelect, onMove);
+  // ラベルドラッグは「ドラッグ先の絶対座標(%)」から画像位置との差分をオフセットに変換
+  const handleDragLabel = useDrag(editable, onSelect, (x, y) => {
+    onLabelMove(x - placement.x, y - placement.y);
+  });
 
-  const imageElement = placement.image && (
-    <div className="relative h-14 w-14 overflow-hidden border-2 border-white/80 bg-white shadow-lg">
-      <img
-        src={placement.image}
-        alt={placement.product || ""}
-        className="h-full w-full object-contain"
-        draggable={false}
-      />
+  const hasLabel = Boolean(placement.brand || placement.product);
+
+  const imageElement = placement.image ? (
+    <img
+      src={placement.image}
+      alt={placement.product || ""}
+      className="h-full w-full object-contain"
+      style={{ filter: "drop-shadow(0 4px 6px rgba(0,0,0,0.25))" }}
+      draggable={false}
+    />
+  ) : null;
+
+  const labelContent = (
+    <div
+      className="w-[120px] bg-black/40 px-1.5 py-0.5 text-center backdrop-blur-[2px]"
+      style={{ fontFamily: "'Noto Sans JP', sans-serif" }}
+    >
+      {placement.brand && (
+        <p className="truncate text-[11px] font-bold text-white">{placement.brand}</p>
+      )}
+      {placement.product && (
+        <p className="line-clamp-4 text-[10px] font-medium leading-tight text-white">{placement.product}</p>
+      )}
     </div>
   );
 
-  const labelElement = (placement.brand || placement.product) ? (
-    <div className={`w-[100px] ${labelAlign} bg-black/40 px-1.5 py-0.5 text-center backdrop-blur-[2px]`} style={{ fontFamily: "'Noto Sans JP', sans-serif" }}>
-      {placement.brand && (
-        <p className="truncate text-[9px] font-bold text-white">{placement.brand}</p>
-      )}
-      {placement.product && (
-        <p className="line-clamp-4 text-[8px] font-medium leading-tight text-white">{placement.product}</p>
-      )}
-    </div>
-  ) : null;
-
   const effectiveLink = buildFallbackLink(placement);
+
+  // 公開ビュー（編集不可かつリンクあり）：画像とラベルそれぞれをリンク化
   if (!editable && effectiveLink) {
     return (
-      <a
-        href={effectiveLink}
-        target="_blank"
-        rel="noopener noreferrer"
-        data-afl={effectiveLink}
-        data-item-id={placement.id}
-        className="absolute z-10 flex flex-col items-center gap-0.5"
-        style={{
-          left: `${placement.x}%`,
-          top: `${placement.y}%`,
-          transform: `translate(-50%, -50%) scale(${scale})`,
-        }}
-      >
-        {imageElement}
-        {labelElement}
-      </a>
+      <>
+        {imageElement && (
+          <a
+            href={effectiveLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-afl={effectiveLink}
+            data-item-id={placement.id}
+            className="absolute z-10 block h-20 w-20"
+            style={{
+              left: `${placement.x}%`,
+              top: `${placement.y}%`,
+              transform: `translate(-50%, -50%) scale(${scale})`,
+            }}
+          >
+            {imageElement}
+          </a>
+        )}
+        {hasLabel && (
+          <a
+            href={effectiveLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-afl={effectiveLink}
+            data-item-id={placement.id}
+            className="absolute z-10 block"
+            style={{
+              left: `${placement.x + labelOffsetX}%`,
+              top: `${placement.y + labelOffsetY}%`,
+              transform: `translate(-50%, -50%) scale(${labelScale})`,
+            }}
+          >
+            {labelContent}
+          </a>
+        )}
+      </>
     );
   }
 
+  // 編集ビュー：画像とラベルを別々にドラッグ可能な絶対配置要素として描画
   return (
-    <div
-      className={`absolute flex flex-col items-center gap-0.5 ${editable ? "cursor-grab active:cursor-grabbing" : ""} ${isSelected ? "z-20" : "z-10"}`}
-      style={{
-        left: `${placement.x}%`,
-        top: `${placement.y}%`,
-        transform: `translate(-50%, -50%) scale(${scale})`,
-        touchAction: editable ? "none" : undefined,
-      }}
-      onTouchStart={handleDrag}
-      onMouseDown={handleDrag}
-      onClick={(e) => {
-        e.stopPropagation();
-        if (editable) onSelect();
-      }}
-    >
-      {isSelected && editable && (
-        <>
-          <div className="absolute -inset-2 rounded-xl border-2 border-primary/60 bg-primary/5" />
-          <button
-            type="button"
-            className="absolute -left-3 -top-3 z-30 flex h-5 w-5 items-center justify-center rounded-full bg-gray-400 text-white shadow-md active:scale-90"
-            onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            onTouchStart={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" className="h-3 w-3">
-              <line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" />
-            </svg>
-          </button>
-        </>
+    <>
+      {/* 画像 */}
+      {imageElement && (
+        <div
+          className={`absolute flex items-center justify-center ${editable ? "cursor-grab active:cursor-grabbing" : ""} ${isSelected ? "z-20" : "z-10"}`}
+          style={{
+            left: `${placement.x}%`,
+            top: `${placement.y}%`,
+            transform: `translate(-50%, -50%) scale(${scale})`,
+            touchAction: editable ? "none" : undefined,
+          }}
+          onTouchStart={handleDragImage}
+          onMouseDown={handleDragImage}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (editable) onSelect();
+          }}
+        >
+          {isSelected && editable && (
+            <>
+              <div className="pointer-events-none absolute -inset-2 rounded-xl border-2 border-primary/60 bg-primary/5" />
+              <button
+                type="button"
+                className="absolute -left-3 -top-3 z-30 flex h-5 w-5 items-center justify-center rounded-full bg-gray-400 text-white shadow-md active:scale-90"
+                onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                onTouchStart={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" className="h-3 w-3">
+                  <line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" />
+                </svg>
+              </button>
+            </>
+          )}
+          <div className="relative h-20 w-20">{imageElement}</div>
+        </div>
       )}
-      {imageElement}
-      {labelElement}
-    </div>
+
+      {/* ラベル（独立してドラッグ／リサイズ可能） */}
+      {hasLabel && (
+        <div
+          className={`absolute ${editable ? "cursor-grab active:cursor-grabbing" : ""} ${isSelected ? "z-20" : "z-10"}`}
+          style={{
+            left: `${placement.x + labelOffsetX}%`,
+            top: `${placement.y + labelOffsetY}%`,
+            transform: `translate(-50%, -50%) scale(${labelScale})`,
+            touchAction: editable ? "none" : undefined,
+          }}
+          onTouchStart={handleDragLabel}
+          onMouseDown={handleDragLabel}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (editable) onSelect();
+          }}
+        >
+          {isSelected && editable && (
+            <div className="pointer-events-none absolute -inset-1.5 rounded-md border border-dashed border-primary/70" />
+          )}
+          {labelContent}
+        </div>
+      )}
+    </>
   );
 }
 

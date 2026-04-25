@@ -16,6 +16,7 @@ import { searchMockCosme } from "@/lib/mock-data";
 import { CosmeImage } from "@/components/CosmeImage";
 import { uploadImage } from "@/lib/storage";
 import { ImageProcessingModal } from "@/components/cosme-link/ImageProcessingModal";
+import { warmupBackgroundRemoval } from "@/lib/image-processing";
 import type { CosmeItem } from "@/types";
 
 interface AddItemModalProps {
@@ -304,6 +305,8 @@ export function AddItemModal({
 
   useEffect(() => {
     if (!isOpen) return;
+    // モーダルを開いたタイミングで背景除去モデルをプリロード（実行時の待ち時間を短縮）
+    warmupBackgroundRemoval();
     document.body.style.overflow = "hidden";
     document.body.style.userSelect = "none";
     document.body.style.webkitUserSelect = "none";

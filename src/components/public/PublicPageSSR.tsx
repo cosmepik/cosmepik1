@@ -304,33 +304,48 @@ function RecipeSectionBlock({ section, slug, cacheBust, isPremium, userAffiliate
             );
           }
           const scale = p.scale ?? 1;
-          const labelAlign = p.x > 75 ? "self-end" : p.x < 25 ? "self-start" : "self-center";
+          const labelOffsetX = p.labelOffsetX ?? 0;
+          const labelOffsetY = p.labelOffsetY ?? 6.5;
+          const labelScale = p.labelScale ?? 1;
+          const hasLabel = Boolean(p.brand || p.product);
+          const href = aflHref(p.link, userAffiliateId);
           return (
-            <div
-              key={p.id}
-              className="absolute z-10 flex flex-col items-center gap-0.5"
-              style={{
-                left: `${p.x}%`,
-                top: `${p.y}%`,
-                transform: `translate(-50%, -50%) scale(${scale})`,
-              }}
-            >
+            <div key={p.id}>
               {p.image && (
                 <a
-                  href={aflHref(p.link, userAffiliateId)}
+                  href={href}
                   target="_blank"
                   rel="noopener noreferrer"
                   data-afl={p.link || undefined}
-                  className="block h-14 w-14 overflow-hidden border-2 border-white/80 bg-white shadow-lg"
+                  className="absolute z-10 block h-20 w-20"
+                  style={{
+                    left: `${p.x}%`,
+                    top: `${p.y}%`,
+                    transform: `translate(-50%, -50%) scale(${scale})`,
+                    filter: "drop-shadow(0 4px 6px rgba(0,0,0,0.25))",
+                  }}
                 >
                   <SafeImage src={p.image} alt={p.product || ""} className="h-full w-full object-contain" />
                 </a>
               )}
-              {(p.brand || p.product) && (
-                <div className={`w-[100px] ${labelAlign} bg-black/40 px-1.5 py-0.5 text-center`} style={{ backdropFilter: "blur(2px)", fontFamily: "'Noto Sans JP', sans-serif" }}>
-                  {p.brand && <p className="truncate text-[9px] font-bold text-white">{p.brand}</p>}
-                  {p.product && <p className="line-clamp-4 text-[8px] font-medium leading-tight text-white">{p.product}</p>}
-                </div>
+              {hasLabel && (
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-afl={p.link || undefined}
+                  className="absolute z-10 block"
+                  style={{
+                    left: `${p.x + labelOffsetX}%`,
+                    top: `${p.y + labelOffsetY}%`,
+                    transform: `translate(-50%, -50%) scale(${labelScale})`,
+                  }}
+                >
+                  <div className="w-[120px] bg-black/40 px-1.5 py-0.5 text-center" style={{ backdropFilter: "blur(2px)", fontFamily: "'Noto Sans JP', sans-serif" }}>
+                    {p.brand && <p className="truncate text-[11px] font-bold text-white">{p.brand}</p>}
+                    {p.product && <p className="line-clamp-4 text-[10px] font-medium leading-tight text-white">{p.product}</p>}
+                  </div>
+                </a>
               )}
             </div>
           );

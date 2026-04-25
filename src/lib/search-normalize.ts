@@ -65,6 +65,11 @@ const REMOVE_PHRASES = [
   "数量限定",
   "期間限定",
   "韓国コスメ",
+  // "アットコスメ" は "コスメ" より前に置くこと（短い方が先だと "アット" が残る）
+  "アットコスメ",
+  "化粧品",
+  "コスメ",
+  "韓国",
   "特価！",
   "特価!",
   "特価",
@@ -82,6 +87,7 @@ const REMOVE_PHRASES = [
   "楽天",
   "楽天一位",
   "即日発送",
+  "翌日発送",
 ];
 
 /** 括弧付き【】[]「」のプロモーション文言を除去する正規表現 */
@@ -89,6 +95,13 @@ const BRACKET_PATTERN = /[【\[「]([^】\]」]*)[】\]」]/g;
 
 /** 《》の括弧付き文言を除去 */
 const ANGLE_BRACKET_PATTERN = /《[^》]*》/g;
+
+/**
+ * ()（半角）と（）（全角）の括弧内文言を丸ごと除去する正規表現。
+ * 楽天商品名によくある "（正規品）" "(送料無料)" "（24ml）" などをまとめてクレンジングする。
+ * ネストした括弧は想定していない（楽天商品名ではほぼ出現しない）。
+ */
+const PAREN_PATTERN = /[（(][^）)]*[）)]/g;
 
 /** %クーポン（10%クーポン、%クーポン など）を除去 */
 const COUPON_PATTERN = /\d*%クーポン/gi;
@@ -140,9 +153,10 @@ export function cleanseItemName(name: string): string {
   if (!name || typeof name !== "string") return "";
   let s = name.trim();
 
-  // 1. 【...】[...]《》の括弧ブロックを全て除去
+  // 1. 【...】[...]《》(...)（...）の括弧ブロックを全て除去
   s = s.replace(BRACKET_PATTERN, " ").trim();
   s = s.replace(ANGLE_BRACKET_PATTERN, " ").trim();
+  s = s.replace(PAREN_PATTERN, " ").trim();
 
   // 2. ★・◎に続く文言を除去
   s = s.replace(STAR_PATTERN, " ").trim();

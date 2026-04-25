@@ -211,9 +211,12 @@ export function PublicSectionRenderer({ section, slug, userAffiliateId, cardDesi
               );
             }
             const scale = p.scale ?? 1;
+            const labelOffsetX = p.labelOffsetX ?? 0;
+            const labelOffsetY = p.labelOffsetY ?? 6.5;
+            const labelScale = p.labelScale ?? 1;
+            const hasLabel = Boolean(p.brand || p.product);
             const effectiveLink = buildFallbackLink(p);
-            const Wrapper = effectiveLink ? "a" : "div";
-            const wrapperProps = effectiveLink
+            const linkProps = effectiveLink
               ? {
                   href: effectiveLink,
                   target: "_blank" as const,
@@ -221,25 +224,43 @@ export function PublicSectionRenderer({ section, slug, userAffiliateId, cardDesi
                   onClick: (e: React.MouseEvent) => { e.preventDefault(); onClick(effectiveLink, p.id); },
                 }
               : {};
+            const ImgWrapper = effectiveLink ? "a" : "div";
+            const LabelWrapper = effectiveLink ? "a" : "div";
             return (
-              <Wrapper
-                key={p.id}
-                {...wrapperProps}
-                className="absolute z-10 flex flex-col items-center gap-0.5"
-                style={{ left: `${p.x}%`, top: `${p.y}%`, transform: `translate(-50%, -50%) scale(${scale})` }}
-              >
+              <div key={p.id}>
                 {p.image && (
-                  <div className="h-14 w-14 overflow-hidden rounded-lg border-2 border-white/80 bg-white shadow-lg">
-                    <CosmeImage src={p.image} alt={p.product || ""} fill className="object-contain" sizes="56px" />
-                  </div>
+                  <ImgWrapper
+                    {...(linkProps as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
+                    className="absolute z-10 block h-20 w-20"
+                    style={{
+                      left: `${p.x}%`,
+                      top: `${p.y}%`,
+                      transform: `translate(-50%, -50%) scale(${scale})`,
+                      filter: "drop-shadow(0 4px 6px rgba(0,0,0,0.25))",
+                    }}
+                  >
+                    <div className="relative h-full w-full">
+                      <CosmeImage src={p.image} alt={p.product || ""} fill className="object-contain" sizes="56px" />
+                    </div>
+                  </ImgWrapper>
                 )}
-                {(p.brand || p.product) && (
-                  <div className="max-w-[100px] bg-black/40 px-1.5 py-0.5 text-center" style={{ backdropFilter: "blur(2px)" }}>
-                    {p.brand && <p className="truncate text-[9px] font-bold text-white">{p.brand}</p>}
-                    {p.product && <p className="line-clamp-3 text-[8px] font-medium leading-tight text-white">{p.product}</p>}
-                  </div>
+                {hasLabel && (
+                  <LabelWrapper
+                    {...(linkProps as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
+                    className="absolute z-10 block"
+                    style={{
+                      left: `${p.x + labelOffsetX}%`,
+                      top: `${p.y + labelOffsetY}%`,
+                      transform: `translate(-50%, -50%) scale(${labelScale})`,
+                    }}
+                  >
+                    <div className="w-[120px] bg-black/40 px-1.5 py-0.5 text-center" style={{ backdropFilter: "blur(2px)" }}>
+                      {p.brand && <p className="truncate text-[11px] font-bold text-white">{p.brand}</p>}
+                      {p.product && <p className="line-clamp-3 text-[10px] font-medium leading-tight text-white">{p.product}</p>}
+                    </div>
+                  </LabelWrapper>
                 )}
-              </Wrapper>
+              </div>
             );
           })}
           {/* cosmepik ロゴ */}

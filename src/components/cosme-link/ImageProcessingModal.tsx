@@ -1,21 +1,31 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import Cropper, { type Area } from "react-easy-crop";
-import { Loader2, Sparkles, Scissors, Check, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
+  Loader2,
+  Scissors,
+  Check,
+  X,
+  Wand2,
+  ImageIcon,
+} from "lucide-react";
+import {
+  blobToDataUrl,
   cropImageToDataUrl,
+  fetchImageAsBlob,
   removeImageBackground,
 } from "@/lib/image-processing";
+import { ManualCropper, type PixelArea } from "./ManualCropper";
 
-type Stage = "processing" | "preview" | "manual";
+type Stage = "choose" | "processing" | "manual";
 
 interface Props {
   isOpen: boolean;
   /** 元画像URL（楽天URL / dataURL / アップロード後URL など） */
   sourceUrl: string;
   onCancel: () => void;
-  /** 処理後の data URL を返す */
+  /** 処理後の data URL（または同一オリジンURL）を返す */
   onConfirm: (processedDataUrl: string) => void;
 }
 
@@ -25,50 +35,34 @@ export function ImageProcessingModal({
   onCancel,
   onConfirm,
 }: Props) {
-  const [stage, setStage] = useState<Stage>("processing");
+  const [stage, setStage] = useState<Stage>("choose");
   const [progress, setProgress] = useState(0);
-  const [autoResult, setAutoResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [asIsBusy, setAsIsBusy] = useState(false);
 
   // Manual crop state
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedPixels, setCroppedPixels] = useState<Area | null>(null);
+  const [croppedPixels, setCroppedPixels] = useState<PixelArea | null>(null);
   const [manualBusy, setManualBusy] = useState(false);
 
+  // onConfirm は親のレンダー毎に参照が変わる可能性があるため ref に保持し、
+  // 処理中に再レンダーが起きても useEffect が重複実行されないようにする。
+  const onConfirmRef = useRef(onConfirm);
+  useEffect(() => {
+    onConfirmRef.current = onConfirm;
+  });
+
+  // モーダルが開く / 対象画像が変わる度に状態をリセット
   useEffect(() => {
     if (!isOpen) return;
-    setStage("processing");
+    setStage("choose");
     setProgress(0);
-    setAutoResult(null);
     setError(null);
-    setCrop({ x: 0, y: 0 });
-    setZoom(1);
     setCroppedPixels(null);
-
-    let cancelled = false;
-    (async () => {
-      try {
-        const dataUrl = await removeImageBackground(sourceUrl, (p) => {
-          if (!cancelled) setProgress(p);
-        });
-        if (cancelled) return;
-        setAutoResult(dataUrl);
-        setStage("preview");
-      } catch (e) {
-        console.error("[ImageProcessingModal] auto removal failed", e);
-        if (cancelled) return;
-        const detail = e instanceof Error ? e.message : String(e);
-        setError(`自動処理に失敗しました。手動で調整してください。\n詳細: ${detail}`);
-        setStage("manual");
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
+    setAsIsBusy(false);
+    setManualBusy(false);
   }, [isOpen, sourceUrl]);
 
+  // モーダル表示中は背面のスクロールを止める
   useEffect(() => {
     if (!isOpen) return;
     document.body.style.overflow = "hidden";
@@ -77,20 +71,75 @@ export function ImageProcessingModal({
     };
   }, [isOpen]);
 
-  const onCropComplete = useCallback(
-    (_area: Area, areaPixels: Area) => {
-      setCroppedPixels(areaPixels);
-    },
-    [],
-  );
+  // stage === "processing" に入ったときだけ AI 背景除去を実行する。
+  // ユーザーが「背景を除去」ボタンを押すまでは重い処理を走らせない。
+  useEffect(() => {
+    if (!isOpen || stage !== "processing") return;
+
+    setProgress(0);
+    setError(null);
+
+    let cancelled = false;
+
+    // 疑似プログレス: 実コールバックが発火しない / 遅延するケース用に
+    // 時間経過で 90% まで指数的に滑らかに上昇させる（減少はしない）。
+    const start = performance.now();
+    const TIME_CONSTANT_MS = 2500;
+    const SIMULATED_CEILING = 90;
+    const tickerId = window.setInterval(() => {
+      if (cancelled) return;
+      const elapsed = performance.now() - start;
+      const simulated =
+        SIMULATED_CEILING * (1 - Math.exp(-elapsed / TIME_CONSTANT_MS));
+      setProgress((prev) => Math.max(prev, simulated));
+    }, 80);
+
+    (async () => {
+      try {
+        const dataUrl = await removeImageBackground(sourceUrl, (p) => {
+          if (cancelled) return;
+          setProgress((prev) => Math.max(prev, Math.min(p, 95)));
+        });
+        if (cancelled) return;
+        window.clearInterval(tickerId);
+        setProgress(100);
+        // 100% 表示を一瞬だけ見せてから親に渡す（視覚的な完了感のため）
+        await new Promise((r) => setTimeout(r, 180));
+        if (cancelled) return;
+        // 新UX: プレビュー画面を挟まず、そのまま親に確定を返す
+        onConfirmRef.current(dataUrl);
+      } catch (e) {
+        console.error("[ImageProcessingModal] bg removal failed", e);
+        if (cancelled) return;
+        window.clearInterval(tickerId);
+        const detail = e instanceof Error ? e.message : String(e);
+        setError(
+          `背景除去に失敗しました。別の方法を選んでください。\n詳細: ${detail}`,
+        );
+        setStage("choose");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(tickerId);
+    };
+  }, [isOpen, stage, sourceUrl]);
+
+  const handleCropChange = useCallback((area: PixelArea | null) => {
+    setCroppedPixels(area);
+  }, []);
 
   const handleManualConfirm = async () => {
-    if (!croppedPixels) return;
+    if (!croppedPixels || manualBusy) return;
     setManualBusy(true);
     try {
-      const cropSource = autoResult ?? sourceUrl;
-      const dataUrl = await cropImageToDataUrl(cropSource, croppedPixels, "image/png");
-      onConfirm(dataUrl);
+      const dataUrl = await cropImageToDataUrl(
+        sourceUrl,
+        croppedPixels,
+        "image/png",
+      );
+      onConfirmRef.current(dataUrl);
     } catch (e) {
       console.error("[ImageProcessingModal] manual crop failed", e);
       setError("切り抜きに失敗しました");
@@ -99,22 +148,69 @@ export function ImageProcessingModal({
     }
   };
 
-  if (!isOpen) return null;
+  // 「このまま使う」: 元画像をそのまま使う。
+  // 外部URLはブラウザ経由で取得して dataURL 化することで、
+  // 呼び出し側の Supabase Storage へのアップロードパスに乗せる。
+  const handleUseAsIs = async () => {
+    if (asIsBusy) return;
+    setAsIsBusy(true);
+    setError(null);
+    try {
+      if (sourceUrl.startsWith("data:")) {
+        onConfirmRef.current(sourceUrl);
+        return;
+      }
+      const blob = await fetchImageAsBlob(sourceUrl);
+      const dataUrl = await blobToDataUrl(blob);
+      onConfirmRef.current(dataUrl);
+    } catch (e) {
+      console.error("[ImageProcessingModal] use as-is failed", e);
+      const detail = e instanceof Error ? e.message : String(e);
+      setError(`画像の読み込みに失敗しました\n詳細: ${detail}`);
+      setAsIsBusy(false);
+    }
+  };
 
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={onCancel} />
+  if (!isOpen) return null;
+  if (typeof window === "undefined") return null;
+
+  // プレビュー表示用URL。
+  //  - dataURL / blobURL / 同一オリジン（"/..."を含む）はそのまま
+  //  - 外部URLのみ CORS 対策のため /api/image-proxy 経由
+  const previewSrc = (() => {
+    if (sourceUrl.startsWith("data:") || sourceUrl.startsWith("blob:")) {
+      return sourceUrl;
+    }
+    try {
+      const u = new URL(sourceUrl, window.location.href);
+      if (u.origin === window.location.origin) return sourceUrl;
+    } catch {
+      // URL として不正な場合はそのまま渡す
+      return sourceUrl;
+    }
+    return `/api/image-proxy?url=${encodeURIComponent(sourceUrl)}`;
+  })();
+
+  const busy = asIsBusy || manualBusy;
+
+  const modal = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      <div
+        className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
+        onClick={busy ? undefined : onCancel}
+      />
       <div className="relative z-10 flex max-h-[90dvh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-card shadow-xl">
         <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-3">
           <h3 className="text-sm font-bold text-card-foreground">
+            {stage === "choose" && "画像の使い方を選択"}
             {stage === "processing" && "画像を処理中..."}
-            {stage === "preview" && "背景を消しました"}
             {stage === "manual" && "切り抜き調整"}
           </h3>
           <button
             type="button"
             onClick={onCancel}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-secondary-foreground hover:bg-accent"
+            disabled={busy}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-secondary-foreground hover:bg-accent disabled:opacity-50"
             aria-label="閉じる"
           >
             <X className="h-4 w-4" />
@@ -122,51 +218,77 @@ export function ImageProcessingModal({
         </div>
 
         <div className="flex-1 overflow-y-auto">
+          {stage === "choose" && (
+            <div className="flex flex-col gap-4 p-5">
+              {error && (
+                <p className="whitespace-pre-wrap break-words rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                  {error}
+                </p>
+              )}
+              <div className="relative mx-auto aspect-square w-full max-w-xs overflow-hidden rounded-xl bg-[conic-gradient(at_top_left,_#f3f4f6_25%,_#e5e7eb_25%_50%,_#f3f4f6_50%_75%,_#e5e7eb_75%)] bg-[length:20px_20px]">
+                <img
+                  src={previewSrc}
+                  alt="元画像"
+                  className="absolute inset-0 h-full w-full object-contain"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => setStage("processing")}
+                  disabled={busy}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                >
+                  <Wand2 className="h-4 w-4" />
+                  AIで背景を除去
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStage("manual")}
+                  disabled={busy}
+                  className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background py-3 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"
+                >
+                  <Scissors className="h-4 w-4" />
+                  トリミング
+                </button>
+                <button
+                  type="button"
+                  onClick={handleUseAsIs}
+                  disabled={busy}
+                  className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background py-3 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"
+                >
+                  {asIsBusy ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" /> 読み込み中...
+                    </>
+                  ) : (
+                    <>
+                      <ImageIcon className="h-4 w-4" /> このまま使う
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+
           {stage === "processing" && (
             <div className="flex flex-col items-center justify-center gap-4 px-5 py-10">
               <Loader2 className="h-10 w-10 animate-spin text-primary" />
               <div className="w-full max-w-xs">
                 <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                   <div
-                    className="h-full bg-primary transition-all"
+                    className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
                 <p className="mt-2 text-center text-xs text-muted-foreground">
-                  {progress < 100 ? `AIで背景を除去中 ${progress}%` : "仕上げ中..."}
+                  {progress < 100
+                    ? `AIで背景を除去中 ${Math.round(progress)}%`
+                    : "仕上げ中..."}
                 </p>
                 <p className="mt-1 text-center text-[10px] text-muted-foreground/70">
                   初回のみモデルをダウンロードします（少しお待ちください）
                 </p>
-              </div>
-            </div>
-          )}
-
-          {stage === "preview" && autoResult && (
-            <div className="flex flex-col gap-4 p-5">
-              <div className="flex items-center justify-center gap-1.5 rounded-lg bg-primary/10 px-3 py-2 text-xs font-medium text-primary">
-                <Sparkles className="h-3.5 w-3.5" /> 自動で背景を除去しました
-              </div>
-              <div className="relative mx-auto aspect-square w-full max-w-xs overflow-hidden rounded-xl bg-[conic-gradient(at_top_left,_#f3f4f6_25%,_#e5e7eb_25%_50%,_#f3f4f6_50%_75%,_#e5e7eb_75%)] bg-[length:20px_20px]">
-                <img src={autoResult} alt="処理後プレビュー" className="absolute inset-0 h-full w-full object-contain" />
-              </div>
-              <div className="flex flex-col gap-2">
-                <button
-                  type="button"
-                  onClick={() => onConfirm(autoResult)}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                >
-                  <Check className="h-4 w-4" />
-                  このまま使う
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStage("manual")}
-                  className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background py-3 text-sm font-medium text-foreground hover:bg-accent"
-                >
-                  <Scissors className="h-4 w-4" />
-                  手動で調整
-                </button>
               </div>
             </div>
           )}
@@ -178,53 +300,46 @@ export function ImageProcessingModal({
                   {error}
                 </p>
               )}
-              <div className="relative mx-auto aspect-square w-full overflow-hidden rounded-xl bg-[conic-gradient(at_top_left,_#f3f4f6_25%,_#e5e7eb_25%_50%,_#f3f4f6_50%_75%,_#e5e7eb_75%)] bg-[length:20px_20px]">
-                <Cropper
-                  image={(() => {
-                    const src = autoResult ?? sourceUrl;
-                    return src.startsWith("data:") || src.startsWith("blob:")
-                      ? src
-                      : `/api/image-proxy?url=${encodeURIComponent(src)}`;
-                  })()}
-                  crop={crop}
-                  zoom={zoom}
-                  aspect={undefined}
-                  showGrid
-                  onCropChange={setCrop}
-                  onZoomChange={setZoom}
-                  onCropComplete={onCropComplete}
-                  restrictPosition={false}
-                  objectFit="contain"
-                />
+              <ManualCropper
+                imageUrl={previewSrc}
+                onChange={handleCropChange}
+                className="mx-auto aspect-square w-full overflow-hidden rounded-xl bg-[conic-gradient(at_top_left,_#f3f4f6_25%,_#e5e7eb_25%_50%,_#f3f4f6_50%_75%,_#e5e7eb_75%)] bg-[length:20px_20px]"
+              />
+              <p className="text-center text-[11px] text-muted-foreground">
+                枠の角・辺をドラッグしてサイズ調整／ピンチで拡大・縮小
+              </p>
+              <div className="mt-1 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setStage("choose")}
+                  disabled={manualBusy}
+                  className="flex-1 rounded-xl border border-border bg-background py-3 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"
+                >
+                  戻る
+                </button>
+                <button
+                  type="button"
+                  onClick={handleManualConfirm}
+                  disabled={!croppedPixels || manualBusy}
+                  className="flex flex-[2] items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {manualBusy ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" /> 処理中...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-4 w-4" /> この範囲で切り抜く
+                    </>
+                  )}
+                </button>
               </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs text-muted-foreground">ズーム</label>
-                <input
-                  type="range"
-                  min={1}
-                  max={4}
-                  step={0.01}
-                  value={zoom}
-                  onChange={(e) => setZoom(Number(e.target.value))}
-                  className="w-full"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={handleManualConfirm}
-                disabled={!croppedPixels || manualBusy}
-                className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-              >
-                {manualBusy ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> 処理中...</>
-                ) : (
-                  <><Check className="h-4 w-4" /> この範囲で切り抜く</>
-                )}
-              </button>
             </div>
           )}
         </div>
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }

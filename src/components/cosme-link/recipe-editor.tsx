@@ -7,6 +7,7 @@ import { useSections } from "@/lib/section-context";
 import { uploadImage } from "@/lib/storage";
 import { flushSections } from "@/lib/store";
 import type { Section, RecipePlacement } from "@/lib/sections";
+import { LABEL_DEFAULT } from "@/lib/sections";
 import { RecipeCanvas } from "./recipe-canvas";
 import { AddItemModal } from "./add-item-modal";
 import { OnboardingBubble } from "./onboarding-guide";
@@ -127,6 +128,16 @@ export function RecipeEditor() {
     [placements, updateRecipe],
   );
 
+  const handleLabelMove = useCallback(
+    (id: string, offsetX: number, offsetY: number) => {
+      const next = placements.map((p) =>
+        p.id === id ? { ...p, labelOffsetX: offsetX, labelOffsetY: offsetY } : p,
+      );
+      updateRecipe({ placements: next });
+    },
+    [placements, updateRecipe],
+  );
+
   const handleDelete = useCallback((id?: string) => {
     const targetId = id ?? selectedId;
     if (!targetId) return;
@@ -147,6 +158,34 @@ export function RecipeEditor() {
     },
     [selectedId, placements, updateRecipe],
   );
+
+  const handleLabelScale = useCallback(
+    (delta: number) => {
+      if (!selectedId) return;
+      const next = placements.map((p) => {
+        if (p.id !== selectedId) return p;
+        const cur = p.labelScale ?? LABEL_DEFAULT.scale;
+        return { ...p, labelScale: Math.max(0.5, Math.min(2.5, cur + delta)) };
+      });
+      updateRecipe({ placements: next });
+    },
+    [selectedId, placements, updateRecipe],
+  );
+
+  const handleLabelReset = useCallback(() => {
+    if (!selectedId) return;
+    const next = placements.map((p) =>
+      p.id === selectedId
+        ? {
+            ...p,
+            labelOffsetX: LABEL_DEFAULT.offsetX,
+            labelOffsetY: LABEL_DEFAULT.offsetY,
+            labelScale: LABEL_DEFAULT.scale,
+          }
+        : p,
+    );
+    updateRecipe({ placements: next });
+  }, [selectedId, placements, updateRecipe]);
 
   const updatePlacement = useCallback(
     (id: string, updates: Partial<RecipePlacement>) => {
@@ -231,6 +270,7 @@ export function RecipeEditor() {
           selectedId={selectedId}
           onSelect={setSelectedId}
           onMove={handleMove}
+          onLabelMove={handleLabelMove}
           onDelete={handleDelete}
           onBackgroundClick={() => fileInputRef.current?.click()}
           onPinchScale={handleScale}
@@ -416,6 +456,44 @@ export function RecipeEditor() {
               </button>
             </div>
           </div>
+
+          {/* タイトルボックス操作 */}
+          {(selectedPlacement.brand || selectedPlacement.product) && !editingLabel && (
+            <div className="flex items-center justify-between gap-2 border-t border-border pt-2">
+              <div className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
+                <span className="truncate text-[11px] font-medium">タイトル</span>
+                <span className="truncate text-[10px] text-muted-foreground/70">
+                  ドラッグで移動
+                </span>
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => handleLabelScale(-0.15)}
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95"
+                  aria-label="タイトルを縮小"
+                >
+                  <ZoomOut className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleLabelScale(0.15)}
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95"
+                  aria-label="タイトルを拡大"
+                >
+                  <ZoomIn className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLabelReset}
+                  className="rounded-full bg-secondary px-2.5 py-1.5 text-[10px] font-medium text-secondary-foreground transition-colors hover:bg-accent active:scale-95"
+                  aria-label="タイトル位置をリセット"
+                >
+                  リセット
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

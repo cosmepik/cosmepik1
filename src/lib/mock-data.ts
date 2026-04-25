@@ -1,18 +1,22 @@
 import type { CosmeItem } from "@/types";
 import { normalizeForSearch } from "@/lib/search-normalize";
 
-/** カテゴリ別のプレースホルダー画像（placehold.co） */
+/**
+ * カテゴリ別のダミー画像（/public/mock-cosme 以下の実写コスメ写真）。
+ * ローカル開発時の背景除去テストで形状がわかるよう、プレースホルダーではなく
+ * 実際のコスメ写真を使用する。
+ */
 const IMG = {
-  lip: "https://placehold.co/128x128/fce4ec/e91e63?text=Lip",
-  base: "https://placehold.co/128x128/f5f0e6/d4a574?text=Base",
-  toner: "https://placehold.co/128x128/e0f7fa/00acc1?text=Toner",
-  serum: "https://placehold.co/128x128/f3e5f5/8e24aa?text=Serum",
-  cream: "https://placehold.co/128x128/fff8e1/ffa000?text=Cream",
-  mascara: "https://placehold.co/128x128/263238/37474f?text=Mascara",
-  blush: "https://placehold.co/128x128/ffebee/f44336?text=Blush",
-  eye: "https://placehold.co/128x128/ede7f6/5e35b1?text=Eye",
-  cleanser: "https://placehold.co/128x128/e8f5e9/43a047?text=Wash",
-  sunscreen: "https://placehold.co/128x128/fff3e0/ff9800?text=UV",
+  lip: "/mock-cosme/lip.jpg",
+  base: "/mock-cosme/base.jpg",
+  toner: "/mock-cosme/toner.jpg",
+  serum: "/mock-cosme/serum.jpg",
+  cream: "/mock-cosme/cream.jpg",
+  mascara: "/mock-cosme/mascara.jpg",
+  blush: "/mock-cosme/blush.jpg",
+  eye: "/mock-cosme/eye.jpg",
+  cleanser: "/mock-cosme/cleanser.jpg",
+  sunscreen: "/mock-cosme/sunscreen.jpg",
 } as const;
 
 /**

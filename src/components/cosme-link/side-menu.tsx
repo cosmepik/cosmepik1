@@ -245,6 +245,13 @@ export function SideMenu({ isOpen, onClose }: SideMenuProps) {
               if (supabase) {
                 await supabase.auth.signOut();
                 document.cookie = "cosmepik_demo=; path=/; max-age=0";
+                // ダッシュボードの localStorage キャッシュも消しておく。
+                // 同じ端末で別アカウントがログインした際に、前ユーザーのメイクレシピが一瞬見えるのを防ぐ。
+                try {
+                  localStorage.removeItem("cosmepik-dashboard-cache-v1");
+                } catch {
+                  // 握りつぶし（サインアウト自体は続行）
+                }
                 window.location.href = "/";
               }
             }}
