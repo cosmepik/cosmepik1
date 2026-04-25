@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
+import { Download, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import type { RecipePlacement } from "@/lib/sections";
 import { LABEL_DEFAULT } from "@/lib/sections";
+import { downloadRecipeImage } from "@/lib/recipe-download";
 
 const COMMENT_FONT = "'HuiFontP29', cursive";
 
@@ -49,9 +52,51 @@ export function RecipeCanvas({
 }: RecipeCanvasProps) {
   useCommentFont();
   const canvasRef = useRef<HTMLDivElement>(null);
+  const [downloading, setDownloading] = useState(false);
 
   const onPinchScaleRef = useRef(onPinchScale);
   onPinchScaleRef.current = onPinchScale;
+
+  // 画像保存処理。クリック時のみ html-to-image を動的 import するので
+  // 通常のページロードには影響しない。
+  // Web Share API があれば iOS Safari で写真アプリへの保存にも対応する。
+  const handleDownload = useCallback(
+    async (e: React.MouseEvent | React.TouchEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (downloading) return;
+      const el = canvasRef.current;
+      if (!el) return;
+      // 編集中の選択を解除して、選択枠が画像に写り込まないようにする
+      if (editable) onSelect?.(null);
+      setDownloading(true);
+      try {
+        const result = await downloadRecipeImage(el, {
+          filename: `cosmepik-recipe-${Date.now()}`,
+          shareTitle: "メイクレシピ",
+        });
+        if (!result.ok) {
+          toast.error("画像の保存に失敗しました");
+          if (process.env.NODE_ENV !== "production") {
+            console.warn("[RecipeCanvas] download failed", result.error);
+          }
+        } else if (result.method === "download") {
+          toast.success("メイクレシピを保存しました");
+        }
+        // share / newtab の場合は OS のシートやタブが出るので追加トーストは不要
+      } catch (err) {
+        toast.error("画像の保存に失敗しました");
+        if (process.env.NODE_ENV !== "production") {
+          console.warn("[RecipeCanvas] download error", err);
+        }
+      } finally {
+        setDownloading(false);
+      }
+    },
+    [downloading, editable, onSelect],
+  );
+
+  const showDownloadButton = Boolean(backgroundImage) || placements.length > 0;
 
   useEffect(() => {
     if (!editable) return;
@@ -115,6 +160,7 @@ export function RecipeCanvas({
         />
       ) : editable ? (
         <div
+          data-editor-decoration="1"
           className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-muted-foreground"
           onClick={() => onBackgroundClick?.()}
         >
@@ -124,6 +170,26 @@ export function RecipeCanvas({
           <p className="text-sm">タップして顔写真をアップロード</p>
         </div>
       ) : null}
+
+      {/* ダウンロードボタン（右上）。data-editor-decoration を付けて画像化対象から除外 */}
+      {showDownloadButton && (
+        <button
+          type="button"
+          data-editor-decoration="1"
+          aria-label="メイクレシピを画像で保存"
+          onClick={handleDownload}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          disabled={downloading}
+          className="absolute right-2 top-2 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-black/55 text-white shadow-lg backdrop-blur-md transition-all hover:bg-black/75 active:scale-95 disabled:opacity-60"
+        >
+          {downloading ? (
+            <Loader2 className="h-[18px] w-[18px] animate-spin" />
+          ) : (
+            <Download className="h-[18px] w-[18px]" />
+          )}
+        </button>
+      )}
 
       {placements.map((p) =>
         p.type === "comment" ? (
@@ -341,9 +407,10 @@ function PlacementItem({
         >
           {isSelected && editable && (
             <>
-              <div className="pointer-events-none absolute -inset-2 rounded-xl border-2 border-primary/60 bg-primary/5" />
+              <div data-editor-decoration="1" className="pointer-events-none absolute -inset-2 rounded-xl border-2 border-primary/60 bg-primary/5" />
               <button
                 type="button"
+                data-editor-decoration="1"
                 className="absolute -left-3 -top-3 z-30 flex h-5 w-5 items-center justify-center rounded-full bg-gray-400 text-white shadow-md active:scale-90"
                 onClick={(e) => { e.stopPropagation(); onDelete(); }}
                 onTouchStart={(e) => e.stopPropagation()}
@@ -377,7 +444,7 @@ function PlacementItem({
           }}
         >
           {isSelected && editable && (
-            <div className="pointer-events-none absolute -inset-1.5 rounded-md border border-dashed border-primary/70" />
+            <div data-editor-decoration="1" className="pointer-events-none absolute -inset-1.5 rounded-md border border-dashed border-primary/70" />
           )}
           {labelContent}
         </div>
@@ -432,9 +499,10 @@ function CommentItem({
     >
       {isSelected && editable && (
         <>
-          <div className="absolute -inset-1.5 rounded-lg border-2 border-primary/60 bg-primary/5" />
+          <div data-editor-decoration="1" className="absolute -inset-1.5 rounded-lg border-2 border-primary/60 bg-primary/5" />
           <button
             type="button"
+            data-editor-decoration="1"
             className="absolute -left-3 -top-3 z-30 flex h-5 w-5 items-center justify-center rounded-full bg-gray-400 text-white shadow-md active:scale-90"
             onClick={(e) => { e.stopPropagation(); onDelete(); }}
             onTouchStart={(e) => e.stopPropagation()}

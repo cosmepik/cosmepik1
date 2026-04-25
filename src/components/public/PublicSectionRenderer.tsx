@@ -164,6 +164,159 @@ function ProductCard({
   );
 }
 
+// メイクレシピのキャンバス。
+function RecipeSection({
+  section,
+  slug,
+  userAffiliateId,
+}: {
+  section: Section;
+  slug: string;
+  userAffiliateId?: string | null;
+}) {
+  const onClick = usePublicAffiliateClick(slug, userAffiliateId);
+  const placements = section.placements ?? [];
+  if (!section.backgroundImage && placements.length === 0) return null;
+  const hasComments = placements.some((p) => p.type === "comment");
+  return (
+    <section className="relative">
+      {hasComments && (
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Yomogi&display=swap" />
+      )}
+      <div className="relative w-full overflow-hidden" style={{ aspectRatio: "3 / 4" }}>
+        {section.backgroundImage && (
+          <img src={section.backgroundImage} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        )}
+        {placements.map((p) => {
+          if (p.type === "comment") {
+            const scale = p.scale ?? 1;
+            const rotation = p.rotation ?? 0;
+            return (
+              <div
+                key={p.id}
+                className="absolute z-10 max-w-[60%]"
+                style={{ left: `${p.x}%`, top: `${p.y}%`, transform: "translate(-50%, -50%)" }}
+              >
+                <p
+                  style={{
+                    fontFamily: "Yomogi, cursive",
+                    color: p.color || "#333",
+                    fontSize: `${Math.round(13 * scale)}px`,
+                    lineHeight: 1.4,
+                    transform: rotation ? `rotate(${rotation}deg)` : undefined,
+                    textShadow: "0 1px 3px rgba(255,255,255,0.8), 0 0 1px rgba(255,255,255,0.6)",
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {p.comment}
+                </p>
+              </div>
+            );
+          }
+          const scale = p.scale ?? 1;
+          const labelOffsetX = p.labelOffsetX ?? 0;
+          const labelOffsetY = p.labelOffsetY ?? 6.5;
+          const labelScale = p.labelScale ?? 1;
+          const hasLabel = Boolean(p.brand || p.product);
+          const effectiveLink = buildFallbackLink(p);
+          // リンクありのときだけクリックハンドラを生やすための共通 handler。
+          // 以前は `{...linkProps}` を "a" | "div" の両方に spread していたが、
+          // onClick の型引数が HTMLAnchorElement / HTMLDivElement で噛み合わず
+          // TypeScript のビルドが落ちたため、<a> と <div> を明示的に分岐して
+          // それぞれに合った props のみ渡すようにした。
+          const handleLinkClick = effectiveLink
+            ? (e: React.MouseEvent) => {
+                e.preventDefault();
+                onClick(effectiveLink, p.id);
+              }
+            : undefined;
+          const imgStyle = {
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            transform: `translate(-50%, -50%) scale(${scale})`,
+            filter: "drop-shadow(0 4px 6px rgba(0,0,0,0.25))",
+          } as const;
+          const labelStyle = {
+            left: `${p.x + labelOffsetX}%`,
+            top: `${p.y + labelOffsetY}%`,
+            transform: `translate(-50%, -50%) scale(${labelScale})`,
+          } as const;
+          const imgInner = p.image ? (
+            <div className="relative h-full w-full">
+              <CosmeImage src={p.image} alt={p.product || ""} fill className="object-contain" sizes="56px" />
+            </div>
+          ) : null;
+          const labelInner = (
+            <div className="w-[120px] bg-black/40 px-1.5 py-0.5 text-center" style={{ backdropFilter: "blur(2px)" }}>
+              {p.brand && <p className="truncate text-[11px] font-bold text-white">{p.brand}</p>}
+              {p.product && <p className="line-clamp-3 text-[10px] font-medium leading-tight text-white">{p.product}</p>}
+            </div>
+          );
+          return (
+            <div key={p.id}>
+              {p.image && (
+                effectiveLink ? (
+                  <a
+                    href={effectiveLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={handleLinkClick}
+                    className="absolute z-10 block h-20 w-20"
+                    style={imgStyle}
+                  >
+                    {imgInner}
+                  </a>
+                ) : (
+                  <div className="absolute z-10 block h-20 w-20" style={imgStyle}>
+                    {imgInner}
+                  </div>
+                )
+              )}
+              {hasLabel && (
+                effectiveLink ? (
+                  <a
+                    href={effectiveLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={handleLinkClick}
+                    className="absolute z-10 block"
+                    style={labelStyle}
+                  >
+                    {labelInner}
+                  </a>
+                ) : (
+                  <div className="absolute z-10 block" style={labelStyle}>
+                    {labelInner}
+                  </div>
+                )
+              )}
+            </div>
+          );
+        })}
+        {/* cosmepik ロゴ */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2"
+          style={{
+            width: 112,
+            height: 28,
+            backgroundColor: "rgba(255,255,255,0.6)",
+            maskImage: "url(/logo.svg)",
+            maskSize: "contain",
+            maskRepeat: "no-repeat",
+            maskPosition: "center",
+            WebkitMaskImage: "url(/logo.svg)",
+            WebkitMaskSize: "contain",
+            WebkitMaskRepeat: "no-repeat",
+            WebkitMaskPosition: "center",
+          }}
+        />
+      </div>
+    </section>
+  );
+}
+
 export function PublicSectionRenderer({ section, slug, userAffiliateId, cardDesignId, cardColor }: Props) {
   const onClick = usePublicAffiliateClick(slug, userAffiliateId);
   const design = getCardDesign(cardDesignId);
@@ -171,146 +324,7 @@ export function PublicSectionRenderer({ section, slug, userAffiliateId, cardDesi
   const colorStyle = cardBgStyle(cardColor);
 
   if (section.type === "recipe") {
-    const placements = section.placements ?? [];
-    if (!section.backgroundImage && placements.length === 0) return null;
-    const hasComments = placements.some((p) => p.type === "comment");
-    return (
-      <section className="relative">
-        {hasComments && (
-          <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Yomogi&display=swap" />
-        )}
-        <div className="relative w-full overflow-hidden" style={{ aspectRatio: "3 / 4" }}>
-          {section.backgroundImage && (
-            <img src={section.backgroundImage} alt="" className="absolute inset-0 h-full w-full object-cover" />
-          )}
-          {placements.map((p) => {
-            if (p.type === "comment") {
-              const scale = p.scale ?? 1;
-              const rotation = p.rotation ?? 0;
-              return (
-                <div
-                  key={p.id}
-                  className="absolute z-10 max-w-[60%]"
-                  style={{ left: `${p.x}%`, top: `${p.y}%`, transform: "translate(-50%, -50%)" }}
-                >
-                  <p
-                    style={{
-                      fontFamily: "Yomogi, cursive",
-                      color: p.color || "#333",
-                      fontSize: `${Math.round(13 * scale)}px`,
-                      lineHeight: 1.4,
-                      transform: rotation ? `rotate(${rotation}deg)` : undefined,
-                      textShadow: "0 1px 3px rgba(255,255,255,0.8), 0 0 1px rgba(255,255,255,0.6)",
-                      whiteSpace: "pre-wrap",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {p.comment}
-                  </p>
-                </div>
-              );
-            }
-            const scale = p.scale ?? 1;
-            const labelOffsetX = p.labelOffsetX ?? 0;
-            const labelOffsetY = p.labelOffsetY ?? 6.5;
-            const labelScale = p.labelScale ?? 1;
-            const hasLabel = Boolean(p.brand || p.product);
-            const effectiveLink = buildFallbackLink(p);
-            // リンクありのときだけクリックハンドラを生やすための共通 handler。
-            // 以前は `{...linkProps}` を "a" | "div" の両方に spread していたが、
-            // onClick の型引数が HTMLAnchorElement / HTMLDivElement で噛み合わず
-            // TypeScript のビルドが落ちたため、<a> と <div> を明示的に分岐して
-            // それぞれに合った props のみ渡すようにした。
-            const handleLinkClick = effectiveLink
-              ? (e: React.MouseEvent) => {
-                  e.preventDefault();
-                  onClick(effectiveLink, p.id);
-                }
-              : undefined;
-            const imgStyle = {
-              left: `${p.x}%`,
-              top: `${p.y}%`,
-              transform: `translate(-50%, -50%) scale(${scale})`,
-              filter: "drop-shadow(0 4px 6px rgba(0,0,0,0.25))",
-            } as const;
-            const labelStyle = {
-              left: `${p.x + labelOffsetX}%`,
-              top: `${p.y + labelOffsetY}%`,
-              transform: `translate(-50%, -50%) scale(${labelScale})`,
-            } as const;
-            const imgInner = p.image ? (
-              <div className="relative h-full w-full">
-                <CosmeImage src={p.image} alt={p.product || ""} fill className="object-contain" sizes="56px" />
-              </div>
-            ) : null;
-            const labelInner = (
-              <div className="w-[120px] bg-black/40 px-1.5 py-0.5 text-center" style={{ backdropFilter: "blur(2px)" }}>
-                {p.brand && <p className="truncate text-[11px] font-bold text-white">{p.brand}</p>}
-                {p.product && <p className="line-clamp-3 text-[10px] font-medium leading-tight text-white">{p.product}</p>}
-              </div>
-            );
-            return (
-              <div key={p.id}>
-                {p.image && (
-                  effectiveLink ? (
-                    <a
-                      href={effectiveLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={handleLinkClick}
-                      className="absolute z-10 block h-20 w-20"
-                      style={imgStyle}
-                    >
-                      {imgInner}
-                    </a>
-                  ) : (
-                    <div className="absolute z-10 block h-20 w-20" style={imgStyle}>
-                      {imgInner}
-                    </div>
-                  )
-                )}
-                {hasLabel && (
-                  effectiveLink ? (
-                    <a
-                      href={effectiveLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={handleLinkClick}
-                      className="absolute z-10 block"
-                      style={labelStyle}
-                    >
-                      {labelInner}
-                    </a>
-                  ) : (
-                    <div className="absolute z-10 block" style={labelStyle}>
-                      {labelInner}
-                    </div>
-                  )
-                )}
-              </div>
-            );
-          })}
-          {/* cosmepik ロゴ */}
-          <span
-            aria-hidden
-            className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2"
-            style={{
-              width: 112,
-              height: 28,
-              backgroundColor: "rgba(255,255,255,0.6)",
-              maskImage: "url(/logo.svg)",
-              maskSize: "contain",
-              maskRepeat: "no-repeat",
-              maskPosition: "center",
-              WebkitMaskImage: "url(/logo.svg)",
-              WebkitMaskSize: "contain",
-              WebkitMaskRepeat: "no-repeat",
-              WebkitMaskPosition: "center",
-            }}
-          />
-        </div>
-      </section>
-    );
+    return <RecipeSection section={section} slug={slug} userAffiliateId={userAffiliateId} />;
   }
 
   const showTitle = !["heading", "text"].includes(section.type);
