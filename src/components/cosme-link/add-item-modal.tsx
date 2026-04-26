@@ -596,6 +596,11 @@ export function AddItemModal({
 
       {processingSource && (
         <ImageProcessingModal
+          // key を sourceUrl に紐付けることで、別コスメに切り替わった瞬間に
+          // 必ず新インスタンスとしてマウントし直す。これにより、前回の
+          // useEffect クリーンアップ漏れや stale な Promise / closure が
+          // 次のコスメに影響することを完全に防ぐ。
+          key={processingSource}
           isOpen={true}
           sourceUrl={processingSource}
           onCancel={handleProcessingCancel}
