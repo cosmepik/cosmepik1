@@ -181,7 +181,7 @@ export function RecipeCanvas({
           onMouseDown={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
           disabled={downloading}
-          className="absolute right-2 top-2 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-black/55 text-white shadow-lg backdrop-blur-md transition-all hover:bg-black/75 active:scale-95 disabled:opacity-60"
+          className="absolute right-2 top-2 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-black/55 text-white shadow-lg backdrop-blur-md transition-all hover:bg-black/75 active:scale-95 disabled:opacity-60"
         >
           {downloading ? (
             <Loader2 className="h-[18px] w-[18px] animate-spin" />
