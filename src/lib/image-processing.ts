@@ -53,33 +53,34 @@ export async function fetchImageAsBlob(url: string): Promise<Blob> {
 const BG_REMOVAL_MAX_DIM = 1024;
 
 /**
- * 背景除去 Worker を遅延生成して再利用する。
+ * 背景除去 Worker は **リクエストごとに新規生成し、終わったら必ず terminate** する。
  *
- * Worker 内で推論することで、メインスレッドが完全に自由になり、
- *   - スピナーなど CSS アニメーションが停止しない
- *   - 進捗バーの更新がスムーズ
- *   - キャンセルボタンなど UI が常に応答する
+ * 以前は Worker をシングルトンとして再利用していたが、`@imgly/background-removal`
+ * の内部 ONNX Runtime セッションが Worker 内で共有された結果、稀に「直前の
+ * リクエストの結果が次のリクエストに混入する（B の画像をリクエストしたのに
+ * A の処理結果が返る）」というバグが本番で再現していた。
  *
- * Worker 生成に失敗した環境（極めて古いブラウザなど）では、
- * メインスレッドでのフォールバックに戻る。
+ * Worker をリクエストごとに完全に作り直すことで、@imgly のモジュール状態 /
+ * onnx セッション / バッファが call ごとに完全に独立し、混入が原理的に
+ * 発生しなくなる。モデルファイル本体はブラウザの HTTP キャッシュに残るため、
+ * 2 回目以降の Worker 起動でもダウンロード自体は再発生しない（インスタンス
+ * 化のコストのみ）。
  */
-let workerInstance: Worker | null = null;
 let workerUnavailable = false;
-function getWorker(): Worker | null {
+function createWorker(): Worker | null {
   if (typeof window === "undefined") return null;
   if (workerUnavailable) return null;
-  if (workerInstance) return workerInstance;
   try {
-    workerInstance = new Worker(
+    const w = new Worker(
       new URL("./workers/bg-removal.worker.ts", import.meta.url),
       { type: "module" },
     );
-    workerInstance.addEventListener("error", (e) => {
+    w.addEventListener("error", (e) => {
       if (process.env.NODE_ENV !== "production") {
         console.warn("[bg-removal] worker error", e.message);
       }
     });
-    return workerInstance;
+    return w;
   } catch (e) {
     workerUnavailable = true;
     if (process.env.NODE_ENV !== "production") {
@@ -92,19 +93,27 @@ function getWorker(): Worker | null {
 /**
  * 背景除去ライブラリと **モデル/wasm本体** を事前ロードしてブラウザキャッシュに載せる。
  *
- * Worker が使える場合は Worker 側で preload する（推論時と同じコンテキストで
- * キャッシュが効くように）。Worker が使えない場合はメインスレッドで preload。
+ * 使い捨て Worker を立てて preload だけ行い、すぐ terminate する。
+ * モデルファイル本体は HTTP キャッシュに残るので、本番の remove 用 Worker は
+ * モデルファイルのダウンロードをスキップして起動できる。
  *
- * - 失敗時は warmupPromise を null に戻して再試行可能にする（ネットワーク一時エラー対策）。
+ * - 失敗時は warmupPromise を null に戻して再試行可能にする。
  */
 let warmupPromise: Promise<void> | null = null;
 export function warmupBackgroundRemoval(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
   if (warmupPromise) return warmupPromise;
 
-  const worker = getWorker();
+  const worker = createWorker();
   if (worker) {
     warmupPromise = new Promise<void>((resolve) => {
+      const cleanup = () => {
+        try {
+          worker.terminate();
+        } catch {
+          /* ignore */
+        }
+      };
       const onMessage = (e: MessageEvent) => {
         const d = e.data as { type?: string };
         if (d.type === "preloaded" || d.type === "error") {
@@ -115,6 +124,7 @@ export function warmupBackgroundRemoval(): Promise<void> {
               console.warn("[warmupBackgroundRemoval] preload failed in worker");
             }
           }
+          cleanup();
           resolve();
         }
       };
@@ -176,70 +186,99 @@ async function downscaleImageBlob(blob: Blob, maxDim: number): Promise<Blob> {
  * 初回呼び出し時にモデル（~40MB / isnet_quint8）がダウンロードされブラウザキャッシュに保存される。
  *
  * アーキテクチャ：
- *  - **Web Worker 内で推論**することでメインスレッドをブロックしない
- *    → スピナーが止まらず、進捗バーもスムーズ、キャンセル操作も即応答
- *  - 入力画像を事前にダウンスケール（1024px上限）してモデル処理量を削減
- *  - 量子化モデル (`isnet_quint8`) により推論自体も 20-30% 高速化
- *  - 出力は WebP（PNGよりエンコード高速＋ファイルサイズ小）
+ *  - **リクエストごとに使い捨ての Web Worker を立てて推論**する。
+ *    Worker のシングルトン再利用は @imgly の内部状態が次のリクエストに
+ *    混入するバグを誘発するため避ける。
+ *  - メインスレッドはブロックされないので、スピナーや進捗バーが滑らか。
+ *  - 入力画像を事前にダウンスケール（1024px上限）してモデル処理量を削減。
+ *  - 量子化モデル (`isnet_quint8`) で推論を 20-30% 高速化。
+ *  - 出力は WebP（PNGよりエンコード高速＋ファイルサイズ小）。
  *
  * 注：以前 `device: "gpu"` + `isnet_quint8` を試したが、
  * 一部ブラウザ（ONNX Runtime のWebGPUビルドと相性悪し）でクラッシュしたため取り止め。
  * CPU + quint8 の組み合わせは安定して動作する。
  */
-let nextRequestId = 1;
 export async function removeImageBackground(
   srcUrl: string,
   onProgress?: (progress: number) => void,
 ): Promise<string> {
   // warmup が未完了でも同じ Promise を共有することで重複ロードを防ぐ。
-  // 完了済みであれば即時解決される。
+  // 完了済みであれば即時解決される。モデルファイル自体はブラウザキャッシュに残る。
   const warm = warmupBackgroundRemoval();
   const blob = await fetchImageAsBlob(srcUrl);
   await warm;
   const downscaled = await downscaleImageBlob(blob, BG_REMOVAL_MAX_DIM);
 
-  const worker = getWorker();
+  const worker = createWorker();
   if (worker) {
-    const resultBlob = await runInWorker(worker, downscaled, onProgress);
-    return blobToDataUrl(resultBlob);
+    try {
+      const resultBlob = await runInDisposableWorker(worker, downscaled, onProgress);
+      return blobToDataUrl(resultBlob);
+    } finally {
+      try {
+        worker.terminate();
+      } catch {
+        /* ignore */
+      }
+    }
   }
 
   // フォールバック: Worker が使えない環境ではメインスレッドで実行
   return runOnMainThread(downscaled, onProgress);
 }
 
-/** Worker にジョブを投げて結果の Blob を受け取る */
-function runInWorker(
+/**
+ * 使い捨て Worker にジョブを投げて結果の Blob を受け取る。
+ *
+ * Worker は呼び出し側で必ず terminate される前提なので、preload と remove を
+ * シーケンシャルに送って結果を待つだけのシンプルな実装で良い。requestId を
+ * 使い回す必要も無い（1 Worker = 1 リクエスト）。
+ */
+function runInDisposableWorker(
   worker: Worker,
   blob: Blob,
   onProgress?: (p: number) => void,
 ): Promise<Blob> {
-  const requestId = nextRequestId++;
+  const REQUEST_ID = 1;
   return new Promise((resolve, reject) => {
+    let preloadDone = false;
     const onMessage = (e: MessageEvent) => {
       const d = e.data as
+        | { type: "preloaded" }
         | { type: "progress"; requestId: number; value: number }
         | { type: "result"; requestId: number; blob: Blob }
         | { type: "error"; requestId: number | null; message: string };
-      if (!("requestId" in d) || d.requestId !== requestId) {
-        if (d.type === "error" && d.requestId === null) {
-          worker.removeEventListener("message", onMessage);
-          reject(new Error(d.message));
-        }
+
+      if (d.type === "preloaded") {
+        preloadDone = true;
+        worker.postMessage({ type: "remove", requestId: REQUEST_ID, blob });
         return;
       }
       if (d.type === "progress") {
         onProgress?.(d.value);
-      } else if (d.type === "result") {
+        return;
+      }
+      if (d.type === "result") {
         worker.removeEventListener("message", onMessage);
         resolve(d.blob);
-      } else if (d.type === "error") {
+        return;
+      }
+      if (d.type === "error") {
         worker.removeEventListener("message", onMessage);
         reject(new Error(d.message));
+        return;
       }
     };
     worker.addEventListener("message", onMessage);
-    worker.postMessage({ type: "remove", requestId, blob });
+    worker.addEventListener("error", (e) => {
+      worker.removeEventListener("message", onMessage);
+      reject(new Error(e.message || "Worker error"));
+    });
+    // まず preload して @imgly が完全に初期化されるのを待ってから remove を送る。
+    // preload 自体は HTTP キャッシュ済みなのでネットワーク往復は発生しない。
+    if (!preloadDone) {
+      worker.postMessage({ type: "preload" });
+    }
   });
 }
 
