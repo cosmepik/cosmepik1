@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   X,
   Plus,
@@ -24,6 +24,16 @@ interface AddItemModalProps {
   onClose: () => void;
   sectionId: string;
   sectionType: SectionType;
+  /**
+   * 任意：作成された SectionItem をどう保存するかを呼び出し側で完全に制御したい
+   * 場合に渡すコールバック。指定すると `addItemToSection` 経由の保存はスキップし、
+   * このコールバックだけが呼ばれる。
+   *
+   * メイクレシピ編集画面では、`items` を経由せず `placements` に直接保存する
+   * ためにこの経路を使う（`items → placements` 変換の useEffect で取り違えが
+   * 起きるバグを構造的に避けるため）。
+   */
+  onItemCreated?: (item: SectionItem) => void;
 }
 
 export function AddItemModal({
@@ -31,6 +41,7 @@ export function AddItemModal({
   onClose,
   sectionId,
   sectionType,
+  onItemCreated,
 }: AddItemModalProps) {
   const { slug, addItemToSection } = useSections();
 
@@ -57,6 +68,37 @@ export function AddItemModal({
   // 画像処理モーダル状態
   const [processingSource, setProcessingSource] = useState<string | null>(null);
   const [processingPending, setProcessingPending] = useState<CosmeItem | null>(null);
+
+  /**
+   * 親から渡された onItemCreated を ref で保持し、handleProcessedImage の
+   * 非同期パス内で参照しても確実に最新の参照を呼ぶようにする。
+   */
+  const onItemCreatedRef = useRef(onItemCreated);
+  useEffect(() => {
+    onItemCreatedRef.current = onItemCreated;
+  });
+
+  /**
+   * 作成された item を実際に保存する。onItemCreated が渡されていれば
+   * それだけを呼び、無ければ従来どおり addItemToSection に流す。
+   */
+  const persistItem = (item: SectionItem) => {
+    if (onItemCreatedRef.current) {
+      onItemCreatedRef.current(item);
+      return;
+    }
+    if (sectionType === "routine") {
+      addItemToSection(sectionId, { ...item });
+    } else if (sectionType === "products") {
+      addItemToSection(sectionId, {
+        ...item,
+        rating: item.rating ?? 0,
+        reviewCount: item.reviewCount ?? 0,
+      });
+    } else {
+      addItemToSection(sectionId, item);
+    }
+  };
 
   const handleImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -91,23 +133,22 @@ export function AddItemModal({
       // 検索結果から追加するフロー
       setImageUploading(true);
       try {
+        // ファイル名にタイムスタンプ + ランダムサフィックスを入れて、
+        // 同一ミリ秒に呼ばれた場合でも絶対に衝突しないようにする。
+        const uniq = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
         const uploadedUrl = await uploadImage(
           processedDataUrl,
           "cosme-items",
-          `processed-${Date.now()}`,
+          `processed-${uniq}`,
         );
         const newItem: SectionItem = {
-          id: `item-${Date.now()}`,
+          id: `item-${uniq}`,
           product: pendingItem.name,
           image: uploadedUrl,
           originalImage: pendingItem.imageUrl,
           link: pendingItem.rakutenUrl ?? pendingItem.amazonUrl,
         };
-        if (sectionType === "routine") {
-          addItemToSection(sectionId, { ...newItem });
-        } else if (sectionType === "products") {
-          addItemToSection(sectionId, { ...newItem, rating: 0, reviewCount: 0 });
-        }
+        persistItem(newItem);
         handleClose();
       } finally {
         setImageUploading(false);
@@ -119,10 +160,11 @@ export function AddItemModal({
     setImageUploading(true);
     try {
       setImagePreview(processedDataUrl);
+      const uniq = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
       const url = await uploadImage(
         processedDataUrl,
         "cosme-items",
-        `manual-${Date.now()}`,
+        `manual-${uniq}`,
       );
       setImage(url);
       if (sourceUrl) setOriginalImage(sourceUrl);
@@ -137,8 +179,9 @@ export function AddItemModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    const uniq = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     const newItem: SectionItem = {
-      id: `item-${Date.now()}`,
+      id: `item-${uniq}`,
     };
 
     if (sectionType === "routine") {
@@ -164,7 +207,7 @@ export function AddItemModal({
       newItem.link = link.trim();
     }
 
-    addItemToSection(sectionId, newItem);
+    persistItem(newItem);
     handleClose();
   };
 

@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { useSections } from "@/lib/section-context";
 import { uploadImage } from "@/lib/storage";
 import { flushSections } from "@/lib/store";
-import type { Section, RecipePlacement } from "@/lib/sections";
+import type { Section, RecipePlacement, SectionItem } from "@/lib/sections";
 import { LABEL_DEFAULT } from "@/lib/sections";
 import { RecipeCanvas } from "./recipe-canvas";
 import { AddItemModal } from "./add-item-modal";
@@ -53,11 +53,20 @@ export function RecipeEditor() {
   const [editingComment, setEditingComment] = useState(false);
   const [tempComment, setTempComment] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const prevItemCountRef = useRef(0);
   const [showEditTip, setShowEditTip] = useState(false);
 
   const backgroundImage = recipeSection?.backgroundImage || "";
   const placements = recipeSection?.placements ?? [];
+
+  /**
+   * 親→子 の閉路を断つため、最新の `recipeSection` を ref で保持する。
+   * AddItemModal から渡されるコールバックは初回マウント時の closure を
+   * そのまま使い続けるため、ref 経由で常に最新の placements を読む。
+   */
+  const recipeSectionRef = useRef(recipeSection);
+  useEffect(() => {
+    recipeSectionRef.current = recipeSection;
+  });
 
   const updateRecipe = useCallback(
     (updates: Partial<Section>) => {
@@ -67,42 +76,35 @@ export function RecipeEditor() {
     [recipeSection, updateSection],
   );
 
-  useEffect(() => {
-    if (!recipeSection) return;
-    const items = recipeSection.items ?? [];
-    const currentPlacements = recipeSection.placements ?? [];
-    if (items.length > prevItemCountRef.current && items.length > 0) {
-      const newItems = items.slice(prevItemCountRef.current);
-      const newPlacements: RecipePlacement[] = newItems.map((item, idx) => ({
-        id: item.id,
-        product: item.product,
-        brand: item.brand,
-        image: item.image,
-        link: item.link,
-        x: 30 + ((currentPlacements.length + idx) % 4) * 15,
-        y: 30 + ((currentPlacements.length + idx) % 3) * 15,
-        scale: 1,
-      }));
-      updateSection(recipeSection.id, {
-        items: [],
-        placements: [...currentPlacements, ...newPlacements],
-      });
-      if (newPlacements.length > 0) {
-        setSelectedId(newPlacements[newPlacements.length - 1].id);
-        if (!localStorage.getItem("cosmetree:editTipShown")) {
-          localStorage.setItem("cosmetree:editTipShown", "1");
-          setTimeout(() => setShowEditTip(true), 600);
-        }
-      }
+  /**
+   * AddItemModal で作成された item を、items を経由せず直接 placement として
+   * 追加する。`item.image` を直接 placement に書き込むため、
+   * 「items → placements」変換段階での取り違えバグが構造的に発生しない。
+   */
+  const handleItemCreated = useCallback((item: SectionItem) => {
+    const section = recipeSectionRef.current;
+    if (!section) return;
+    const currentPlacements = section.placements ?? [];
+    const newPlacement: RecipePlacement = {
+      id: item.id,
+      product: item.product,
+      brand: item.brand,
+      image: item.image,
+      link: item.link,
+      originalImage: item.originalImage,
+      x: 30 + (currentPlacements.length % 4) * 15,
+      y: 30 + (currentPlacements.length % 3) * 15,
+      scale: 1,
+    };
+    updateSection(section.id, {
+      placements: [...currentPlacements, newPlacement],
+    });
+    setSelectedId(newPlacement.id);
+    if (!localStorage.getItem("cosmetree:editTipShown")) {
+      localStorage.setItem("cosmetree:editTipShown", "1");
+      setTimeout(() => setShowEditTip(true), 600);
     }
-    prevItemCountRef.current = items.length;
-  }, [recipeSection, updateSection]);
-
-  useEffect(() => {
-    if (!showAddModal && recipeSection) {
-      prevItemCountRef.current = recipeSection.items?.length ?? 0;
-    }
-  }, [showAddModal, recipeSection]);
+  }, [updateSection]);
 
   const handleBackgroundUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -508,6 +510,7 @@ export function RecipeEditor() {
         onClose={() => setShowAddModal(false)}
         sectionId={recipeSection?.id ?? ""}
         sectionType="routine"
+        onItemCreated={handleItemCreated}
       />
     </div>
   );
