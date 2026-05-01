@@ -94,42 +94,31 @@ export default function LoginPage() {
 
         <h1 className="mb-6 text-center text-lg font-semibold text-foreground">ログイン</h1>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="mb-1 block text-sm font-medium text-card-foreground">メールアドレス</label>
-            <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" enterKeyHint="next" className="w-full rounded-lg border border-input bg-white px-4 py-2.5 text-card-foreground outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" placeholder="you@example.com" />
-          </div>
-          <div>
-            <label htmlFor="password" className="mb-1 block text-sm font-medium text-card-foreground">パスワード</label>
-            <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} autoComplete="current-password" enterKeyHint="go" className="w-full rounded-lg border border-input bg-white px-4 py-2.5 text-card-foreground outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" placeholder="6文字以上" />
-          </div>
-          {message && <p className={`text-sm ${message.type === "ok" ? "text-green-600" : "text-destructive"}`}>{message.text}</p>}
-          <div className="flex justify-end">
-            <Link href="/forgot-password" className="text-xs text-muted-foreground hover:text-primary hover:underline">パスワードを忘れた場合</Link>
-          </div>
-          <button type="submit" disabled={loading} className="w-full rounded-lg bg-primary py-3 font-medium text-white hover:opacity-90 active:scale-[0.98] disabled:opacity-50 transition-all">
-            {loading ? "処理中..." : "ログイン"}
-          </button>
-        </form>
-
-        {/* 区切り */}
-        <div className="relative flex items-center justify-center my-5">
-          <span className="absolute inset-x-0 top-1/2 h-px bg-border" />
-          <span className="relative bg-white px-3 text-xs text-muted-foreground">または</span>
-        </div>
-
         {/* ソーシャルログイン */}
         <div className="space-y-2.5">
-          <button
-            type="button"
-            onClick={() => { window.location.href = "/api/auth/line"; }}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-medium text-white hover:opacity-90 active:scale-[0.98] disabled:opacity-50 transition-all"
-            style={{ backgroundColor: "#06C755" }}
-          >
-            <img src="/line-icon.png" alt="" className="h-5 w-5 shrink-0 object-contain" aria-hidden />
-            LINEでログイン
-          </button>
+          <div className="relative mt-3">
+            <div
+              className="pointer-events-none absolute -left-0.5 -top-4 z-10"
+              aria-hidden="true"
+            >
+              <div className="relative">
+                <div className="rounded-md bg-sky-100 px-2 py-1 text-[10px] font-bold leading-tight text-sky-800 shadow-sm">
+                  おすすめ
+                </div>
+                <div className="absolute left-2.5 top-full h-0 w-0 border-l-[5px] border-r-[5px] border-t-[6px] border-l-transparent border-r-transparent border-t-sky-100" />
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => { window.location.href = "/api/auth/line"; }}
+              disabled={loading}
+              className="relative z-0 w-full flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-medium text-white hover:opacity-90 active:scale-[0.98] disabled:opacity-50 transition-all"
+              style={{ backgroundColor: "#06C755" }}
+            >
+              <img src="/line-icon.png" alt="" className="h-5 w-5 shrink-0 object-contain" aria-hidden />
+              LINEでログイン
+            </button>
+          </div>
           <button
             type="button"
             onClick={() => handleOAuth("google")}
@@ -156,6 +145,30 @@ export default function LoginPage() {
             Xでログイン
           </button>
         </div>
+
+        {/* 区切り */}
+        <div className="relative flex items-center justify-center my-5">
+          <span className="absolute inset-x-0 top-1/2 h-px bg-border" />
+          <span className="relative bg-white px-3 text-xs text-muted-foreground">または</span>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="email" className="mb-1 block text-sm font-medium text-card-foreground">メールアドレス</label>
+            <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" enterKeyHint="next" className="w-full rounded-lg border border-input bg-white px-4 py-2.5 text-card-foreground outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" placeholder="you@example.com" />
+          </div>
+          <div>
+            <label htmlFor="password" className="mb-1 block text-sm font-medium text-card-foreground">パスワード</label>
+            <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} autoComplete="current-password" enterKeyHint="go" className="w-full rounded-lg border border-input bg-white px-4 py-2.5 text-card-foreground outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors" placeholder="6文字以上" />
+          </div>
+          {message && <p className={`text-sm ${message.type === "ok" ? "text-green-600" : "text-destructive"}`}>{message.text}</p>}
+          <div className="flex justify-end">
+            <Link href="/forgot-password" className="text-xs text-muted-foreground hover:text-primary hover:underline">パスワードを忘れた場合</Link>
+          </div>
+          <button type="submit" disabled={loading} className="w-full rounded-lg bg-primary py-3 font-medium text-white hover:opacity-90 active:scale-[0.98] disabled:opacity-50 transition-all">
+            {loading ? "処理中..." : "ログイン"}
+          </button>
+        </form>
 
         <p className="mt-5 text-center">
           <Link href="/register" className="text-sm text-primary hover:underline">新規登録はこちら</Link>
