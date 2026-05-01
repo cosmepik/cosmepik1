@@ -65,9 +65,25 @@ export function AddItemModal({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [originalImage, setOriginalImage] = useState<string>("");
 
-  // 画像処理モーダル状態
-  const [processingSource, setProcessingSource] = useState<string | null>(null);
-  const [processingPending, setProcessingPending] = useState<CosmeItem | null>(null);
+  /**
+   * 画像処理モーダルの「対象」を 1 つの atomic な state にまとめる。
+   * - source と pending を別 state にすると、稀に片方だけが更新済みで
+   *   もう片方が前回値というタイミングが React 19 並行レンダリング下で
+   *   観測できてしまう（タイトルは正しいのに画像だけ前のコスメになる
+   *   バグの根本原因）。
+   * - また `invocationId` をキーにして ImageProcessingModal を mount
+   *   し直すことで、確実に毎回フレッシュな instance になる。
+   * - onConfirm 経由で処理結果が返ってきたとき、`target` を closure
+   *   ではなく明示的にパラメータで受け取るため、stale state の余地も
+   *   完全に消える。
+   */
+  type ProcessingTarget = {
+    invocationId: string;
+    source: string;
+    /** null は手動アップロードフォーム経由 */
+    item: CosmeItem | null;
+  };
+  const [processingTarget, setProcessingTarget] = useState<ProcessingTarget | null>(null);
 
   /**
    * 親から渡された onItemCreated を ref で保持し、handleProcessedImage の
@@ -111,8 +127,11 @@ export function AddItemModal({
         reader.readAsDataURL(file);
       });
       // 画像処理モーダルを開く（自動背景除去 → プレビュー → 手動クロップ）
-      setProcessingPending(null); // 手動フォーム用
-      setProcessingSource(dataUrl);
+      setProcessingTarget({
+        invocationId: `inv-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        source: dataUrl,
+        item: null, // 手動フォーム用
+      });
     } catch {
       setImage("");
       setImagePreview(null);
@@ -122,12 +141,20 @@ export function AddItemModal({
     }
   };
 
-  /** 画像処理モーダルで確定された data URL を処理 */
-  const handleProcessedImage = async (processedDataUrl: string) => {
-    const sourceUrl = processingSource;
-    const pendingItem = processingPending;
-    setProcessingSource(null);
-    setProcessingPending(null);
+  /**
+   * 画像処理モーダルで確定された data URL を処理。
+   * - `target` は呼び出し時にモーダルへ渡した「対象」をそのまま受け取る。
+   *   state を closure 経由で参照しないため、結果と処理対象が取り違えに
+   *   なる経路が原理的に存在しない。
+   */
+  const handleProcessedImage = async (
+    processedDataUrl: string,
+    target: ProcessingTarget,
+  ) => {
+    setProcessingTarget(null);
+
+    const pendingItem = target.item;
+    const sourceUrl = target.source;
 
     if (pendingItem) {
       // 検索結果から追加するフロー
@@ -227,8 +254,7 @@ export function AddItemModal({
     setSearchApiError(null);
     setSearchApiDebug(null);
     setOriginalImage("");
-    setProcessingSource(null);
-    setProcessingPending(null);
+    setProcessingTarget(null);
     onClose();
   };
 
@@ -337,13 +363,18 @@ export function AddItemModal({
 
   const handleAddFromSearch = (item: CosmeItem) => {
     // 画像処理モーダルを開く（自動背景除去 → プレビュー or 手動調整）
-    setProcessingPending(item);
-    setProcessingSource(item.imageUrl);
+    // source と item を atomic に 1 つの state object として書き込む。
+    // 別 state にしていた頃は片方だけ古い値が残るタイミングが理論上あり、
+    // 「タイトルは正しいのに画像だけ前のコスメ」の取り違えバグ要因だった。
+    setProcessingTarget({
+      invocationId: `inv-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      source: item.imageUrl,
+      item,
+    });
   };
 
   const handleProcessingCancel = () => {
-    setProcessingSource(null);
-    setProcessingPending(null);
+    setProcessingTarget(null);
   };
 
   useEffect(() => {
@@ -368,8 +399,7 @@ export function AddItemModal({
    */
   useEffect(() => {
     if (!isOpen) {
-      setProcessingSource(null);
-      setProcessingPending(null);
+      setProcessingTarget(null);
     }
   }, [isOpen]);
 
@@ -650,17 +680,20 @@ export function AddItemModal({
         </div>
       </div>
 
-      {processingSource && (
+      {processingTarget && (
         <ImageProcessingModal
-          // key を sourceUrl に紐付けることで、別コスメに切り替わった瞬間に
+          // key を invocationId に紐付けることで、+ ボタンを押すたびに
           // 必ず新インスタンスとしてマウントし直す。これにより、前回の
           // useEffect クリーンアップ漏れや stale な Promise / closure が
           // 次のコスメに影響することを完全に防ぐ。
-          key={processingSource}
+          key={processingTarget.invocationId}
           isOpen={true}
-          sourceUrl={processingSource}
+          sourceUrl={processingTarget.source}
           onCancel={handleProcessingCancel}
-          onConfirm={handleProcessedImage}
+          // target をクロージャで束縛して onConfirm に渡す。
+          // 処理結果と「どのコスメ向けの結果か」を必ず一致させるため、
+          // state ではなくこの target を直接 handleProcessedImage に渡す。
+          onConfirm={(dataUrl) => handleProcessedImage(dataUrl, processingTarget)}
         />
       )}
     </div>
