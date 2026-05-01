@@ -3,7 +3,7 @@
  *
  * - AI背景除去（@imgly/background-removal）
  * - Canvasベースの手動クロップ
- * - 外部URL（楽天等）を /api/image-proxy 経由で Blob 取得
+ * - 外部URL（楽天等）を /api/img-proxy 経由で Blob 取得
  */
 
 import type { Area } from "react-easy-crop";
@@ -41,7 +41,7 @@ export async function fetchImageAsBlob(url: string): Promise<Blob> {
     }
     return res.blob();
   }
-  const proxied = `/api/image-proxy?url=${encodeURIComponent(url)}`;
+  const proxied = `/api/img-proxy?url=${encodeURIComponent(url)}`;
   const res = await fetch(proxied);
   if (!res.ok) {
     throw new Error(`Image fetch failed: ${res.status}`);

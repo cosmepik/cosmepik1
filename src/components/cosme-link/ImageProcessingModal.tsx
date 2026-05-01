@@ -176,7 +176,7 @@ export function ImageProcessingModal({
 
   // プレビュー表示用URL。
   //  - dataURL / blobURL / 同一オリジン（"/..."を含む）はそのまま
-  //  - 外部URLのみ CORS 対策のため /api/image-proxy 経由
+  //  - 外部URLのみ CORS 対策のため /api/img-proxy 経由
   const previewSrc = (() => {
     if (sourceUrl.startsWith("data:") || sourceUrl.startsWith("blob:")) {
       return sourceUrl;
@@ -188,7 +188,7 @@ export function ImageProcessingModal({
       // URL として不正な場合はそのまま渡す
       return sourceUrl;
     }
-    return `/api/image-proxy?url=${encodeURIComponent(sourceUrl)}`;
+    return `/api/img-proxy?url=${encodeURIComponent(sourceUrl)}`;
   })();
 
   const busy = asIsBusy || manualBusy;

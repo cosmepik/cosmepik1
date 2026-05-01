@@ -7,7 +7,7 @@
  * - 楽天の商品画像（thumbnail.image.rakuten.co.jp / r.r10s.jp 等）は
  *   CORS ヘッダが返らないため html-to-image の内部 fetch が失敗する。
  *   これを避けるため、画像化前にクロスオリジンの `<img>` を
- *   `/api/image-proxy` 経由で data URL に差し替えてから toBlob を呼ぶ。
+ *   `/api/img-proxy` 経由で data URL に差し替えてから toBlob を呼ぶ。
  * - 保存方法は次の優先順位で試す:
  *   1) Web Share API（`navigator.share` with files）→ iOS Safari の写真アプリ保存に最適
  *   2) `<a download>` 属性によるダウンロード → デスクトップ Chrome / Safari / Android
@@ -42,13 +42,13 @@ function isCrossOriginHttp(url: string): boolean {
 }
 
 /**
- * 画像 URL を `/api/image-proxy` 経由で取得し、data URL 化する。
+ * 画像 URL を `/api/img-proxy` 経由で取得し、data URL 化する。
  * プロキシが許可していないホストの場合は upstream 502 が返るので
  * その場合は null を返してスキップさせる。
  */
 async function fetchAsDataUrl(url: string): Promise<string | null> {
   try {
-    const proxied = `/api/image-proxy?url=${encodeURIComponent(url)}`;
+    const proxied = `/api/img-proxy?url=${encodeURIComponent(url)}`;
     const res = await fetch(proxied);
     if (!res.ok) return null;
     const blob = await res.blob();

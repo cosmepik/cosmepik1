@@ -8,6 +8,15 @@ const ALLOWED_HOSTS = [
   "hbb.afl.rakuten.co.jp",
 ];
 
+/**
+ * 楽天等のクロスオリジン画像を取得する CORS プロキシ。
+ *
+ * 旧パス `/api/image-proxy` は Netlify Edge が `?url=` をキャッシュキー
+ * に含めず、最初にキャッシュされた画像が後続の別 URL 要求にも返って
+ * しまうバグを誘発していた。新パスに切り替えて古いキャッシュ群を捨て、
+ * 同時に `Netlify-Vary: query=url` を返してこれ以降は URL ごとに
+ * 別エントリとしてキャッシュされるようにする。
+ */
 export async function GET(req: NextRequest) {
   const url = req.nextUrl.searchParams.get("url");
   if (!url) {
@@ -27,7 +36,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const upstream = await fetch(parsed.toString(), {
-      headers: { "user-agent": "cosmetree-image-proxy/1.0" },
+      headers: { "user-agent": "cosmetree-image-proxy/2.0" },
     });
     if (!upstream.ok) {
       return NextResponse.json(
@@ -41,12 +50,17 @@ export async function GET(req: NextRequest) {
       status: 200,
       headers: {
         "content-type": contentType,
+        // Netlify Edge / 標準 CDN いずれにも `?url=` をキャッシュキー
+        // へ含めさせる。Netlify-Vary は Netlify 独自の拡張、Vary は
+        // 標準ヘッダ（互換性目的で両方入れる）。
         "cache-control": "public, max-age=86400, immutable",
+        "netlify-vary": "query=url",
+        "vary": "url",
         "access-control-allow-origin": "*",
       },
     });
   } catch (err) {
-    console.error("[image-proxy]", err);
+    console.error("[img-proxy]", err);
     return NextResponse.json({ error: "fetch failed" }, { status: 502 });
   }
 }
