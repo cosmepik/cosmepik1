@@ -360,6 +360,19 @@ export function AddItemModal({
     };
   }, [isOpen]);
 
+  /**
+   * 防御: モーダルが閉じる方向（isOpen → false）に切り替わったら必ず
+   * 画像処理 state を空にする。`handleClose` でも同じことをしているが、
+   * 親側からの強制クローズや、処理中に親 isOpen が落ちるパスでも漏れなく
+   * リセットされるようにここでも明示する。
+   */
+  useEffect(() => {
+    if (!isOpen) {
+      setProcessingSource(null);
+      setProcessingPending(null);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const canAddCosme = ["routine", "products"].includes(sectionType);

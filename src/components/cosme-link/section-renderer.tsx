@@ -715,12 +715,16 @@ export function SectionRenderer({ section }: SectionRendererProps) {
       </div>
       <div className="mt-1">{renderContent()}</div>
 
-      <AddItemModal
-        isOpen={showAddItemModal}
-        onClose={() => setShowAddItemModal(false)}
-        sectionId={section.id}
-        sectionType={section.type}
-      />
+      {/* 条件付きレンダリングで開くたびに fresh インスタンスを生成し、
+          内部 state（processingSource など）の取り違えバグを防ぐ */}
+      {showAddItemModal && (
+        <AddItemModal
+          isOpen
+          onClose={() => setShowAddItemModal(false)}
+          sectionId={section.id}
+          sectionType={section.type}
+        />
+      )}
     </section>
   );
 }

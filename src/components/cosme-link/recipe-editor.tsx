@@ -505,13 +505,21 @@ export function RecipeEditor() {
         </p>
       )}
 
-      <AddItemModal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        sectionId={recipeSection?.id ?? ""}
-        sectionType="routine"
-        onItemCreated={handleItemCreated}
-      />
+      {/*
+        AddItemModal は条件付きレンダリングにして、開くたびに新しいインスタンス
+        として mount し直す。常駐させると processingSource など内部 state が
+        前回の開閉から残り、稀に「2 個目以降の追加で前のコスメ画像が出る」
+        バグの引き金になる（本番の React 19 並行レンダリング下で再現）。
+      */}
+      {showAddModal && (
+        <AddItemModal
+          isOpen
+          onClose={() => setShowAddModal(false)}
+          sectionId={recipeSection?.id ?? ""}
+          sectionType="routine"
+          onItemCreated={handleItemCreated}
+        />
+      )}
     </div>
   );
 }
