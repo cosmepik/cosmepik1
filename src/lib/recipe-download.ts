@@ -2,18 +2,18 @@
  * メイクレシピキャンバスを画像（PNG）として保存するためのユーティリティ。
  *
  * 設計メモ:
- * - 画像化には `html-to-image` を使う（foreignObject ベース）。
- * - クロスオリジンの `<img>` は環境により取り込めないことがあり（楽天サムネの CORS 非対応、
- *   iOS で Supabase Storage 背景が白飛び等）、楽天許可ホストと Supabase 公開パスのみ
- *   `/api/img-proxy` で data URL に差し替えてから `toBlob` を呼ぶ。
+ * - 画像化には `html-to-image` を使う。foreignObject ベースなので
+ *   外部画像（Supabase Storage 等）も CORS が許可されていれば取り込める。
+ * - 楽天の商品画像（thumbnail.image.rakuten.co.jp / r.r10s.jp 等）は
+ *   CORS ヘッダが返らないため html-to-image の内部 fetch が失敗する。
+ *   これを避けるため、画像化前にクロスオリジンの `<img>` を
+ *   `/api/img-proxy` 経由で data URL に差し替えてから toBlob を呼ぶ。
  * - 保存方法は次の優先順位で試す:
  *   1) Web Share API（`navigator.share` with files）→ iOS Safari の写真アプリ保存に最適
  *   2) `<a download>` 属性によるダウンロード → デスクトップ Chrome / Safari / Android
  *   3) 上記いずれも使えない / エラー時は new tab で開く（長押し保存）
  * - 編集中のUI（選択枠・削除ボタン等）は `data-editor-decoration="1"` を
  *   付けておけばこの関数で除外する。
- * - モバイル WebKit/Chromium で data URL に差し替え直後に toBlob すると背景だけ落ちるため、
- *   load 待ち + `decode()` + 描画フラッシュしてからキャプチャする。
  */
 
 export interface DownloadRecipeOptions {
@@ -39,60 +39,6 @@ function isCrossOriginHttp(url: string): boolean {
   } catch {
     return false;
   }
-}
-
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/** 複数フレーム待機（レイアウト・ペイントの反映用） */
-function waitForPaintFrames(count = 2): Promise<void> {
-  let chain = Promise.resolve();
-  for (let i = 0; i < count; i += 1) {
-    chain = chain.then(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
-  }
-  return chain;
-}
-
-/**
- * `<img>` を実際に描画可能になるまで待つ（モバイルで toBlob が白背景になる対策）。
- * - load / complete
- * - 可能なら `decode()`
- * - 数フレーム待ち
- */
-async function awaitImgDecodedForCapture(img: HTMLImageElement, loadTimeoutMs: number): Promise<void> {
-  if (!img.getAttribute("src")) return;
-
-  await Promise.race([
-    new Promise<void>((resolve) => {
-      if (img.complete && img.naturalWidth > 0) {
-        queueMicrotask(() => resolve());
-        return;
-      }
-      img.addEventListener("load", () => resolve(), { once: true });
-      img.addEventListener("error", () => resolve(), { once: true });
-    }),
-    delay(loadTimeoutMs),
-  ]);
-
-  try {
-    if (typeof img.decode === "function") {
-      await img.decode();
-    }
-  } catch {
-    /* 古い環境や壊れたフレームで throw してもキャプチャは試す */
-  }
-
-  await waitForPaintFrames(2);
-}
-
-/**
- * キャンバス内の全 `<img>` をデコード済み状態にそろえる（toBlob 直前）。
- */
-async function flushAllImages(root: HTMLElement, perImageMs: number): Promise<void> {
-  const imgs = Array.from(root.querySelectorAll("img")) as HTMLImageElement[];
-  await Promise.all(imgs.map((img) => awaitImgDecodedForCapture(img, perImageMs)));
-  await waitForPaintFrames(2);
 }
 
 /**
@@ -139,8 +85,20 @@ async function inlineCrossOriginImages(root: HTMLElement): Promise<() => void> {
       const dataUrl = await getDataUrl(original);
       if (!dataUrl) return;
 
-      img.setAttribute("src", dataUrl);
-      await awaitImgDecodedForCapture(img, 6000);
+      // 差し替え後に画像のロード完了を待つ（data URL でも decode は非同期な実装あり）
+      await new Promise<void>((resolve) => {
+        const onDone = () => {
+          img.removeEventListener("load", onDone);
+          img.removeEventListener("error", onDone);
+          resolve();
+        };
+        img.addEventListener("load", onDone, { once: true });
+        img.addEventListener("error", onDone, { once: true });
+        img.setAttribute("src", dataUrl);
+        // 既にキャッシュされていて load イベントが発火しないケースに備えて
+        // タイムアウトでも resolve する
+        setTimeout(onDone, 1500);
+      });
 
       restore.push(() => {
         img.setAttribute("src", original);
@@ -178,8 +136,6 @@ export async function downloadRecipeImage(
 
   // クロスオリジン画像を data URL に差し替え（楽天等の CORS 非対応ホスト対策）
   const restoreImages = await inlineCrossOriginImages(element);
-
-  await flushAllImages(element, 4500);
 
   let blob: Blob | null = null;
   try {
