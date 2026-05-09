@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const ALLOWED_HOSTS = [
+const RAKUTEN_HOSTS = [
   "thumbnail.image.rakuten.co.jp",
   "shop.r10s.jp",
   "image.rakuten.co.jp",
@@ -8,8 +8,19 @@ const ALLOWED_HOSTS = [
   "hbb.afl.rakuten.co.jp",
 ];
 
+/** Supabase Storage 公開オブジェクトのみ（メイクレシピ背景など html-to-image 用データURL化） */
+function isAllowedSupabasePublicStorage(parsed: URL): boolean {
+  if (parsed.protocol !== "https:") return false;
+  if (!parsed.hostname.endsWith(".supabase.co")) return false;
+  return parsed.pathname.includes("/storage/v1/object/public/");
+}
+
+function isAllowedRakutenHost(hostname: string): boolean {
+  return RAKUTEN_HOSTS.some((host) => hostname.endsWith(host));
+}
+
 /**
- * 楽天等のクロスオリジン画像を取得する CORS プロキシ。
+ * クロスオリジン画像を取得する CORS プロキシ（楽天サムネ・Supabase Storage 公開URL）。
  *
  * 旧パス `/api/image-proxy` は Netlify Edge が `?url=` をキャッシュキー
  * に含めず、最初にキャッシュされた画像が後続の別 URL 要求にも返って
@@ -30,7 +41,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "invalid url" }, { status: 400 });
   }
 
-  if (!ALLOWED_HOSTS.some((host) => parsed.hostname.endsWith(host))) {
+  const allowed =
+    isAllowedRakutenHost(parsed.hostname) || isAllowedSupabasePublicStorage(parsed);
+  if (!allowed) {
     return NextResponse.json({ error: "host not allowed" }, { status: 403 });
   }
 

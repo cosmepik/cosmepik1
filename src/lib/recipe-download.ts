@@ -2,12 +2,10 @@
  * メイクレシピキャンバスを画像（PNG）として保存するためのユーティリティ。
  *
  * 設計メモ:
- * - 画像化には `html-to-image` を使う。foreignObject ベースなので
- *   外部画像（Supabase Storage 等）も CORS が許可されていれば取り込める。
- * - 楽天の商品画像（thumbnail.image.rakuten.co.jp / r.r10s.jp 等）は
- *   CORS ヘッダが返らないため html-to-image の内部 fetch が失敗する。
- *   これを避けるため、画像化前にクロスオリジンの `<img>` を
- *   `/api/img-proxy` 経由で data URL に差し替えてから toBlob を呼ぶ。
+ * - 画像化には `html-to-image` を使う（foreignObject ベース）。
+ * - クロスオリジンの `<img>` は環境により取り込めないことがあり（楽天サムネの CORS 非対応、
+ *   iOS で Supabase Storage 背景が白飛び等）、楽天許可ホストと Supabase 公開パスのみ
+ *   `/api/img-proxy` で data URL に差し替えてから `toBlob` を呼ぶ。
  * - 保存方法は次の優先順位で試す:
  *   1) Web Share API（`navigator.share` with files）→ iOS Safari の写真アプリ保存に最適
  *   2) `<a download>` 属性によるダウンロード → デスクトップ Chrome / Safari / Android
