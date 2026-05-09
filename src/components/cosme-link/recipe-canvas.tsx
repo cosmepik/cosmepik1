@@ -150,6 +150,7 @@ export function RecipeCanvas({
         <img
           src={backgroundImage}
           alt="メイクレシピ背景"
+          data-recipe-background="1"
           className="absolute inset-0 h-full w-full object-cover"
           draggable={false}
           onClick={() => {
