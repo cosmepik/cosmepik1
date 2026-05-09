@@ -275,7 +275,7 @@ function EditPageContent({ slug }: { slug: string }) {
         />
 
         {/* 公開リンク（編集ボタン群） */}
-        <div className="mx-auto mt-4 mb-5 w-full max-w-[400px]">
+        <div className="mx-auto mt-4 mb-5 flex w-full max-w-[400px] flex-col gap-2">
           {editingUrl ? (
             <div className="flex flex-col gap-2 px-1">
               <div className="flex items-center gap-2 rounded-xl border-2 border-primary/40 bg-white px-3 py-2.5 shadow-sm">
@@ -315,27 +315,37 @@ function EditPageContent({ slug }: { slug: string }) {
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-center gap-2">
-              <a
-                href={profileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex min-w-0 items-center gap-1.5 rounded-full border border-border bg-white px-3 py-2 text-sm text-foreground/80 no-underline shadow-sm transition-colors hover:bg-muted/50 hover:text-foreground"
-              >
-                <span className="min-w-0 truncate">{profileUrl}</span>
-                <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-              </a>
-              <button
-                type="button"
-                onClick={() => setEditingUrl(true)}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-white text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground active:scale-95"
-                aria-label="URLを編集"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" />
-                </svg>
-              </button>
-            </div>
+            <>
+              <div className="flex items-center justify-center gap-2">
+                <a
+                  href={profileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex min-w-0 items-center gap-1.5 rounded-full border border-border bg-white px-3 py-2 text-sm text-foreground/80 no-underline shadow-sm transition-colors hover:bg-muted/50 hover:text-foreground"
+                >
+                  <span className="min-w-0 truncate">{profileUrl}</span>
+                  <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setEditingUrl(true)}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-white text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground active:scale-95"
+                  aria-label="URLを編集"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" />
+                  </svg>
+                </button>
+              </div>
+              <div className="self-start px-1">
+                <Link
+                  href="/dashboard/revenue"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-md transition-all hover:bg-primary/90 active:scale-95"
+                >
+                  収益化方法💰
+                </Link>
+              </div>
+            </>
           )}
         </div>
 

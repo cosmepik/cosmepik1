@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { DollarSign } from "lucide-react";
+import { BookOpen, ChevronRight, DollarSign } from "lucide-react";
 import { SideMenu } from "@/components/cosme-link/side-menu";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { useUser } from "@/hooks/use-user";
@@ -133,9 +133,23 @@ export default function RevenuePage() {
                 </p>
                 <Link
                   href="/guide/rakuten-affiliate"
-                  className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                  className="group mt-3 flex w-full items-center gap-3 rounded-xl border-2 border-primary/35 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent px-4 py-3.5 text-left shadow-sm ring-1 ring-primary/15 transition-all hover:border-primary/55 hover:from-primary/15 hover:shadow-md active:scale-[0.995]"
                 >
-                  楽天アフィリエイトの登録方法を見る →
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/80 text-primary shadow-sm ring-1 ring-primary/10 group-hover:bg-white">
+                    <BookOpen className="h-5 w-5" strokeWidth={2} aria-hidden />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold text-foreground">
+                      楽天アフィリエイトの登録方法を見る
+                    </span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">
+                      はじめての方でもわかりやすい手順ガイド
+                    </span>
+                  </span>
+                  <ChevronRight
+                    className="h-5 w-5 shrink-0 text-primary transition-transform group-hover:translate-x-0.5"
+                    aria-hidden
+                  />
                 </Link>
               </div>
             </div>

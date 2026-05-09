@@ -88,9 +88,16 @@ const REMOVE_PHRASES = [
   "楽天一位",
   "即日発送",
   "翌日発送",
+  "訳あり商品",
+  "新色",
+  "全",
+  "ギフト",
+  "新色追加",
+  "配送",
+  "クリスマス",
+  "プレゼント",
   "本体",
 ];
-
 /** 括弧付き【】[]「」のプロモーション文言を除去する正規表現 */
 const BRACKET_PATTERN = /[【\[「]([^】\]」]*)[】\]」]/g;
 
@@ -144,10 +151,15 @@ const TIME_PATTERNS = [
   /\d{1,2}時(?:頃|〜|～)?/g,
 ];
 
+/** 容量・分量（例: 30ml, 50mL, 0.5g, ３０ｍｌ / 24ml × 10）。単位がある場合のみ。※SPF50 単独数字にはマッチしない */
+const VOLUME_WEIGHT_PATTERN =
+  /[0-9０-９]+(?:[.,．][0-9０-９]+)?(?:\s*[×ｘxX]\s*[0-9０-９]+(?:[.,．][0-9０-９]+)?)?\s*(?:㎖|[mMｍ][lL]|[gｇ])/gi;
+
 /**
  * 楽天APIの商品名をクレンジング
  * - 括弧付き（【】[]）のプロモーション文言を除去
  * - ★に続く文言、%OFF、MAX円、数量限定などを除去
+ * - 容量・分量（〇ml / 〇g など）
  * - 余分なスペースを整理
  */
 export function cleanseItemName(name: string): string {
@@ -181,6 +193,9 @@ export function cleanseItemName(name: string): string {
   for (const re of TIME_PATTERNS) {
     s = s.replace(re, " ").trim();
   }
+
+  // 5b. 30ml / 0.5g など容量・分量
+  s = s.replace(VOLUME_WEIGHT_PATTERN, " ").trim();
 
   // 6. 除去文言を繰り返し削除
   let prev = "";
