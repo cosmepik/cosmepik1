@@ -155,11 +155,18 @@ const TIME_PATTERNS = [
 const VOLUME_WEIGHT_PATTERN =
   /[0-9０-９]+(?:[.,．][0-9０-９]+)?(?:\s*[×ｘxX]\s*[0-9０-９]+(?:[.,．][0-9０-９]+)?)?\s*(?:㎖|[mMｍ][lL]|[gｇ])/gi;
 
+/** 価格表記（例: 200円、1,200円、￥500）。※末尾が円または先頭が¥￥のブロックのみ */
+const PRICE_YEN_PATTERNS = [
+  /[¥￥]\s*[0-9０-９]+(?:[,，][0-9０-９]{3})*(?:[.,．][0-9０-９]+)?/g,
+  /[0-9０-９]+(?:[,，][0-9０-９]{3})*(?:[.,．][0-9０-９]+)?\s*円/g,
+];
+
 /**
  * 楽天APIの商品名をクレンジング
  * - 括弧付き（【】[]）のプロモーション文言を除去
  * - ★に続く文言、%OFF、MAX円、数量限定などを除去
  * - 容量・分量（〇ml / 〇g など）
+ * - 価格（〇円 / ¥〇 など）
  * - 余分なスペースを整理
  */
 export function cleanseItemName(name: string): string {
@@ -196,6 +203,11 @@ export function cleanseItemName(name: string): string {
 
   // 5b. 30ml / 0.5g など容量・分量
   s = s.replace(VOLUME_WEIGHT_PATTERN, " ").trim();
+
+  // 5c. 200円 / ¥1,980 など価格
+  for (const re of PRICE_YEN_PATTERNS) {
+    s = s.replace(re, " ").trim();
+  }
 
   // 6. 除去文言を繰り返し削除
   let prev = "";
