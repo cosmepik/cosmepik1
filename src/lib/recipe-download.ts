@@ -222,10 +222,22 @@ async function loadBackgroundForCompositing(
  * 指定の DOM 要素を PNG 画像化してユーザーの端末に保存させる。
  * モバイル（特に iOS）では `navigator.share` を優先して写真アプリへの保存を促す。
  */
+export type DownloadRecipeMethod =
+  | "share"
+  | "share-cancelled"
+  | "download"
+  | "newtab";
+
+export interface DownloadRecipeResult {
+  ok: boolean;
+  method: DownloadRecipeMethod;
+  error?: Error;
+}
+
 export async function downloadRecipeImage(
   element: HTMLElement,
   options: DownloadRecipeOptions = {},
-): Promise<{ ok: boolean; method: "share" | "download" | "newtab"; error?: Error }> {
+): Promise<DownloadRecipeResult> {
   const {
     filename = `cosmepik-recipe-${Date.now()}`,
     shareTitle = "メイクレシピ",
@@ -372,7 +384,7 @@ async function deliverBlob(
   blob: Blob,
   filename: string,
   shareTitle: string,
-): Promise<{ ok: boolean; method: "share" | "download" | "newtab"; error?: Error }> {
+): Promise<DownloadRecipeResult> {
   const file = new File([blob], `${filename}.jpg`, { type: "image/jpeg" });
 
   // 1) Web Share API（iOS で写真アプリに保存できる唯一の方法）
@@ -385,7 +397,9 @@ async function deliverBlob(
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
       if (error.name === "AbortError") {
-        return { ok: true, method: "share" };
+        // ユーザーがシェアダイアログをキャンセル → 保存はされていない。
+        // 成功ポップを誤って出さないように、別の method で返す。
+        return { ok: true, method: "share-cancelled" };
       }
       // それ以外はフォールバックに進む
     }

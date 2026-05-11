@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { downloadRecipeImage } from "@/lib/recipe-download";
+import { useRecipeSavedPopup } from "./recipe-saved-popup";
 
 interface Props {
   /**
@@ -20,6 +21,7 @@ interface Props {
  */
 export function RecipeDownloadButton({ getTarget, filename }: Props) {
   const [downloading, setDownloading] = useState(false);
+  const { showSavedPopup, savedPopup } = useRecipeSavedPopup();
 
   const handleClick = useCallback(
     async (e: React.MouseEvent) => {
@@ -36,8 +38,10 @@ export function RecipeDownloadButton({ getTarget, filename }: Props) {
         });
         if (!result.ok) {
           toast.error("画像の保存に失敗しました");
-        } else if (result.method === "download") {
-          toast.success("メイクレシピを保存しました");
+        } else if (result.method === "share-cancelled") {
+          // ユーザーが共有ダイアログをキャンセル → 何も出さない
+        } else {
+          showSavedPopup();
         }
       } catch {
         toast.error("画像の保存に失敗しました");
@@ -45,25 +49,28 @@ export function RecipeDownloadButton({ getTarget, filename }: Props) {
         setDownloading(false);
       }
     },
-    [downloading, getTarget, filename],
+    [downloading, getTarget, filename, showSavedPopup],
   );
 
   return (
-    <button
-      type="button"
-      data-editor-decoration="1"
-      aria-label="メイクレシピを画像で保存"
-      onClick={handleClick}
-      onMouseDown={(e) => e.stopPropagation()}
-      onTouchStart={(e) => e.stopPropagation()}
-      disabled={downloading}
-      className="absolute right-2 top-2 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-black/55 text-white shadow-lg backdrop-blur-md transition-all hover:bg-black/75 active:scale-95 disabled:opacity-60"
-    >
-      {downloading ? (
-        <Loader2 className="h-[18px] w-[18px] animate-spin" />
-      ) : (
-        <Download className="h-[18px] w-[18px]" />
-      )}
-    </button>
+    <>
+      <button
+        type="button"
+        data-editor-decoration="1"
+        aria-label="メイクレシピを画像で保存"
+        onClick={handleClick}
+        onMouseDown={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        disabled={downloading}
+        className="absolute right-2 top-2 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-black/55 text-white shadow-lg backdrop-blur-md transition-all hover:bg-black/75 active:scale-95 disabled:opacity-60"
+      >
+        {downloading ? (
+          <Loader2 className="h-[18px] w-[18px] animate-spin" />
+        ) : (
+          <Download className="h-[18px] w-[18px]" />
+        )}
+      </button>
+      {savedPopup}
+    </>
   );
 }

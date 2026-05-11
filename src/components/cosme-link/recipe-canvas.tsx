@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import type { RecipePlacement } from "@/lib/sections";
 import { LABEL_DEFAULT } from "@/lib/sections";
 import { downloadRecipeImage } from "@/lib/recipe-download";
+import { useRecipeSavedPopup } from "./recipe-saved-popup";
 
 const COMMENT_FONT = "'HuiFontP29', cursive";
 
@@ -53,6 +54,7 @@ export function RecipeCanvas({
   useCommentFont();
   const canvasRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
+  const { showSavedPopup, savedPopup } = useRecipeSavedPopup();
 
   const onPinchScaleRef = useRef(onPinchScale);
   onPinchScaleRef.current = onPinchScale;
@@ -80,10 +82,11 @@ export function RecipeCanvas({
           if (process.env.NODE_ENV !== "production") {
             console.warn("[RecipeCanvas] download failed", result.error);
           }
-        } else if (result.method === "download") {
-          toast.success("メイクレシピを保存しました");
+        } else if (result.method === "share-cancelled") {
+          // ユーザーが共有ダイアログをキャンセル → 成功ポップは出さない
+        } else {
+          showSavedPopup();
         }
-        // share / newtab の場合は OS のシートやタブが出るので追加トーストは不要
       } catch (err) {
         toast.error("画像の保存に失敗しました");
         if (process.env.NODE_ENV !== "production") {
@@ -93,7 +96,7 @@ export function RecipeCanvas({
         setDownloading(false);
       }
     },
-    [downloading, editable, onSelect],
+    [downloading, editable, onSelect, showSavedPopup],
   );
 
   const showDownloadButton = Boolean(backgroundImage) || placements.length > 0;
@@ -140,6 +143,7 @@ export function RecipeCanvas({
   if (!editable && !backgroundImage && placements.length === 0) return null;
 
   return (
+    <>
     <div
       ref={canvasRef}
       data-recipe-canvas
@@ -237,6 +241,8 @@ export function RecipeCanvas({
       />
 
     </div>
+    {savedPopup}
+    </>
   );
 }
 
