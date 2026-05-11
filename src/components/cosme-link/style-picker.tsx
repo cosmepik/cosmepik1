@@ -47,8 +47,12 @@ if (process.env.NODE_ENV !== "production") {
   }
 }
 
-/** 画像を圧縮して data URL を返す */
-function compressImage(file: File, maxWidth = 1200): Promise<string> {
+/**
+ * 画像を圧縮して data URL を返す。
+ * 壁紙はレシピ背景と同様にダウンロード画像の最終解像度（>=1080px）に直結するので
+ * 十分なサイズ・品質を確保する。
+ */
+function compressImage(file: File, maxWidth = 2048): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -73,7 +77,7 @@ function compressImage(file: File, maxWidth = 1200): Promise<string> {
         return;
       }
       ctx.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL("image/jpeg", 0.8));
+      resolve(canvas.toDataURL("image/jpeg", 0.92));
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);

@@ -13,7 +13,12 @@ import { AddItemModal } from "./add-item-modal";
 import { OnboardingBubble } from "./onboarding-guide";
 import { warmupBackgroundRemoval } from "@/lib/image-processing";
 
-function compressImage(file: File, maxWidth = 1200, quality = 0.80): Promise<string> {
+/**
+ * 背景写真は画像保存時の最終解像度（>=1080px）と並べたときの劣化が目立つので
+ * maxWidth は十分大きく取り、JPEG 品質も高めにする。
+ * 1 レシピに 1 枚しかアップしないので Supabase ストレージ的にも余裕。
+ */
+function compressImage(file: File, maxWidth = 2048, quality = 0.92): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);

@@ -30,8 +30,19 @@ export interface DownloadRecipeOptions {
   filename?: string;
   /** Web Share API のタイトル */
   shareTitle?: string;
-  /** 画像化のピクセル比。Retina で綺麗にしたいので既定 2。 */
+  /**
+   * 画像化のピクセル比。
+   * 省略時は端末の `devicePixelRatio` と、最小出力幅（既定 1080px）を満たす倍率の
+   * 大きい方を採用する（上限 3）。これにより：
+   *   - DPR=3 のスマホでも画面と同等のシャープさで文字がラスタライズされる
+   *   - PC でも実用解像度（>=1080px 幅）を確保
+   *   - 上限 3 で iOS Safari の foreignObject メモリ不足クラッシュを回避
+   */
   pixelRatio?: number;
+  /** 出力 JPEG の品質（0〜1）。既定 0.92。 */
+  jpegQuality?: number;
+  /** 最小出力幅（px）。pixelRatio 自動算出のときに使う。既定 1080。 */
+  minOutputWidth?: number;
 }
 
 /**
@@ -218,8 +229,20 @@ export async function downloadRecipeImage(
   const {
     filename = `cosmepik-recipe-${Date.now()}`,
     shareTitle = "メイクレシピ",
-    pixelRatio = 2,
+    jpegQuality = 0.92,
+    minOutputWidth = 1080,
   } = options;
+
+  // pixelRatio の決定:
+  //   - 明示指定があればそれを尊重
+  //   - そうでなければ「画面 DPR」と「最小幅を満たす倍率」のうち大きい方を採用
+  //   - 上限 3 で iOS foreignObject の安全圏に収める
+  const targetRect = element.getBoundingClientRect();
+  const rectWidth = Math.max(1, targetRect.width);
+  const dpr =
+    typeof window !== "undefined" ? Math.max(1, window.devicePixelRatio || 1) : 1;
+  const requiredRatio = minOutputWidth / rectWidth;
+  const pixelRatio = options.pixelRatio ?? Math.min(Math.max(dpr, requiredRatio), 3);
 
   const { toBlob } = await import("html-to-image");
 
@@ -319,8 +342,12 @@ export async function downloadRecipeImage(
     const fgImage = await loadImageElement(fgObjectUrl);
     ctx.drawImage(fgImage, 0, 0, W, H);
 
+    // JPEG で出力する。背景画像（あるいは白塗り）が下敷きになっており
+    // 最終 Canvas に透明領域は残らないので、JPEG で問題ない。
+    // PNG（~2MB）と比べてファイルサイズが 1/3〜1/5 になり、解像度を上げても
+    // 共有・保存が軽快になる。
     finalBlob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob((b) => resolve(b), "image/png");
+      canvas.toBlob((b) => resolve(b), "image/jpeg", jpegQuality);
     });
   } catch (err) {
     return {
@@ -346,7 +373,7 @@ async function deliverBlob(
   filename: string,
   shareTitle: string,
 ): Promise<{ ok: boolean; method: "share" | "download" | "newtab"; error?: Error }> {
-  const file = new File([blob], `${filename}.png`, { type: "image/png" });
+  const file = new File([blob], `${filename}.jpg`, { type: "image/jpeg" });
 
   // 1) Web Share API（iOS で写真アプリに保存できる唯一の方法）
   if (typeof navigator !== "undefined" && typeof navigator.canShare === "function") {
@@ -369,7 +396,7 @@ async function deliverBlob(
   try {
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${filename}.png`;
+    a.download = `${filename}.jpg`;
     a.rel = "noopener";
     document.body.appendChild(a);
     a.click();
