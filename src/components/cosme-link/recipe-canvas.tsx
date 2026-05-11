@@ -331,7 +331,14 @@ function PlacementItem({
   const labelContent = (
     <div
       className="w-[120px] bg-black/40 px-1.5 py-0.5 text-center backdrop-blur-[2px]"
-      style={{ fontFamily: "'Noto Sans JP', sans-serif" }}
+      // OS 標準の日本語ゴシック体スタックを使う。画面・保存（html-to-image）の
+      // 両方で同じシステムフォントが使われるので、文字の太さ・字形が完全に一致する。
+      // Noto Sans JP の Web Font 埋め込みは iOS Safari でメモリ不足によるリロードを
+      // 引き起こすため避ける（ラベルは 10〜11px の小さいテキストでフォント差は目立たない）。
+      style={{
+        fontFamily:
+          "-apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', Meiryo, sans-serif",
+      }}
     >
       {placement.brand && (
         <p className="truncate text-[11px] font-bold text-white">{placement.brand}</p>

@@ -341,7 +341,7 @@ function RecipeSectionBlock({ section, slug, cacheBust, isPremium, userAffiliate
                     transform: `translate(-50%, -50%) scale(${labelScale})`,
                   }}
                 >
-                  <div className="w-[120px] bg-black/40 px-1.5 py-0.5 text-center" style={{ backdropFilter: "blur(2px)", fontFamily: "'Noto Sans JP', sans-serif" }}>
+                  <div className="w-[120px] bg-black/40 px-1.5 py-0.5 text-center" style={{ backdropFilter: "blur(2px)", fontFamily: "-apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', Meiryo, sans-serif" }}>
                     {p.brand && <p className="truncate text-[11px] font-bold text-white">{p.brand}</p>}
                     {p.product && <p className="line-clamp-4 text-[10px] font-medium leading-tight text-white">{p.product}</p>}
                   </div>
