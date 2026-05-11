@@ -20,11 +20,14 @@ import type { Config } from "@imgly/background-removal";
  *   被写体では画質差はほぼ目視で分からない。
  * - `device: "cpu"` は安定性優先（GPU/WebGPU は過去にクラッシュ実績あり）。
  * - 出力は WebP（PNGよりエンコード高速＋ファイルサイズ小）。
+ *   quality は 0.95。0.9 から少しだけ上げて透過エッジの劣化を抑える。
+ *   ファイルサイズは 1.3〜1.5 倍だが、コスメ画像 1 枚 150〜300KB レベルで
+ *   ストレージへの影響は小さい。
  */
 const BG_CONFIG: Config = {
   model: "isnet_quint8",
   device: "cpu",
-  output: { format: "image/webp", quality: 0.9 },
+  output: { format: "image/webp", quality: 0.95 },
 };
 
 /**
@@ -163,7 +166,12 @@ export function warmupBackgroundRemoval(): Promise<void> {
 
 /**
  * 画像を指定最大辺に収まるようダウンスケール。すでに小さい場合は元Blobを返す。
- * JPEG(0.85)で再エンコードするので、楽天の大きな PNG 画像も軽量化される。
+ *
+ * 1024px を超える大きな画像（楽天の高解像度商品写真やスマホの撮影画像）はここで
+ * `canvas.toBlob` で JPEG 0.95 に再エンコードされる。以前は 0.85 だったが、モデル
+ * に渡す入力品質を少しでも上げて **マスク境界（透過エッジ）の品質を改善する** 目的で
+ * 0.95 に引き上げた。ファイルサイズは 1.5〜2 倍になるが、Worker への postMessage で
+ * 渡すだけで保存はされないため実害はない。
  */
 async function downscaleImageBlob(blob: Blob, maxDim: number): Promise<Blob> {
   let bitmap: ImageBitmap;
@@ -185,7 +193,7 @@ async function downscaleImageBlob(blob: Blob, maxDim: number): Promise<Blob> {
     if (!ctx) return blob;
     ctx.drawImage(bitmap, 0, 0, w, h);
     const out = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/jpeg", 0.85),
+      canvas.toBlob(resolve, "image/jpeg", 0.95),
     );
     return out ?? blob;
   } finally {

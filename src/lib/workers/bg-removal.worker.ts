@@ -22,7 +22,7 @@ declare const self: DedicatedWorkerGlobalScope;
 const BG_CONFIG: Config = {
   model: "isnet_quint8",
   device: "cpu",
-  output: { format: "image/webp", quality: 0.9 },
+  output: { format: "image/webp", quality: 0.95 },
 };
 
 type InMessage =
