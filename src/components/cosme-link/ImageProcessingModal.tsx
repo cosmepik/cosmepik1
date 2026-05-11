@@ -18,7 +18,7 @@ import {
 } from "@/lib/image-processing";
 import { ManualCropper, type PixelArea } from "./ManualCropper";
 
-type Stage = "choose" | "processing" | "manual";
+type Stage = "choose" | "processing" | "preview" | "manual";
 
 /**
  * 背景除去モデルを一度でも実行成功した端末かどうかの localStorage フラグ。
@@ -73,6 +73,9 @@ export function ImageProcessingModal({
   // 「初回のみモデルをダウンロードします」案内を出すか
   const [isBgFirstUse, setIsBgFirstUse] = useState(false);
 
+  // 背景除去の結果（透過 WebP の data URL）。preview / manual 段階で使う。
+  const [bgRemovedDataUrl, setBgRemovedDataUrl] = useState<string | null>(null);
+
   // onConfirm は親のレンダー毎に参照が変わる可能性があるため ref に保持し、
   // 処理中に再レンダーが起きても useEffect が重複実行されないようにする。
   const onConfirmRef = useRef(onConfirm);
@@ -89,6 +92,7 @@ export function ImageProcessingModal({
     setCroppedPixels(null);
     setAsIsBusy(false);
     setManualBusy(false);
+    setBgRemovedDataUrl(null);
   }, [isOpen, sourceUrl]);
 
   // モーダル表示中は背面のスクロールを止める
@@ -134,11 +138,14 @@ export function ImageProcessingModal({
         window.clearInterval(tickerId);
         setProgress(100);
         markBgModelLoaded();
-        // 100% 表示を一瞬だけ見せてから親に渡す（視覚的な完了感のため）
+        // 100% 表示を一瞬だけ見せてからプレビュー画面に遷移する
         await new Promise((r) => setTimeout(r, 180));
         if (cancelled) return;
-        // 新UX: プレビュー画面を挟まず、そのまま親に確定を返す
-        onConfirmRef.current(dataUrl);
+        // 背景除去が綺麗に決まらないケースの救済として、結果を必ずプレビューで
+        // ユーザーに確認させる。プレビュー画面でユーザーが「このまま使う」を
+        // 押すか、トリミング微調整するかを選べるようにする。
+        setBgRemovedDataUrl(dataUrl);
+        setStage("preview");
       } catch (e) {
         console.error("[ImageProcessingModal] bg removal failed", e);
         if (cancelled) return;
@@ -165,8 +172,11 @@ export function ImageProcessingModal({
     if (!croppedPixels || manualBusy) return;
     setManualBusy(true);
     try {
+      // 背景除去後にトリミング微調整するフローでは、入力は除去済み data URL。
+      // 通常のトリミング（choose → manual）では元画像 URL。
+      const cropSource = bgRemovedDataUrl ?? sourceUrl;
       const dataUrl = await cropImageToDataUrl(
-        sourceUrl,
+        cropSource,
         croppedPixels,
         "image/png",
       );
@@ -177,6 +187,25 @@ export function ImageProcessingModal({
     } finally {
       setManualBusy(false);
     }
+  };
+
+  // プレビュー段階でユーザーが「この仕上がりで保存」を選んだとき
+  const handlePreviewConfirm = () => {
+    if (!bgRemovedDataUrl) return;
+    onConfirmRef.current(bgRemovedDataUrl);
+  };
+
+  // プレビューから「やり直す」: 背景除去結果を破棄して選択画面に戻る
+  const handlePreviewRetry = () => {
+    setBgRemovedDataUrl(null);
+    setCroppedPixels(null);
+    setStage("choose");
+  };
+
+  // プレビューから「さらに切り抜き調整」: 除去結果をそのままトリミング画面へ
+  const handlePreviewToManual = () => {
+    setCroppedPixels(null);
+    setStage("manual");
   };
 
   // 「このまま使う」: 元画像をそのまま使う。
@@ -235,6 +264,7 @@ export function ImageProcessingModal({
           <h3 className="text-sm font-bold text-card-foreground">
             {stage === "choose" && "画像の使い方を選択"}
             {stage === "processing" && "画像を処理中..."}
+            {stage === "preview" && "仕上がりを確認"}
             {stage === "manual" && "切り抜き調整"}
           </h3>
           <button
@@ -326,6 +356,51 @@ export function ImageProcessingModal({
             </div>
           )}
 
+          {stage === "preview" && bgRemovedDataUrl && (
+            <div className="flex flex-col gap-4 p-5">
+              {error && (
+                <p className="whitespace-pre-wrap break-words rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                  {error}
+                </p>
+              )}
+              <div className="relative mx-auto aspect-square w-full max-w-xs overflow-hidden rounded-xl bg-[conic-gradient(at_top_left,_#f3f4f6_25%,_#e5e7eb_25%_50%,_#f3f4f6_50%_75%,_#e5e7eb_75%)] bg-[length:20px_20px]">
+                <img
+                  src={bgRemovedDataUrl}
+                  alt="背景除去後のプレビュー"
+                  className="absolute inset-0 h-full w-full object-contain"
+                />
+              </div>
+              <p className="text-center text-[11px] text-muted-foreground">
+                仕上がりを確認してください。必要なら切り抜き調整でトリミングできます。
+              </p>
+              <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={handlePreviewConfirm}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                >
+                  <Check className="h-4 w-4" />
+                  この仕上がりで保存
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePreviewToManual}
+                  className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background py-3 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"
+                >
+                  <Scissors className="h-4 w-4" />
+                  切り抜き調整
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePreviewRetry}
+                  className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background py-3 text-sm font-medium text-muted-foreground hover:bg-accent disabled:opacity-50"
+                >
+                  やり直す
+                </button>
+              </div>
+            </div>
+          )}
+
           {stage === "manual" && (
             <div className="flex flex-col gap-3 p-5">
               {error && (
@@ -334,7 +409,7 @@ export function ImageProcessingModal({
                 </p>
               )}
               <ManualCropper
-                imageUrl={previewSrc}
+                imageUrl={bgRemovedDataUrl ?? previewSrc}
                 onChange={handleCropChange}
                 className="mx-auto aspect-square w-full overflow-hidden rounded-xl bg-[conic-gradient(at_top_left,_#f3f4f6_25%,_#e5e7eb_25%_50%,_#f3f4f6_50%_75%,_#e5e7eb_75%)] bg-[length:20px_20px]"
               />
@@ -344,7 +419,9 @@ export function ImageProcessingModal({
               <div className="mt-1 flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setStage("choose")}
+                  onClick={() =>
+                    bgRemovedDataUrl ? setStage("preview") : setStage("choose")
+                  }
                   disabled={manualBusy}
                   className="flex-1 rounded-xl border border-border bg-background py-3 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"
                 >

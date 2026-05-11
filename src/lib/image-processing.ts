@@ -14,10 +14,11 @@ import type { Config } from "@imgly/background-removal";
  * `preload()` と `removeBackground()` に同じ設定を渡すことで、
  * warmup 時に取得したモデル/wasm が実行時にもそのまま再利用される。
  *
- * - `model: "isnet_quint8"` は量子化済みの軽量モデル（~40MB）。
- *   デフォルトの `isnet_fp16`（~80MB）に比べて初回ダウンロードが半減し、
- *   推論時間も 20〜30% ほど速い。コスメ商品写真のようにエッジが明瞭な
- *   被写体では画質差はほぼ目視で分からない。
+ * - `model: "isnet_fp16"` は量子化していないフルモデル（~80MB）。
+ *   `isnet_quint8`（~40MB, 量子化版）と比べてマスク境界が明確に綺麗になり、
+ *   髪・毛先・透明素材などのエッジ品質が向上する。コスメ商品のような明瞭な
+ *   被写体でも、ボトルの曲面や粉感のあるエッジで違いが体感できる。
+ *   推論時間は 20〜30% 増えるがホット待機 Worker で体感差は小さい。
  * - `device: "cpu"` は安定性優先（GPU/WebGPU は過去にクラッシュ実績あり）。
  * - 出力は WebP（PNGよりエンコード高速＋ファイルサイズ小）。
  *   quality は 0.95。0.9 から少しだけ上げて透過エッジの劣化を抑える。
@@ -25,7 +26,7 @@ import type { Config } from "@imgly/background-removal";
  *   ストレージへの影響は小さい。
  */
 const BG_CONFIG: Config = {
-  model: "isnet_quint8",
+  model: "isnet_fp16",
   device: "cpu",
   output: { format: "image/webp", quality: 0.95 },
 };

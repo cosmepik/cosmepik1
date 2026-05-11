@@ -20,7 +20,7 @@ declare const self: DedicatedWorkerGlobalScope;
 
 // 背景除去の共通設定（image-processing.ts の BG_CONFIG と一致させること）
 const BG_CONFIG: Config = {
-  model: "isnet_quint8",
+  model: "isnet_fp16",
   device: "cpu",
   output: { format: "image/webp", quality: 0.95 },
 };
