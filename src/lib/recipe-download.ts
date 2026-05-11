@@ -242,6 +242,22 @@ export async function downloadRecipeImage(
   const bgPrevVisibility = bgImg ? bgImg.style.visibility : null;
   if (bgImg) bgImg.style.visibility = "hidden";
 
+  // 5) backdrop-filter を持つ要素を一時的に無効化する。
+  //    html-to-image の SVG foreignObject 経路では backdrop-filter が
+  //    テキストを含むレイヤーをオフスクリーン合成するため、ラベルのテキストが
+  //    ぼやける。キャプチャ時だけ無効化することで、画面表示と同じシャープさを保つ。
+  //    bg-black/40 の半透明背景は残るので外観上の変化はほぼない。
+  type BackdropRestoreEntry = { el: HTMLElement; prev: string };
+  const backdropRestoreList: BackdropRestoreEntry[] = [];
+  element.querySelectorAll<HTMLElement>("*").forEach((el) => {
+    const computed = window.getComputedStyle(el).backdropFilter;
+    if (computed && computed !== "none") {
+      backdropRestoreList.push({ el, prev: el.style.backdropFilter });
+      el.style.backdropFilter = "none";
+      el.style.setProperty("-webkit-backdrop-filter", "none");
+    }
+  });
+
   let fgBlob: Blob | null = null;
   try {
     fgBlob = await toBlob(element, {
@@ -259,6 +275,10 @@ export async function downloadRecipeImage(
   } finally {
     if (bgImg && bgPrevVisibility !== null) {
       bgImg.style.visibility = bgPrevVisibility;
+    }
+    for (const { el, prev } of backdropRestoreList) {
+      el.style.backdropFilter = prev;
+      el.style.setProperty("-webkit-backdrop-filter", prev);
     }
     restoreForegroundImages();
   }
