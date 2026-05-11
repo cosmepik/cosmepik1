@@ -281,6 +281,11 @@ export async function downloadRecipeImage(
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("canvas 2d context unavailable");
 
+    // 背景画像のスケーリングと前景キャプチャの drawImage 補間を高品質に。
+    // 明示しないとブラウザ既定（多くは "low" / "medium"）で甘くなる。
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, W, H);
     if (bgLoaded) {
