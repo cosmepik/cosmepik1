@@ -35,10 +35,11 @@ import { getCardDesign } from "@/lib/card-designs";
 import { type Section, type SectionItem } from "@/lib/sections";
 import { useSections } from "@/lib/section-context";
 import { useAffiliateClick } from "@/hooks/use-affiliate-click";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CosmeImage } from "@/components/CosmeImage";
 import { AddItemModal } from "./add-item-modal";
 import { RecipeCanvas } from "./recipe-canvas";
+import { warmupBackgroundRemoval } from "@/lib/image-processing";
 
 function buildFallbackLink(item: SectionItem): string {
   if (item.link) return item.link;
@@ -574,6 +575,15 @@ export function SectionRenderer({ section }: SectionRendererProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const currentIndex = sections.findIndex((s) => s.id === section.id);
   const canAddItems = ["routine", "products", "link"].includes(section.type);
+
+  // 編集モードでコスメ追加できるセクションがマウントされた段階で背景除去モデルを
+  // ホット待機させておく。実際に「AIで背景を除去」が押された瞬間は preload を
+  // 待たずに即推論が始まる。冪等なので同一ページに複数セクションあっても問題なし。
+  useEffect(() => {
+    if (isEditMode && canAddItems) {
+      warmupBackgroundRemoval();
+    }
+  }, [isEditMode, canAddItems]);
 
   const handleTitleCommit = () => {
     const next = editingTitle.trim();

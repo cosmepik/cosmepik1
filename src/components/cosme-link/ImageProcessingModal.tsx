@@ -20,6 +20,32 @@ import { ManualCropper, type PixelArea } from "./ManualCropper";
 
 type Stage = "choose" | "processing" | "manual";
 
+/**
+ * 背景除去モデルを一度でも実行成功した端末かどうかの localStorage フラグ。
+ * モデル本体はブラウザの HTTP キャッシュに残るので、2 回目以降は実際の
+ * 「ダウンロード」は発生しない。ユーザーが「毎回ダウンロードしている」と
+ * 誤解しないように、このフラグが立っている端末では初回案内テキストを出さない。
+ */
+const BG_MODEL_LOADED_FLAG = "cosmepik:bg-model-loaded";
+
+function getIsBgFirstUse(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return !window.localStorage.getItem(BG_MODEL_LOADED_FLAG);
+  } catch {
+    return false;
+  }
+}
+
+function markBgModelLoaded(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(BG_MODEL_LOADED_FLAG, "1");
+  } catch {
+    /* ignore */
+  }
+}
+
 interface Props {
   isOpen: boolean;
   /** 元画像URL（楽天URL / dataURL / アップロード後URL など） */
@@ -43,6 +69,9 @@ export function ImageProcessingModal({
   // Manual crop state
   const [croppedPixels, setCroppedPixels] = useState<PixelArea | null>(null);
   const [manualBusy, setManualBusy] = useState(false);
+
+  // 「初回のみモデルをダウンロードします」案内を出すか
+  const [isBgFirstUse, setIsBgFirstUse] = useState(false);
 
   // onConfirm は親のレンダー毎に参照が変わる可能性があるため ref に保持し、
   // 処理中に再レンダーが起きても useEffect が重複実行されないようにする。
@@ -78,6 +107,7 @@ export function ImageProcessingModal({
 
     setProgress(0);
     setError(null);
+    setIsBgFirstUse(getIsBgFirstUse());
 
     let cancelled = false;
 
@@ -103,6 +133,7 @@ export function ImageProcessingModal({
         if (cancelled) return;
         window.clearInterval(tickerId);
         setProgress(100);
+        markBgModelLoaded();
         // 100% 表示を一瞬だけ見せてから親に渡す（視覚的な完了感のため）
         await new Promise((r) => setTimeout(r, 180));
         if (cancelled) return;
@@ -286,9 +317,11 @@ export function ImageProcessingModal({
                     ? `AIで背景を除去中 ${Math.round(progress)}%`
                     : "仕上げ中..."}
                 </p>
-                <p className="mt-1 text-center text-[10px] text-muted-foreground/70">
-                  初回のみモデルをダウンロードします（少しお待ちください）
-                </p>
+                {isBgFirstUse && (
+                  <p className="mt-1 text-center text-[10px] text-muted-foreground/70">
+                    初回のみモデルをダウンロードします（少しお待ちください）
+                  </p>
+                )}
               </div>
             </div>
           )}

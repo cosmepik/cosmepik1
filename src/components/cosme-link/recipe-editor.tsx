@@ -11,6 +11,7 @@ import { LABEL_DEFAULT } from "@/lib/sections";
 import { RecipeCanvas } from "./recipe-canvas";
 import { AddItemModal } from "./add-item-modal";
 import { OnboardingBubble } from "./onboarding-guide";
+import { warmupBackgroundRemoval } from "@/lib/image-processing";
 
 function compressImage(file: File, maxWidth = 1200, quality = 0.80): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -67,6 +68,12 @@ export function RecipeEditor() {
   useEffect(() => {
     recipeSectionRef.current = recipeSection;
   });
+
+  // レシピ編集画面がマウントされた段階で背景除去モデルをホット待機させる。
+  // 実際に「AIで背景を除去」が押された瞬間は preload を待たずに即推論が始まる。
+  useEffect(() => {
+    warmupBackgroundRemoval();
+  }, []);
 
   const updateRecipe = useCallback(
     (updates: Partial<Section>) => {
