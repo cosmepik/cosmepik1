@@ -157,129 +157,6 @@ async function inlineCrossOriginForegroundImages(root: HTMLElement): Promise<() 
   };
 }
 
-/**
- * 保存画像のラベル文字が画面（Web Font: Noto Sans JP）と一致するように、
- * html-to-image の `fontEmbedCSS` に渡す `@font-face` 文字列を構築する。
- *
- * 動作:
- *  - Google Fonts CSS API から Noto Sans JP wght 500/700 の CSS を取得
- *  - CSS 内の `url(https://fonts.gstatic.com/...)` をすべて fetch し、base64 化
- *  - CSS の URL を data: URL に置換した文字列を返す
- *
- * 1 度成功した結果はモジュールスコープにキャッシュする（同セッション内なら 1 度だけ）。
- * 失敗時は null（呼び出し側で `skipFonts: true` のシンプル経路にフォールバックさせる）。
- */
-let cachedFontEmbedCss: string | null | undefined; // undefined: 未試行
-async function getNotoSansJpFontEmbedCss(): Promise<string | null> {
-  if (cachedFontEmbedCss !== undefined) return cachedFontEmbedCss;
-  try {
-    const cssUrl =
-      "https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700&display=swap";
-    const cssRes = await fetch(cssUrl);
-    if (!cssRes.ok) {
-      cachedFontEmbedCss = null;
-      return null;
-    }
-    const cssText = await cssRes.text();
-
-    const urlRegex = /url\((https:\/\/[^)]+)\)/g;
-    const uniqueUrls = Array.from(
-      new Set(Array.from(cssText.matchAll(urlRegex)).map((m) => m[1])),
-    );
-
-    const replacements = await Promise.all(
-      uniqueUrls.map(async (url) => {
-        try {
-          const res = await fetch(url);
-          if (!res.ok) return [url, null] as const;
-          const buf = await res.arrayBuffer();
-          const bytes = new Uint8Array(buf);
-          let binary = "";
-          // base64 化（短いチャンクで btoa の引数長制限を避ける）
-          const CHUNK = 0x8000;
-          for (let i = 0; i < bytes.byteLength; i += CHUNK) {
-            binary += String.fromCharCode.apply(
-              null,
-              Array.from(bytes.subarray(i, i + CHUNK)) as unknown as number[],
-            );
-          }
-          const base64 = btoa(binary);
-          const mime = res.headers.get("content-type") || "font/woff2";
-          return [url, `data:${mime};base64,${base64}`] as const;
-        } catch {
-          return [url, null] as const;
-        }
-      }),
-    );
-
-    let embedded = cssText;
-    for (const [url, dataUrl] of replacements) {
-      if (dataUrl) embedded = embedded.split(url).join(dataUrl);
-    }
-    cachedFontEmbedCss = embedded;
-    return embedded;
-  } catch {
-    cachedFontEmbedCss = null;
-    return null;
-  }
-}
-
-/**
- * 前景キャプチャを 3 段フォールバックで実行する。
- *
- *  Plan A: `skipFonts: false` で Web Font を埋め込む（最も画面と一致）
- *  Plan B: `fontEmbedCSS` に Noto Sans JP の woff2 を data URL で埋め込んだ CSS を渡す
- *  Plan C: 旧来どおり `skipFonts: true` で実行（最低限の保険）
- *
- * 各段で `try/catch` し、例外や `null` Blob が返ったら次の段に進む。
- * これにより環境差（cross-origin stylesheet による SecurityError、Google Fonts 不到達 等）に
- * 対しても必ず何らかの保存画像が出るようにする。
- */
-type ToBlobFn = typeof import("html-to-image").toBlob;
-type ToBlobOpts = NonNullable<Parameters<ToBlobFn>[1]>;
-async function captureForegroundWithFontFallback(
-  toBlob: ToBlobFn,
-  element: HTMLElement,
-  baseOpts: ToBlobOpts,
-): Promise<Blob | null> {
-  // Plan A
-  try {
-    const blob = await toBlob(element, { ...baseOpts, skipFonts: false });
-    if (blob) return blob;
-  } catch (err) {
-    if (process.env.NODE_ENV !== "production") {
-      console.warn("[recipe-download] Plan A (skipFonts:false) failed", err);
-    }
-  }
-
-  // Plan B
-  try {
-    const fontCss = await getNotoSansJpFontEmbedCss();
-    if (fontCss) {
-      const blob = await toBlob(element, {
-        ...baseOpts,
-        skipFonts: true,
-        fontEmbedCSS: fontCss,
-      });
-      if (blob) return blob;
-    }
-  } catch (err) {
-    if (process.env.NODE_ENV !== "production") {
-      console.warn("[recipe-download] Plan B (fontEmbedCSS) failed", err);
-    }
-  }
-
-  // Plan C
-  try {
-    return await toBlob(element, { ...baseOpts, skipFonts: true });
-  } catch (err) {
-    if (process.env.NODE_ENV !== "production") {
-      console.warn("[recipe-download] Plan C (skipFonts:true) failed", err);
-    }
-    return null;
-  }
-}
-
 /** object-fit: cover を canvas で再現して drawImage する */
 function drawImageCover(
   ctx: CanvasRenderingContext2D,
@@ -383,14 +260,16 @@ export async function downloadRecipeImage(
 
   let fgBlob: Blob | null = null;
   try {
-    // 前景キャプチャはフォント埋め込みを最大限優先する 3 段フォールバックで実行。
-    //  A: skipFonts:false → B: fontEmbedCSS で Noto Sans JP を強制埋め込み → C: skipFonts:true
-    // ラベル（Noto Sans JP）の太さ・字形が画面と一致するようになる。
-    fgBlob = await captureForegroundWithFontFallback(toBlob, element, {
+    fgBlob = await toBlob(element, {
       pixelRatio,
       cacheBust: false,
       // 透明背景で出力。最終合成時に背景画像をその下に敷く。
       backgroundColor: undefined,
+      // クロスオリジン <link rel="stylesheet"> から cssRules を読み SecurityError を避ける。
+      // また Noto Sans JP の woff2 を foreignObject に埋め込もうとすると iOS Safari で
+      // メモリ不足によるタブ自動リロード（"ぐるぐる→ページリロード"）が起きるため、
+      // フォントは画面と完全一致させず skipFonts: true 経路でシステムフォントに任せる。
+      skipFonts: true,
       filter: (node: HTMLElement) => {
         if (!(node instanceof HTMLElement)) return true;
         return node.dataset?.editorDecoration !== "1";
