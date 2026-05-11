@@ -189,23 +189,11 @@ export function ImageProcessingModal({
     }
   };
 
-  // プレビュー段階でユーザーが「この仕上がりで保存」を選んだとき
-  const handlePreviewConfirm = () => {
-    if (!bgRemovedDataUrl) return;
-    onConfirmRef.current(bgRemovedDataUrl);
-  };
-
   // プレビューから「やり直す」: 背景除去結果を破棄して選択画面に戻る
   const handlePreviewRetry = () => {
     setBgRemovedDataUrl(null);
     setCroppedPixels(null);
     setStage("choose");
-  };
-
-  // プレビューから「さらに切り抜き調整」: 除去結果をそのままトリミング画面へ
-  const handlePreviewToManual = () => {
-    setCroppedPixels(null);
-    setStage("manual");
   };
 
   // 「このまま使う」: 元画像をそのまま使う。
@@ -356,52 +344,7 @@ export function ImageProcessingModal({
             </div>
           )}
 
-          {stage === "preview" && bgRemovedDataUrl && (
-            <div className="flex flex-col gap-4 p-5">
-              {error && (
-                <p className="whitespace-pre-wrap break-words rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
-                  {error}
-                </p>
-              )}
-              <div className="relative mx-auto aspect-square w-full max-w-xs overflow-hidden rounded-xl bg-[conic-gradient(at_top_left,_#f3f4f6_25%,_#e5e7eb_25%_50%,_#f3f4f6_50%_75%,_#e5e7eb_75%)] bg-[length:20px_20px]">
-                <img
-                  src={bgRemovedDataUrl}
-                  alt="背景除去後のプレビュー"
-                  className="absolute inset-0 h-full w-full object-contain"
-                />
-              </div>
-              <p className="text-center text-[11px] text-muted-foreground">
-                仕上がりを確認してください。必要なら切り抜き調整でトリミングできます。
-              </p>
-              <div className="flex flex-col gap-2">
-                <button
-                  type="button"
-                  onClick={handlePreviewConfirm}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                >
-                  <Check className="h-4 w-4" />
-                  この仕上がりで保存
-                </button>
-                <button
-                  type="button"
-                  onClick={handlePreviewToManual}
-                  className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background py-3 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"
-                >
-                  <Scissors className="h-4 w-4" />
-                  切り抜き調整
-                </button>
-                <button
-                  type="button"
-                  onClick={handlePreviewRetry}
-                  className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background py-3 text-sm font-medium text-muted-foreground hover:bg-accent disabled:opacity-50"
-                >
-                  やり直す
-                </button>
-              </div>
-            </div>
-          )}
-
-          {stage === "manual" && (
+          {(stage === "preview" || stage === "manual") && (
             <div className="flex flex-col gap-3 p-5">
               {error && (
                 <p className="whitespace-pre-wrap break-words rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
@@ -414,18 +357,22 @@ export function ImageProcessingModal({
                 className="mx-auto aspect-square w-full overflow-hidden rounded-xl bg-[conic-gradient(at_top_left,_#f3f4f6_25%,_#e5e7eb_25%_50%,_#f3f4f6_50%_75%,_#e5e7eb_75%)] bg-[length:20px_20px]"
               />
               <p className="text-center text-[11px] text-muted-foreground">
-                枠の角・辺をドラッグしてサイズ調整／ピンチで拡大・縮小
+                {stage === "preview"
+                  ? "仕上がりを確認してください。必要なら枠で範囲を微調整できます。"
+                  : "枠の角・辺をドラッグしてサイズ調整／ピンチで拡大・縮小"}
               </p>
               <div className="mt-1 flex gap-2">
                 <button
                   type="button"
-                  onClick={() =>
-                    bgRemovedDataUrl ? setStage("preview") : setStage("choose")
+                  onClick={
+                    stage === "preview"
+                      ? handlePreviewRetry
+                      : () => setStage("choose")
                   }
                   disabled={manualBusy}
                   className="flex-1 rounded-xl border border-border bg-background py-3 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"
                 >
-                  戻る
+                  {stage === "preview" ? "やり直す" : "戻る"}
                 </button>
                 <button
                   type="button"
@@ -439,7 +386,10 @@ export function ImageProcessingModal({
                     </>
                   ) : (
                     <>
-                      <Check className="h-4 w-4" /> この範囲で切り抜く
+                      <Check className="h-4 w-4" />{" "}
+                      {stage === "preview"
+                        ? "この仕上がりで保存"
+                        : "この範囲で切り抜く"}
                     </>
                   )}
                 </button>
