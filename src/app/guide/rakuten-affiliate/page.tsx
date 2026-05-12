@@ -13,6 +13,7 @@ import {
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { CosmepikLogo } from "@/components/cosmepik-logo";
+import { LectureVideo } from "@/components/LectureVideo";
 
 const steps = [
   {
@@ -331,6 +332,18 @@ export default function RakutenAffiliateGuidePage() {
             楽天アフィリエイトの設定を完了しましょう。
           </p>
         </div>
+      </div>
+
+      {/* Lecture video */}
+      <div className="mx-auto max-w-2xl px-4 pt-6">
+        <LectureVideo
+          youtubeId="7BbxqflHF64"
+          title="楽天アフィリエイト登録方法"
+          orientation="vertical"
+        />
+        <p className="mt-2 text-center text-[11px] text-muted-foreground">
+          動画で見る：楽天アフィリエイト登録の流れ
+        </p>
       </div>
 
       {/* Info banner */}

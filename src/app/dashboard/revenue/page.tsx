@@ -5,6 +5,7 @@ import Link from "next/link";
 import { BookOpen, ChevronRight, DollarSign } from "lucide-react";
 import { SideMenu } from "@/components/cosme-link/side-menu";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { LectureVideo } from "@/components/LectureVideo";
 import { useUser } from "@/hooks/use-user";
 import { getCosmeSets, getProfile, setProfile } from "@/lib/store";
 
@@ -102,6 +103,17 @@ export default function RevenuePage() {
           <DollarSign className="h-6 w-6 text-primary" aria-hidden />
           収益化
         </h1>
+
+        <div className="mb-6">
+          <LectureVideo
+            youtubeId="7BbxqflHF64"
+            title="cosmepikで収益化する方法"
+            orientation="vertical"
+          />
+          <p className="mt-2 text-center text-[11px] text-muted-foreground">
+            動画で見る：cosmepikでの収益化の流れ
+          </p>
+        </div>
 
         <p className="mb-6 text-sm text-muted-foreground">
           楽天アフィリエイトIDを設定すると、コスメリンクに掲載した商品の購入時に収益の一部が還元されます。
