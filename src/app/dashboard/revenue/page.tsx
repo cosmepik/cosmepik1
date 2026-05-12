@@ -129,19 +129,32 @@ export default function RevenuePage() {
                   placeholder="0ea12345.ab.cd（任意）"
                   className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                 />
-                <div className="mt-3">
+                <p className="text-[11px] text-muted-foreground">
+                  楽天アフィリエイトに登録済みの場合、IDを入力すると収益の一部が還元されます。設定はすべてのメイクレシピに適用されます。
+                </p>
+                <div className="flex items-center gap-3 py-1">
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={saving || !hasSets || !hasChanged}
+                    className="rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    {saving ? "保存中..." : "保存"}
+                  </button>
+                  {saved && (
+                    <span className="text-sm text-green-600">保存しました</span>
+                  )}
+                </div>
+                <p className="text-center text-[11px] text-muted-foreground">
+                  動画で見る：cosmepikでの収益化の流れ
+                </p>
+                <div>
                   <LectureVideo
                     youtubeId="7BbxqflHF64"
                     title="cosmepikで収益化する方法"
                     orientation="vertical"
                   />
-                  <p className="mt-2 text-center text-[11px] text-muted-foreground">
-                    動画で見る：cosmepikでの収益化の流れ
-                  </p>
                 </div>
-                <p className="text-[11px] text-muted-foreground">
-                  楽天アフィリエイトに登録済みの場合、IDを入力すると収益の一部が還元されます。設定はすべてのメイクレシピに適用されます。
-                </p>
                 <Link
                   href="/guide/rakuten-affiliate"
                   className="group mt-3 flex w-full items-center gap-3 rounded-xl border-2 border-primary/35 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent px-4 py-3.5 text-left shadow-sm ring-1 ring-primary/15 transition-all hover:border-primary/55 hover:from-primary/15 hover:shadow-md active:scale-[0.995]"
@@ -165,19 +178,6 @@ export default function RevenuePage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={saving || !hasSets || !hasChanged}
-                className="rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
-              >
-                {saving ? "保存中..." : "保存"}
-              </button>
-              {saved && (
-                <span className="text-sm text-green-600">保存しました</span>
-              )}
-            </div>
           </div>
         )}
 
