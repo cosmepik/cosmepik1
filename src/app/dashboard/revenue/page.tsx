@@ -104,17 +104,6 @@ export default function RevenuePage() {
           収益化
         </h1>
 
-        <div className="mb-6">
-          <LectureVideo
-            youtubeId="7BbxqflHF64"
-            title="cosmepikで収益化する方法"
-            orientation="vertical"
-          />
-          <p className="mt-2 text-center text-[11px] text-muted-foreground">
-            動画で見る：cosmepikでの収益化の流れ
-          </p>
-        </div>
-
         <p className="mb-6 text-sm text-muted-foreground">
           楽天アフィリエイトIDを設定すると、コスメリンクに掲載した商品の購入時に収益の一部が還元されます。
         </p>
@@ -140,6 +129,16 @@ export default function RevenuePage() {
                   placeholder="0ea12345.ab.cd（任意）"
                   className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                 />
+                <div className="mt-3">
+                  <LectureVideo
+                    youtubeId="7BbxqflHF64"
+                    title="cosmepikで収益化する方法"
+                    orientation="vertical"
+                  />
+                  <p className="mt-2 text-center text-[11px] text-muted-foreground">
+                    動画で見る：cosmepikでの収益化の流れ
+                  </p>
+                </div>
                 <p className="text-[11px] text-muted-foreground">
                   楽天アフィリエイトに登録済みの場合、IDを入力すると収益の一部が還元されます。設定はすべてのメイクレシピに適用されます。
                 </p>
