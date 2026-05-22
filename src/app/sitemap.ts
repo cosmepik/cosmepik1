@@ -1,4 +1,6 @@
 import type { MetadataRoute } from "next";
+import type { Section } from "@/lib/sections";
+import { countCosmeItems, THIN_PROFILE_THRESHOLD } from "@/lib/profile-seo";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
@@ -9,11 +11,18 @@ const SUPABASE_KEY =
   "";
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://cosmepik.me";
 
+/**
+ * sitemap に出すユーザー名を取得する。
+ * AdSense「有用性の低いコンテンツ」対策として、コスメ件数が閾値未満の
+ * 「中身の薄いプロフィール」は除外する（Google にクロールさせない）。
+ *
+ * sections テーブルから一括取得し、JS 側で件数をカウントしてフィルタする。
+ */
 async function getPublicUsernames(): Promise<string[]> {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return [];
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?select=username&limit=1000`,
+      `${SUPABASE_URL}/rest/v1/sections?select=username,sections_json&limit=2000`,
       {
         headers: {
           apikey: SUPABASE_ANON_KEY,
@@ -21,11 +30,18 @@ async function getPublicUsernames(): Promise<string[]> {
           Accept: "application/json",
         },
         next: { revalidate: 3600 },
-      }
+      },
     );
     if (!res.ok) return [];
-    const rows: { username: string }[] = await res.json();
-    return rows.map((r) => r.username).filter(Boolean);
+    const rows: { username: string; sections_json: Section[] | null }[] = await res.json();
+    const usernames: string[] = [];
+    for (const r of rows) {
+      if (!r.username) continue;
+      if (!Array.isArray(r.sections_json) || r.sections_json.length === 0) continue;
+      if (countCosmeItems(r.sections_json) < THIN_PROFILE_THRESHOLD) continue;
+      usernames.push(r.username);
+    }
+    return usernames;
   } catch {
     return [];
   }

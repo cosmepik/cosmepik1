@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { fetchPublicPageData } from "@/lib/supabase-fetch";
+import { buildProfileMetadata } from "@/lib/profile-seo";
 
 type Props = { params: Promise<{ username: string }> };
 
@@ -10,28 +12,14 @@ function getBaseUrl() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { username } = await params;
-  const base = getBaseUrl();
-  const ogImage = `${base}/api/og?username=${encodeURIComponent(username)}`;
-  const url = `${base}/${username}`;
-
-  return {
-    title: `${username} のコスメ | cosmepik`,
-    description: "愛用コスメをチェック",
-    openGraph: {
-      title: `${username} のコスメ | cosmepik`,
-      description: "愛用コスメをチェック",
-      url,
-      siteName: "cosmepik",
-      images: [{ url: ogImage, width: 1200, height: 630, alt: "cosmepik" }],
-      type: "website",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: `${username} のコスメ | cosmepik`,
-      description: "愛用コスメをチェック",
-      images: [ogImage],
-    },
-  };
+  const { profile, sections } = await fetchPublicPageData(username);
+  return buildProfileMetadata({
+    username,
+    profile,
+    sections,
+    baseUrl: getBaseUrl(),
+    pathPrefix: "/p/",
+  });
 }
 
 const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
