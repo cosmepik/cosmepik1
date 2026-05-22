@@ -35,6 +35,7 @@ interface RecipeCanvasProps {
   onSelect?: (id: string | null) => void;
   onMove?: (id: string, x: number, y: number) => void;
   onLabelMove?: (id: string, offsetX: number, offsetY: number) => void;
+  onLabelHide?: (id: string) => void;
   onDelete?: (id: string) => void;
   onBackgroundClick?: () => void;
   onPinchScale?: (delta: number) => void;
@@ -48,6 +49,7 @@ export function RecipeCanvas({
   onSelect,
   onMove,
   onLabelMove,
+  onLabelHide,
   onDelete,
   onBackgroundClick,
   onPinchScale,
@@ -228,6 +230,7 @@ export function RecipeCanvas({
             onSelect={() => onSelect?.(p.id)}
             onMove={(x, y) => onMove?.(p.id, x, y)}
             onLabelMove={(ox, oy) => onLabelMove?.(p.id, ox, oy)}
+            onLabelHide={onLabelHide ? () => onLabelHide(p.id) : undefined}
             onDelete={() => onDelete?.(p.id)}
           />
         ),
@@ -315,6 +318,7 @@ function PlacementItem({
   onMove,
   onLabelMove,
   onDelete,
+  onLabelHide,
 }: {
   placement: RecipePlacement;
   editable: boolean;
@@ -323,6 +327,7 @@ function PlacementItem({
   onMove: (x: number, y: number) => void;
   onLabelMove: (offsetX: number, offsetY: number) => void;
   onDelete: () => void;
+  onLabelHide?: () => void;
 }) {
   const scale = placement.scale ?? 1;
   const labelOffsetX = placement.labelOffsetX ?? LABEL_DEFAULT.offsetX;
@@ -335,7 +340,9 @@ function PlacementItem({
     onLabelMove(x - placement.x, y - placement.y);
   });
 
-  const hasLabel = Boolean(placement.brand || placement.product);
+  // brand / product のテキストはあっても、ユーザーが「タイトルを非表示」にしている場合は描画しない
+  const hasLabel =
+    Boolean(placement.brand || placement.product) && !placement.hideLabel;
 
   const imageElement = placement.image ? (
     <img
@@ -471,7 +478,24 @@ function PlacementItem({
           }}
         >
           {isSelected && editable && (
-            <div data-editor-decoration="1" className="pointer-events-none absolute -inset-1.5 rounded-md border border-dashed border-primary/70" />
+            <>
+              <div data-editor-decoration="1" className="pointer-events-none absolute -inset-1.5 rounded-md border border-dashed border-primary/70" />
+              {onLabelHide && (
+                <button
+                  type="button"
+                  data-editor-decoration="1"
+                  className="absolute -left-2 -top-2 z-30 flex h-5 w-5 items-center justify-center rounded-full bg-gray-400 text-white shadow-md active:scale-90"
+                  onClick={(e) => { e.stopPropagation(); onLabelHide(); }}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  aria-label="タイトルを非表示にする"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" className="h-3 w-3">
+                    <line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" />
+                  </svg>
+                </button>
+              )}
+            </>
           )}
           {labelContent}
         </div>

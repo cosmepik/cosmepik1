@@ -307,7 +307,8 @@ function RecipeSectionBlock({ section, slug, cacheBust, isPremium, userAffiliate
           const labelOffsetX = p.labelOffsetX ?? 0;
           const labelOffsetY = p.labelOffsetY ?? 6.5;
           const labelScale = p.labelScale ?? 1;
-          const hasLabel = Boolean(p.brand || p.product);
+          // 編集側でユーザーが「タイトル非表示」にしている placement はラベルを描画しない
+          const hasLabel = Boolean(p.brand || p.product) && !p.hideLabel;
           const href = aflHref(p.link, userAffiliateId);
           return (
             <div key={p.id}>

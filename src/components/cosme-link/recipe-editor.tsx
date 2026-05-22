@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Plus, Trash2, ZoomIn, ZoomOut, ImageIcon, Pencil, Check, MessageCircle } from "lucide-react";
+import { Plus, Trash2, ZoomIn, ZoomOut, ImageIcon, Pencil, Check, MessageCircle, X, Eye } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useSections } from "@/lib/section-context";
 import { uploadImage } from "@/lib/storage";
@@ -201,6 +201,20 @@ export function RecipeEditor() {
     updateRecipe({ placements: next });
   }, [selectedId, placements, updateRecipe]);
 
+  /**
+   * タイトル（ラベル）の表示／非表示を切り替える。
+   * brand / product のテキスト自体は残すので、後から再表示できる。
+   */
+  const handleLabelToggleHidden = useCallback(
+    (id: string, hidden: boolean) => {
+      const next = placements.map((p) =>
+        p.id === id ? { ...p, hideLabel: hidden } : p,
+      );
+      updateRecipe({ placements: next });
+    },
+    [placements, updateRecipe],
+  );
+
   const updatePlacement = useCallback(
     (id: string, updates: Partial<RecipePlacement>) => {
       const next = placements.map((p) => (p.id === id ? { ...p, ...updates } : p));
@@ -285,6 +299,7 @@ export function RecipeEditor() {
           onSelect={setSelectedId}
           onMove={handleMove}
           onLabelMove={handleLabelMove}
+          onLabelHide={(id) => handleLabelToggleHidden(id, true)}
           onDelete={handleDelete}
           onBackgroundClick={() => fileInputRef.current?.click()}
           onPinchScale={handleScale}
@@ -474,38 +489,70 @@ export function RecipeEditor() {
           {/* タイトルボックス操作 */}
           {(selectedPlacement.brand || selectedPlacement.product) && !editingLabel && (
             <div className="flex items-center justify-between gap-2 border-t border-border pt-2">
-              <div className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
-                <span className="truncate text-[11px] font-medium">タイトル</span>
-                <span className="truncate text-[10px] text-muted-foreground/70">
-                  ドラッグで移動
-                </span>
-              </div>
-              <div className="flex shrink-0 items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => handleLabelScale(-0.15)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95"
-                  aria-label="タイトルを縮小"
-                >
-                  <ZoomOut className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleLabelScale(0.15)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95"
-                  aria-label="タイトルを拡大"
-                >
-                  <ZoomIn className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleLabelReset}
-                  className="rounded-full bg-secondary px-2.5 py-1.5 text-[10px] font-medium text-secondary-foreground transition-colors hover:bg-accent active:scale-95"
-                  aria-label="タイトル位置をリセット"
-                >
-                  リセット
-                </button>
-              </div>
+              {selectedPlacement.hideLabel ? (
+                // ── 非表示状態：再表示ボタンだけ出す ──
+                <>
+                  <div className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
+                    <span className="truncate text-[11px] font-medium">タイトル</span>
+                    <span className="truncate text-[10px] text-muted-foreground/70">
+                      非表示
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleLabelToggleHidden(selectedPlacement.id, false)}
+                    className="inline-flex shrink-0 items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-[11px] font-medium text-secondary-foreground transition-colors hover:bg-accent active:scale-95"
+                    aria-label="タイトルを表示する"
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    表示する
+                  </button>
+                </>
+              ) : (
+                // ── 表示状態：縮小・拡大・リセット・非表示にする ──
+                <>
+                  <div className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
+                    <span className="truncate text-[11px] font-medium">タイトル</span>
+                    <span className="truncate text-[10px] text-muted-foreground/70">
+                      ドラッグで移動
+                    </span>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleLabelScale(-0.15)}
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95"
+                      aria-label="タイトルを縮小"
+                    >
+                      <ZoomOut className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleLabelScale(0.15)}
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95"
+                      aria-label="タイトルを拡大"
+                    >
+                      <ZoomIn className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleLabelReset}
+                      className="rounded-full bg-secondary px-2.5 py-1.5 text-[10px] font-medium text-secondary-foreground transition-colors hover:bg-accent active:scale-95"
+                      aria-label="タイトル位置をリセット"
+                    >
+                      リセット
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleLabelToggleHidden(selectedPlacement.id, true)}
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent active:scale-95"
+                      aria-label="タイトルを非表示にする"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>

@@ -45,6 +45,12 @@ export interface RecipePlacement {
   labelOffsetY?: number;
   /** label independent scale multiplier (default 1) */
   labelScale?: number;
+  /**
+   * ラベル（brand / product のタイトルボックス）を非表示にするかどうか。
+   * true の場合、編集ビュー / 公開ビュー / 画像保存のいずれでもタイトル枠を描画しない。
+   * 元の brand / product テキストは保持されるので、後から再表示できる。
+   */
+  hideLabel?: boolean;
 }
 
 /** タイトルボックス位置・サイズのデフォルト値 */
