@@ -43,6 +43,13 @@ export interface DownloadRecipeOptions {
   jpegQuality?: number;
   /** 最小出力幅（px）。pixelRatio 自動算出のときに使う。既定 1080。 */
   minOutputWidth?: number;
+  /**
+   * 画像生成が完了し、これから共有ダイアログ／ダウンロードを呼ぶ直前に発火する。
+   * 呼び出し側で「処理中プログレス UI」を閉じるのに使う。
+   * これ以降の処理時間はユーザーの操作（共有ダイアログの選択）次第なので
+   * プログレス表示を続けると体感が悪い。
+   */
+  onBlobReady?: () => void;
 }
 
 /**
@@ -374,6 +381,15 @@ export async function downloadRecipeImage(
 
   if (!finalBlob) {
     return { ok: false, method: "download", error: new Error("合成画像の生成に失敗しました") };
+  }
+
+  // 画像生成が完了 → これ以降は共有ダイアログ／ブラウザのダウンロードで
+  // ユーザー操作待ちになるため、ここで onBlobReady を発火させ、
+  // 呼び出し側に「処理中プログレス UI を閉じてよい」と伝える。
+  try {
+    options.onBlobReady?.();
+  } catch {
+    /* コールバックの失敗は本処理に影響させない */
   }
 
   return await deliverBlob(finalBlob, filename, shareTitle);

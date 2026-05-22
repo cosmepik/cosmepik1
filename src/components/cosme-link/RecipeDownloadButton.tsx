@@ -5,6 +5,7 @@ import { Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { downloadRecipeImage } from "@/lib/recipe-download";
 import { useRecipeSavedPopup } from "./recipe-saved-popup";
+import { useRecipeDownloadProgress } from "./recipe-download-progress";
 
 interface Props {
   /**
@@ -22,6 +23,12 @@ interface Props {
 export function RecipeDownloadButton({ getTarget, filename }: Props) {
   const [downloading, setDownloading] = useState(false);
   const { showSavedPopup, savedPopup } = useRecipeSavedPopup();
+  const {
+    startProgress,
+    finishProgress,
+    cancelProgress,
+    progressOverlay,
+  } = useRecipeDownloadProgress();
 
   const handleClick = useCallback(
     async (e: React.MouseEvent) => {
@@ -31,12 +38,15 @@ export function RecipeDownloadButton({ getTarget, filename }: Props) {
       const el = getTarget();
       if (!el) return;
       setDownloading(true);
+      startProgress();
       try {
         const result = await downloadRecipeImage(el, {
           filename: filename ?? `cosmepik-recipe-${Date.now()}`,
           shareTitle: "メイクレシピ",
+          onBlobReady: finishProgress,
         });
         if (!result.ok) {
+          cancelProgress();
           toast.error("画像の保存に失敗しました");
         } else if (result.method === "share-cancelled") {
           // ユーザーが共有ダイアログをキャンセル → 何も出さない
@@ -44,12 +54,13 @@ export function RecipeDownloadButton({ getTarget, filename }: Props) {
           showSavedPopup();
         }
       } catch {
+        cancelProgress();
         toast.error("画像の保存に失敗しました");
       } finally {
         setDownloading(false);
       }
     },
-    [downloading, getTarget, filename, showSavedPopup],
+    [downloading, getTarget, filename, showSavedPopup, startProgress, finishProgress, cancelProgress],
   );
 
   return (
@@ -71,6 +82,7 @@ export function RecipeDownloadButton({ getTarget, filename }: Props) {
         )}
       </button>
       {savedPopup}
+      {progressOverlay}
     </>
   );
 }

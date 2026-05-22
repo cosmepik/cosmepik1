@@ -7,6 +7,7 @@ import type { RecipePlacement } from "@/lib/sections";
 import { LABEL_DEFAULT } from "@/lib/sections";
 import { downloadRecipeImage } from "@/lib/recipe-download";
 import { useRecipeSavedPopup } from "./recipe-saved-popup";
+import { useRecipeDownloadProgress } from "./recipe-download-progress";
 
 const COMMENT_FONT = "'HuiFontP29', cursive";
 
@@ -55,6 +56,12 @@ export function RecipeCanvas({
   const canvasRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
   const { showSavedPopup, savedPopup } = useRecipeSavedPopup();
+  const {
+    startProgress,
+    finishProgress,
+    cancelProgress,
+    progressOverlay,
+  } = useRecipeDownloadProgress();
 
   const onPinchScaleRef = useRef(onPinchScale);
   onPinchScaleRef.current = onPinchScale;
@@ -72,12 +79,16 @@ export function RecipeCanvas({
       // 編集中の選択を解除して、選択枠が画像に写り込まないようにする
       if (editable) onSelect?.(null);
       setDownloading(true);
+      startProgress();
       try {
         const result = await downloadRecipeImage(el, {
           filename: `cosmepik-recipe-${Date.now()}`,
           shareTitle: "メイクレシピ",
+          // 画像生成が終わって共有ダイアログ／DL が始まる直前にプログレスを閉じる
+          onBlobReady: finishProgress,
         });
         if (!result.ok) {
+          cancelProgress();
           toast.error("画像の保存に失敗しました");
           if (process.env.NODE_ENV !== "production") {
             console.warn("[RecipeCanvas] download failed", result.error);
@@ -88,6 +99,7 @@ export function RecipeCanvas({
           showSavedPopup();
         }
       } catch (err) {
+        cancelProgress();
         toast.error("画像の保存に失敗しました");
         if (process.env.NODE_ENV !== "production") {
           console.warn("[RecipeCanvas] download error", err);
@@ -96,7 +108,7 @@ export function RecipeCanvas({
         setDownloading(false);
       }
     },
-    [downloading, editable, onSelect, showSavedPopup],
+    [downloading, editable, onSelect, showSavedPopup, startProgress, finishProgress, cancelProgress],
   );
 
   const showDownloadButton = Boolean(backgroundImage) || placements.length > 0;
@@ -242,6 +254,7 @@ export function RecipeCanvas({
 
     </div>
     {savedPopup}
+    {progressOverlay}
     </>
   );
 }
