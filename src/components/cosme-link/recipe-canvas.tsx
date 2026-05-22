@@ -361,13 +361,22 @@ function PlacementItem({
     if (!isSelected || !editable) setLabelEditing(false);
   }, [isSelected, editable]);
 
-  // 編集モード開始時、最新の placement 値を下書きにコピー & 商品名 textarea にフォーカス
+  // 編集モード開始時、最新の placement 値を下書きにコピー & 商品名 textarea にフォーカス。
+  // 全選択 (select) はせず、カーソルだけ末尾に置く（直感的に追記・修正できるように）。
   useEffect(() => {
     if (!labelEditing) return;
-    setLabelDraftProduct(placement.product ?? "");
+    const initial = placement.product ?? "";
+    setLabelDraftProduct(initial);
     const t = window.setTimeout(() => {
-      productInputRef.current?.focus();
-      productInputRef.current?.select();
+      const el = productInputRef.current;
+      if (!el) return;
+      el.focus();
+      const len = el.value.length;
+      try {
+        el.setSelectionRange(len, len);
+      } catch {
+        /* iOS Safari で稀に失敗するが致命的ではない */
+      }
     }, 0);
     return () => window.clearTimeout(t);
     // placement.id 単位で発火させたいので product そのものは依存に入れない
@@ -563,15 +572,32 @@ function PlacementItem({
 
       {/* 編集モード中はラベル長方形の見た目はそのままに、商品名（全文）が見えるフォームを
           ラベル位置にオーバーレイ表示する。ブランド名はここでは編集せず、textarea で長文の
-          商品名でも省略せず全部見える形にしている。 */}
-      {labelEditing && editable && onLabelTextChange && (
+          商品名でも省略せず全部見える形にしている。
+          編集ボックス(240px)は max-w-[400px] の canvas からはみ出やすいので、ラベル位置
+          (x/y%) に応じて translate と left/top を切り替えて画面内に収まるようにしている。 */}
+      {labelEditing && editable && onLabelTextChange && (() => {
+        const labelX = placement.x + labelOffsetX;
+        const labelY = placement.y + labelOffsetY;
+        // 横方向: 左端寄り(<30%) は左基準・右端寄り(>70%) は右基準・それ以外は中央基準。
+        // 縦方向: 下端寄り(>60%) はラベルの上に出し、それ以外はラベルの下に出す。
+        const isLeft = labelX < 30;
+        const isRight = labelX > 70;
+        const isBottom = labelY > 60;
+        const leftPercent = isLeft ? 4 : isRight ? 96 : labelX;
+        const topPercent = labelY;
+        const translateX = isLeft ? "0%" : isRight ? "-100%" : "-50%";
+        // 下寄りならボックス底辺をラベル上端付近に置く(translateY=-100% + 余白)、
+        // それ以外はラベル下端付近に置く(translateY=0% + 余白)。labelScale は反映しない方が
+        // 編集中のサイズが安定して扱いやすい。
+        const translateY = isBottom ? "calc(-100% - 12px)" : "12px";
+        return (
         <div
           data-editor-decoration="1"
           className="absolute z-30"
           style={{
-            left: `${placement.x + labelOffsetX}%`,
-            top: `${placement.y + labelOffsetY}%`,
-            transform: `translate(-50%, -50%) scale(${labelScale})`,
+            left: `${leftPercent}%`,
+            top: `${topPercent}%`,
+            transform: `translate(${translateX}, ${translateY})`,
             touchAction: "auto",
           }}
           onClick={(e) => e.stopPropagation()}
@@ -618,7 +644,8 @@ function PlacementItem({
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
     </>
   );
 }
