@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback, useState } from "react";
-import { Download, Loader2 } from "lucide-react";
+import { Check, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { RecipePlacement } from "@/lib/sections";
 import { LABEL_DEFAULT } from "@/lib/sections";
@@ -36,6 +36,11 @@ interface RecipeCanvasProps {
   onMove?: (id: string, x: number, y: number) => void;
   onLabelMove?: (id: string, offsetX: number, offsetY: number) => void;
   onLabelHide?: (id: string) => void;
+  /**
+   * ラベル（ブランド + 商品名）テキストの直接編集が確定したとき呼ばれる。
+   * ラベル長方形をタップしたインライン編集の完了時に発火する。
+   */
+  onLabelTextChange?: (id: string, brand: string, product: string) => void;
   onDelete?: (id: string) => void;
   onBackgroundClick?: () => void;
   onPinchScale?: (delta: number) => void;
@@ -50,6 +55,7 @@ export function RecipeCanvas({
   onMove,
   onLabelMove,
   onLabelHide,
+  onLabelTextChange,
   onDelete,
   onBackgroundClick,
   onPinchScale,
@@ -231,6 +237,11 @@ export function RecipeCanvas({
             onMove={(x, y) => onMove?.(p.id, x, y)}
             onLabelMove={(ox, oy) => onLabelMove?.(p.id, ox, oy)}
             onLabelHide={onLabelHide ? () => onLabelHide(p.id) : undefined}
+            onLabelTextChange={
+              onLabelTextChange
+                ? (brand, product) => onLabelTextChange(p.id, brand, product)
+                : undefined
+            }
             onDelete={() => onDelete?.(p.id)}
           />
         ),
@@ -319,6 +330,7 @@ function PlacementItem({
   onLabelMove,
   onDelete,
   onLabelHide,
+  onLabelTextChange,
 }: {
   placement: RecipePlacement;
   editable: boolean;
@@ -328,11 +340,52 @@ function PlacementItem({
   onLabelMove: (offsetX: number, offsetY: number) => void;
   onDelete: () => void;
   onLabelHide?: () => void;
+  onLabelTextChange?: (brand: string, product: string) => void;
 }) {
   const scale = placement.scale ?? 1;
   const labelOffsetX = placement.labelOffsetX ?? LABEL_DEFAULT.offsetX;
   const labelOffsetY = placement.labelOffsetY ?? LABEL_DEFAULT.offsetY;
   const labelScale = placement.labelScale ?? LABEL_DEFAULT.scale;
+
+  // ラベル長方形をタップして商品名を書き換えるためのインライン編集状態。
+  // 選択中のアイテムでラベルをタップすると編集モードに入り、完了ボタンで保存して抜ける。
+  // ブランド名はここでは編集しない（既存値をそのまま保持する）。
+  const [labelEditing, setLabelEditing] = useState(false);
+  const [labelDraftProduct, setLabelDraftProduct] = useState(
+    placement.product ?? "",
+  );
+  const productInputRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // 別アイテムが選択されたり、選択解除されたら編集モードを抜ける
+  useEffect(() => {
+    if (!isSelected || !editable) setLabelEditing(false);
+  }, [isSelected, editable]);
+
+  // 編集モード開始時、最新の placement 値を下書きにコピー & 商品名 textarea にフォーカス
+  useEffect(() => {
+    if (!labelEditing) return;
+    setLabelDraftProduct(placement.product ?? "");
+    const t = window.setTimeout(() => {
+      productInputRef.current?.focus();
+      productInputRef.current?.select();
+    }, 0);
+    return () => window.clearTimeout(t);
+    // placement.id 単位で発火させたいので product そのものは依存に入れない
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [labelEditing, placement.id]);
+
+  const commitLabelEdit = useCallback(() => {
+    if (!onLabelTextChange) {
+      setLabelEditing(false);
+      return;
+    }
+    const nextProduct = labelDraftProduct.trim();
+    if (nextProduct !== (placement.product ?? "")) {
+      // ブランド名は既存値を維持して、商品名だけ更新する
+      onLabelTextChange(placement.brand ?? "", nextProduct);
+    }
+    setLabelEditing(false);
+  }, [labelDraftProduct, onLabelTextChange, placement.brand, placement.product]);
 
   const handleDragImage = useDrag(editable, onSelect, onMove);
   // ラベルドラッグは「ドラッグ先の絶対座標(%)」から画像位置との差分をオフセットに変換
@@ -460,8 +513,8 @@ function PlacementItem({
         </div>
       )}
 
-      {/* ラベル（独立してドラッグ／リサイズ可能） */}
-      {hasLabel && (
+      {/* ラベル（独立してドラッグ／リサイズ可能。タップでインライン編集に切り替わる） */}
+      {hasLabel && !labelEditing && (
         <div
           className={`absolute ${editable ? "cursor-grab active:cursor-grabbing" : ""} ${isSelected ? "z-20" : "z-10"}`}
           style={{
@@ -474,7 +527,14 @@ function PlacementItem({
           onMouseDown={handleDragLabel}
           onClick={(e) => {
             e.stopPropagation();
-            if (editable) onSelect();
+            if (!editable) return;
+            // すでに選択中のラベルをタップしたら → インライン編集モードに入る
+            // （onLabelTextChange ハンドラが渡されていることが前提）
+            if (isSelected && onLabelTextChange) {
+              setLabelEditing(true);
+            } else {
+              onSelect();
+            }
           }}
         >
           {isSelected && editable && (
@@ -498,6 +558,65 @@ function PlacementItem({
             </>
           )}
           {labelContent}
+        </div>
+      )}
+
+      {/* 編集モード中はラベル長方形の見た目はそのままに、商品名（全文）が見えるフォームを
+          ラベル位置にオーバーレイ表示する。ブランド名はここでは編集せず、textarea で長文の
+          商品名でも省略せず全部見える形にしている。 */}
+      {labelEditing && editable && onLabelTextChange && (
+        <div
+          data-editor-decoration="1"
+          className="absolute z-30"
+          style={{
+            left: `${placement.x + labelOffsetX}%`,
+            top: `${placement.y + labelOffsetY}%`,
+            transform: `translate(-50%, -50%) scale(${labelScale})`,
+            touchAction: "auto",
+          }}
+          onClick={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <div
+            className="flex w-[240px] flex-col gap-1.5 rounded-lg bg-white p-2 shadow-xl ring-2 ring-primary/70"
+            style={{
+              fontFamily:
+                "-apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', Meiryo, sans-serif",
+            }}
+          >
+            <textarea
+              ref={productInputRef}
+              value={labelDraftProduct}
+              onChange={(e) => setLabelDraftProduct(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  setLabelEditing(false);
+                }
+              }}
+              placeholder="商品名"
+              rows={3}
+              className="w-full min-w-0 resize-none rounded border border-input bg-white px-2 py-1.5 text-[12px] font-medium leading-snug text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+            />
+            <div className="flex items-center justify-end gap-1.5">
+              <button
+                type="button"
+                onClick={() => setLabelEditing(false)}
+                className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-medium text-secondary-foreground active:scale-95"
+              >
+                やめる
+              </button>
+              <button
+                type="button"
+                onClick={commitLabelEdit}
+                className="flex items-center gap-0.5 rounded-full bg-primary px-2.5 py-1 text-[11px] font-bold text-primary-foreground active:scale-95"
+              >
+                <Check className="h-3 w-3" strokeWidth={3} />
+                完了
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </>

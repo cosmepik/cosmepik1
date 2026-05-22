@@ -223,6 +223,17 @@ export function RecipeEditor() {
     [placements, updateRecipe],
   );
 
+  /**
+   * RecipeCanvas のラベル長方形を直接タップして編集したときに発火する。
+   * 編集パネル側の startEditLabel フローを経由せず、その場で brand/product を反映する。
+   */
+  const handleLabelTextChange = useCallback(
+    (id: string, brand: string, product: string) => {
+      updatePlacement(id, { brand, product });
+    },
+    [updatePlacement],
+  );
+
   const selectedPlacement = placements.find((p) => p.id === selectedId);
   const isCommentSelected = selectedPlacement?.type === "comment";
 
@@ -300,6 +311,7 @@ export function RecipeEditor() {
           onMove={handleMove}
           onLabelMove={handleLabelMove}
           onLabelHide={(id) => handleLabelToggleHidden(id, true)}
+          onLabelTextChange={handleLabelTextChange}
           onDelete={handleDelete}
           onBackgroundClick={() => fileInputRef.current?.click()}
           onPinchScale={handleScale}
