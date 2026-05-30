@@ -196,7 +196,7 @@ export default function AnalyticsPage() {
                               {entry.name}
                             </p>
                             <p className="text-[11px] text-muted-foreground">
-                              /p/{entry.slug}
+                              /{entry.slug}
                             </p>
                           </div>
                         </div>

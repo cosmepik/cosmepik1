@@ -9,7 +9,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: "username required" }, { status: 400 });
     }
 
-    revalidatePath(`/p/${username}`);
     revalidatePath(`/${username}`);
 
     return NextResponse.json({ ok: true });

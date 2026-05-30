@@ -1,5 +1,23 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
+
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://cosmepik.me";
+
+export const metadata: Metadata = {
+  title: "お問い合わせ｜cosmepik",
+  description:
+    "cosmepik（コスメピック）へのご質問・ご要望・不具合のご報告はこちら。メール（info@cosmepik.me）にて承っています。",
+  alternates: { canonical: `${SITE_URL}/contact` },
+  openGraph: {
+    title: "お問い合わせ｜cosmepik",
+    description:
+      "cosmepikへのご質問・ご要望はメール（info@cosmepik.me）にて承っています。",
+    url: `${SITE_URL}/contact`,
+    siteName: "cosmepik",
+    type: "website",
+  },
+};
 
 export default function ContactPage() {
   return (

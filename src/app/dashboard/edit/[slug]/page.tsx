@@ -279,7 +279,7 @@ function EditPageContent({ slug }: { slug: string }) {
           {editingUrl ? (
             <div className="flex flex-col gap-2 px-1">
               <div className="flex items-center gap-2 rounded-xl border-2 border-primary/40 bg-white px-3 py-2.5 shadow-sm">
-                <span className="shrink-0 text-xs text-muted-foreground">/p/</span>
+                <span className="shrink-0 text-xs text-muted-foreground">/</span>
                 <input
                   type="text"
                   value={tempSlug}

@@ -1,5 +1,31 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
+
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://cosmepik.me";
+
+export const metadata: Metadata = {
+  title: "よくある質問（FAQ）｜cosmepikの使い方・料金・退会について",
+  description:
+    "cosmepik（コスメピック）に関するよくある質問をまとめました。無料で使えるか、できること、登録方法、公開ページのURL、コスメの追加方法、退会手続きなどを分かりやすく解説します。",
+  keywords: [
+    "cosmepik よくある質問",
+    "cosmepik 使い方",
+    "コスメ まとめ アプリ",
+    "メイクレシピ",
+    "cosmepik 退会",
+    "コスメピック",
+  ],
+  alternates: { canonical: `${SITE_URL}/faq` },
+  openGraph: {
+    title: "よくある質問（FAQ）｜cosmepik",
+    description:
+      "無料で使えるか、できること、登録方法、退会手続きなど、cosmepikのよくある質問をまとめました。",
+    url: `${SITE_URL}/faq`,
+    siteName: "cosmepik",
+    type: "website",
+  },
+};
 
 const FAQ_ITEMS = [
   {
@@ -37,8 +63,25 @@ const FAQ_ITEMS = [
 ];
 
 export default function FAQPage() {
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQ_ITEMS.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.a,
+      },
+    })),
+  };
+
   return (
     <main className="min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       <AppHeader>
         <Link href="/guide" className="text-sm text-muted-foreground hover:text-foreground">使い方</Link>
         <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground">ログイン</Link>

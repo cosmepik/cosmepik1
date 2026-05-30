@@ -1,5 +1,23 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
+
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://cosmepik.me";
+
+export const metadata: Metadata = {
+  title: "特定商取引法に基づく表記｜cosmepik",
+  description:
+    "cosmepik（コスメピック）の特定商取引法に基づく表記。事業者名、運営責任者、所在地、連絡先、販売価格、支払方法、返品・キャンセルについて記載しています。",
+  alternates: { canonical: `${SITE_URL}/tokushoho` },
+  openGraph: {
+    title: "特定商取引法に基づく表記｜cosmepik",
+    description:
+      "cosmepikの事業者情報・販売条件・支払方法などの特定商取引法に基づく表記です。",
+    url: `${SITE_URL}/tokushoho`,
+    siteName: "cosmepik",
+    type: "website",
+  },
+};
 
 export default function TokushohoPage() {
   return (
