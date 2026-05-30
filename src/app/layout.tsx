@@ -63,6 +63,11 @@ export const metadata: Metadata = {
     ],
     apple: "/favicon-96.png",
   },
+  // Google Search Console（URL プレフィックス プロパティ）の所有権確認用。
+  // 全ページの <head> に <meta name="google-site-verification" ...> を出力する。
+  verification: {
+    google: "4JH77nq69NRkgv53JZ3TJiSMhuj5jMzgJp-_-Jxj2Hc",
+  },
   ...(isProduction ? {} : { robots: { index: false, follow: false } }),
 };
 
