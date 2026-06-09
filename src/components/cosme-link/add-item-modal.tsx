@@ -637,19 +637,6 @@ export function AddItemModal({
                   )}
                   <div className="flex flex-col gap-1.5">
                     <label className="text-sm font-medium text-card-foreground">
-                      <LinkIcon className="mr-1 inline h-4 w-4" />
-                      商品リンク <span className="text-xs font-normal text-muted-foreground">（任意）</span>
-                    </label>
-                    <input
-                      type="url"
-                      value={link}
-                      onChange={(e) => setLink(e.target.value)}
-                      placeholder="例：https://example.com/product"
-                      className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm font-medium text-card-foreground">
                       <ImageIcon className="mr-1 inline h-4 w-4" />
                       商品画像 <span className="text-xs font-normal text-muted-foreground">（任意）</span>
                     </label>
@@ -672,6 +659,19 @@ export function AddItemModal({
                         disabled={imageUploading}
                       />
                     </label>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-medium text-card-foreground">
+                      <LinkIcon className="mr-1 inline h-4 w-4" />
+                      商品リンク <span className="text-xs font-normal text-muted-foreground">（任意）</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={link}
+                      onChange={(e) => setLink(e.target.value)}
+                      placeholder="例：https://example.com/product"
+                      className="rounded-xl border-2 border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                    />
                   </div>
                   <button
                     type="submit"
