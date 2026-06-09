@@ -35,18 +35,22 @@ export async function uploadImage(
 
   const path = `${folder}/${filename}.${ext}`;
 
-  const { error } = await supabase.storage.from(BUCKET).upload(path, bytes, {
-    contentType,
-    upsert: true,
-    cacheControl: "public, max-age=31536000",
-  });
-
-  if (error) {
-    console.error("[Storage upload]", error.message);
-    return dataUrl;
+  // 一時的なネットワーク不調で base64 フォールバックに落ちると sections_json が
+  // 肥大化するため、数回リトライしてからフォールバックする。
+  let lastError: { message?: string } | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { error } = await supabase.storage.from(BUCKET).upload(path, bytes, {
+      contentType,
+      upsert: true,
+      cacheControl: "public, max-age=31536000",
+    });
+    if (!error) return getPublicUrl(path);
+    lastError = error;
+    await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
   }
 
-  return getPublicUrl(path);
+  console.error("[Storage upload]", lastError?.message ?? "unknown error");
+  return dataUrl;
 }
 
 /** URLがSupabase StorageのURLか判定 */

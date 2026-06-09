@@ -274,15 +274,40 @@ const _debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
 const _pendingData = new Map<string, import("@/lib/sections").Section[]>();
 
 function doSave(s: string, sections: import("@/lib/sections").Section[]): Promise<void> {
-  const p = db.saveSections(s, sections).then(async () => {
+  const p = (async () => {
     try {
-      await fetch("/api/revalidate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: s }),
-      });
-    } catch { /* ignore */ }
-  });
+      // saveSections は base64 を URL に置換した「実際に保存したデータ」を返す。
+      // それでキャッシュを更新し、次回以降 base64 を再送して肥大化させないようにする。
+      const saved = await db.saveSections(s, sections);
+      sectionsCache.set(s, { data: saved, ts: Date.now() });
+      try {
+        await fetch("/api/revalidate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: s }),
+        });
+      } catch { /* ignore */ }
+    } catch (err) {
+      console.error("[store.doSave] セクション保存に失敗しました", err);
+      // サイレントなデータ消失を防ぐ：より新しい保留データが無ければ再キューして自動リトライ。
+      if (!_pendingData.has(s)) {
+        _pendingData.set(s, sections);
+        const existing = _debounceTimers.get(s);
+        if (existing) clearTimeout(existing);
+        _debounceTimers.set(s, setTimeout(() => {
+          _debounceTimers.delete(s);
+          const data = _pendingData.get(s);
+          _pendingData.delete(s);
+          if (data) doSave(s, data);
+        }, 3000));
+      }
+      // ユーザーに保存失敗を知らせる（黙って消えるのを防ぐ）
+      try {
+        const { toast } = await import("sonner");
+        toast.error("メイクレシピの保存に失敗しました。通信環境をご確認ください（自動で再試行します）");
+      } catch { /* ignore */ }
+    }
+  })();
   _pendingSave = p;
   p.finally(() => { if (_pendingSave === p) _pendingSave = null; });
   return p;

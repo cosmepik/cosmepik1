@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { createClient as createBrowserClient } from "@/lib/supabase/client";
+import { uploadImage } from "@/lib/storage";
 import type { ListedCosmeItem, InfluencerProfile, CosmeSet } from "@/types";
 import type { Section } from "@/lib/sections";
 
@@ -377,22 +378,118 @@ export async function fetchSections(username: string): Promise<Section[] | null>
   return arr as Section[];
 }
 
-/** セクション一覧保存（username = slug 指定） */
-export async function saveSections(username: string, sections: Section[]): Promise<void> {
+/**
+ * 画像フィールドが base64 data URL の場合は Storage にアップロードして公開 URL に置き換える。
+ *
+ * base64 のまま sections_json に保存すると、コスメ数に比例して JSONB 行が肥大化し、
+ * 一定サイズを超えると upsert が失敗 → コスメが保存されず消える原因になる。
+ * これを防ぐため、保存直前にすべての data URL を Storage に逃がして JSON を軽量化する。
+ *
+ * @param droppable true の場合、アップロード失敗時に base64 を捨てる（undefined を返す）。
+ *   原画像(originalImage)など「無くても表示は壊れない」フィールドに使い、行の肥大化を防ぐ。
+ */
+async function sanitizeImageField(
+  value: string | undefined,
+  folder: string,
+  key: string,
+  droppable: boolean,
+): Promise<string | undefined> {
+  if (!value || !value.startsWith("data:")) return value;
+  try {
+    const url = await uploadImage(value, folder, key);
+    // uploadImage はアップロード失敗時に元の data URL をそのまま返す
+    if (url.startsWith("data:")) return droppable ? undefined : value;
+    return url;
+  } catch {
+    return droppable ? undefined : value;
+  }
+}
+
+/** sections 内のすべての base64 画像を Storage URL に置き換えた新しい配列を返す */
+async function sanitizeSectionsImages(
+  username: string,
+  sections: Section[],
+): Promise<Section[]> {
+  const stamp = Date.now();
+  return Promise.all(
+    sections.map(async (sec) => {
+      const next: Section = { ...sec };
+
+      if (typeof sec.backgroundImage === "string") {
+        next.backgroundImage = await sanitizeImageField(
+          sec.backgroundImage,
+          `${username}/recipe-bg`,
+          `bg-${sec.id}-${stamp}`,
+          false,
+        );
+      }
+
+      if (Array.isArray(sec.placements) && sec.placements.length > 0) {
+        next.placements = await Promise.all(
+          sec.placements.map(async (p) => ({
+            ...p,
+            image: await sanitizeImageField(p.image, `${username}/cosme`, `img-${p.id}-${stamp}`, false),
+            originalImage: await sanitizeImageField(p.originalImage, `${username}/cosme-orig`, `orig-${p.id}-${stamp}`, true),
+          })),
+        );
+      }
+
+      if (Array.isArray(sec.items) && sec.items.length > 0) {
+        next.items = await Promise.all(
+          sec.items.map(async (it) => ({
+            ...it,
+            image: await sanitizeImageField(it.image, `${username}/cosme`, `img-${it.id}-${stamp}`, false),
+            originalImage: await sanitizeImageField(it.originalImage, `${username}/cosme-orig`, `orig-${it.id}-${stamp}`, true),
+          })),
+        );
+      }
+
+      return next;
+    }),
+  );
+}
+
+/**
+ * セクション一覧保存（username = slug 指定）。
+ *
+ * - 保存前に base64 画像を Storage に退避して JSON を軽量化する
+ * - upsert のエラーを検知し、最大 3 回まで再試行する
+ * - 最終的に失敗したら例外を投げる（呼び出し側がサイレントなデータ消失を検知できるように）
+ *
+ * @returns 実際に保存した（base64 を URL に置換済みの）セクション配列
+ */
+export async function saveSections(username: string, sections: Section[]): Promise<Section[]> {
   const client = getClient();
-  if (!client) return;
+  if (!client) return sections;
 
   await ensureProfileExists(username);
-  await client.from("sections").upsert(
-    {
-      username,
-      sections_json: sections,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "username" }
-  );
 
-  const count = sections.reduce((sum, sec) => {
+  const sanitized = await sanitizeSectionsImages(username, sections);
+
+  let lastError: { message?: string; code?: string } | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { error } = await client.from("sections").upsert(
+      {
+        username,
+        sections_json: sanitized,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "username" }
+    );
+    if (!error) {
+      lastError = null;
+      break;
+    }
+    lastError = error;
+    await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+  }
+  if (lastError) {
+    throw new Error(
+      `saveSections failed: ${lastError.message ?? "unknown"} (${lastError.code ?? "?"})`,
+    );
+  }
+
+  const count = sanitized.reduce((sum, sec) => {
     if (sec.type === "recipe") return sum + (sec.placements?.length ?? 0);
     return sum + (sec.items?.length ?? 0);
   }, 0);
@@ -401,6 +498,8 @@ export async function saveSections(username: string, sections: Section[]): Promi
     .update({ item_count: count })
     .eq("slug", username)
     .then(() => {}, () => {});
+
+  return sanitized;
 }
 
 /** メイクレシピ一覧取得（user_id 指定）。未登録時は空配列を返す */

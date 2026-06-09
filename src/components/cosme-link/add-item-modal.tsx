@@ -194,7 +194,14 @@ export function AddItemModal({
         `manual-${uniq}`,
       );
       setImage(url);
-      if (sourceUrl) setOriginalImage(sourceUrl);
+      // 原画像(sourceUrl)は base64 data URL。そのまま originalImage に保持すると
+      // sections_json が肥大化して保存失敗の原因になるため、Storage にアップロードして
+      // URL を保持する。アップロードに失敗した場合は base64 を持たない（再クロップは不可になるが
+      // コスメ自体は保存できる方を優先）。
+      if (sourceUrl) {
+        const originalUrl = await uploadImage(sourceUrl, "cosme-originals", `orig-${uniq}`);
+        setOriginalImage(originalUrl.startsWith("data:") ? "" : originalUrl);
+      }
     } catch {
       setImage("");
       setImagePreview(null);
