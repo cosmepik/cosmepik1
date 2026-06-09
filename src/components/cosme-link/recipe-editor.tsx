@@ -315,6 +315,8 @@ export function RecipeEditor() {
           onDelete={handleDelete}
           onBackgroundClick={() => fileInputRef.current?.click()}
           onPinchScale={handleScale}
+          labelFrame={recipeSection?.labelFrame}
+          onLabelFrameChange={(frameId) => updateRecipe({ labelFrame: frameId })}
         />
         <OnboardingBubble
           stepIndex={0}

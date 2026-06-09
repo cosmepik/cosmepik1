@@ -11,6 +11,7 @@ import { AdBanner } from "@/components/AdSense";
 import { generateAffiliateLink } from "@/utils/affiliate";
 import type { InfluencerProfile, SnsLink } from "@/types";
 import type { Section, SectionItem } from "@/lib/sections";
+import { getLabelFrame, getFrameStyle } from "@/lib/label-frames";
 
 function aflHref(link: string | undefined, userAffiliateId?: string | null): string {
   if (!link) return "#";
@@ -262,6 +263,7 @@ function isExternalUrl(url: string): boolean {
 function RecipeSectionBlock({ section, slug, cacheBust, isPremium, userAffiliateId }: { section: Section; slug?: string; cacheBust?: string; isPremium?: boolean; userAffiliateId?: string | null }) {
   const placements = section.placements ?? [];
   if (!section.backgroundImage && placements.length === 0) return null;
+  const frame = getLabelFrame(section.labelFrame);
   const bgSrc = isExternalUrl(section.backgroundImage ?? "")
     ? section.backgroundImage
     : slug
@@ -342,9 +344,9 @@ function RecipeSectionBlock({ section, slug, cacheBust, isPremium, userAffiliate
                     transform: `translate(-50%, -50%) scale(${labelScale})`,
                   }}
                 >
-                  <div className="w-[120px] bg-black/40 px-1.5 py-0.5 text-center" style={{ backdropFilter: "blur(2px)", fontFamily: "-apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', Meiryo, sans-serif" }}>
-                    {p.brand && <p className="truncate text-[11px] font-bold text-white">{p.brand}</p>}
-                    {p.product && <p className="line-clamp-4 text-[10px] font-medium leading-tight text-white">{p.product}</p>}
+                  <div className={frame.container} style={getFrameStyle(frame)}>
+                    {p.brand && <p className={frame.brand}>{p.brand}</p>}
+                    {p.product && <p className={frame.product}>{p.product}</p>}
                   </div>
                 </a>
               )}

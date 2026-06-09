@@ -353,3 +353,27 @@ export function flushSections(slug?: string | null): Promise<void> {
 export function waitForPendingSave(): Promise<void> {
   return _pendingSave ?? Promise.resolve();
 }
+
+/** 全 slug の保留中保存を即座に flush する（ページ離脱・バックグラウンド化時用） */
+function flushAllPending(): void {
+  for (const timer of _debounceTimers.values()) clearTimeout(timer);
+  _debounceTimers.clear();
+  for (const s of Array.from(_pendingData.keys())) {
+    const data = _pendingData.get(s);
+    _pendingData.delete(s);
+    if (data) doSave(s, data);
+  }
+}
+
+// iOS Safari はタブのバックグラウンド化・画面ロック・アプリ切替で
+// ページを即座に suspend / kill する。その場合 800ms デバウンスの
+// setTimeout が発火せず、直前に追加したコスメが保存されないまま消える。
+// visibilitychange(hidden) と pagehide のタイミングで保留中の保存を
+// 即時 flush することで、この取りこぼしを防ぐ。
+if (typeof window !== "undefined" && !("__cosmepikFlushBound" in window)) {
+  (window as unknown as Record<string, boolean>).__cosmepikFlushBound = true;
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") flushAllPending();
+  });
+  window.addEventListener("pagehide", () => flushAllPending());
+}

@@ -1,11 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useCallback, useState } from "react";
-import { Check, Download, Loader2 } from "lucide-react";
+import { Check, Download, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import type { RecipePlacement } from "@/lib/sections";
 import { LABEL_DEFAULT } from "@/lib/sections";
 import { downloadRecipeImage } from "@/lib/recipe-download";
+import {
+  getLabelFrame,
+  getFrameStyle,
+  LABEL_FRAMES,
+  type LabelFrame,
+} from "@/lib/label-frames";
 import { useRecipeSavedPopup } from "./recipe-saved-popup";
 import { useRecipeDownloadProgress } from "./recipe-download-progress";
 
@@ -44,6 +50,10 @@ interface RecipeCanvasProps {
   onDelete?: (id: string) => void;
   onBackgroundClick?: () => void;
   onPinchScale?: (delta: number) => void;
+  /** コスメタイトルのフレームデザイン id */
+  labelFrame?: string;
+  /** フレームデザインを変更したとき呼ばれる */
+  onLabelFrameChange?: (frameId: string) => void;
 }
 
 export function RecipeCanvas({
@@ -59,10 +69,14 @@ export function RecipeCanvas({
   onDelete,
   onBackgroundClick,
   onPinchScale,
+  labelFrame,
+  onLabelFrameChange,
 }: RecipeCanvasProps) {
   useCommentFont();
   const canvasRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
+  const [framePickerOpen, setFramePickerOpen] = useState(false);
+  const frame = getLabelFrame(labelFrame);
   const { showSavedPopup, savedPopup } = useRecipeSavedPopup();
   const {
     startProgress,
@@ -216,6 +230,72 @@ export function RecipeCanvas({
         </button>
       )}
 
+      {/* フレーム変更ボタン（保存ボタンの左隣・右上）。編集時のみ表示し画像化対象から除外 */}
+      {editable && onLabelFrameChange && (
+        <>
+          <button
+            type="button"
+            data-editor-decoration="1"
+            aria-label="コスメタイトルのフレームを変更"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onSelect?.(null);
+              setFramePickerOpen((v) => !v);
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            className="absolute right-12 top-2 z-20 flex h-9 items-center gap-1 rounded-full bg-black/55 px-3 text-white shadow-lg backdrop-blur-md transition-all hover:bg-black/75 active:scale-95"
+          >
+            <Sparkles className="h-[15px] w-[15px]" />
+            <span className="text-[11px] font-medium">フレーム</span>
+          </button>
+
+          {framePickerOpen && (
+            <div
+              data-editor-decoration="1"
+              className="absolute right-2 top-12 z-30 w-[200px] rounded-xl border border-white/15 bg-black/80 p-2 shadow-xl backdrop-blur-md"
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+            >
+              <p className="px-1 pb-1.5 text-[11px] font-medium text-white/80">
+                タイトルのフレーム
+              </p>
+              <div className="grid max-h-[300px] grid-cols-2 gap-1.5 overflow-y-auto">
+                {LABEL_FRAMES.map((f) => {
+                  const active = f.id === frame.id;
+                  return (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onLabelFrameChange(f.id);
+                        setFramePickerOpen(false);
+                      }}
+                      className={`flex flex-col items-center gap-1 rounded-lg border p-1.5 transition-colors ${
+                        active
+                          ? "border-white bg-white/15"
+                          : "border-white/15 hover:bg-white/10"
+                      }`}
+                    >
+                      <div
+                        className={f.container}
+                        style={{ ...getFrameStyle(f), width: "100%" }}
+                      >
+                        <p className={f.product}>テキスト</p>
+                      </div>
+                      <span className="text-[10px] text-white/70">{f.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
       {placements.map((p) =>
         p.type === "comment" ? (
           <CommentItem
@@ -231,6 +311,7 @@ export function RecipeCanvas({
           <PlacementItem
             key={p.id}
             placement={p}
+            frame={frame}
             editable={editable}
             isSelected={selectedId === p.id}
             onSelect={() => onSelect?.(p.id)}
@@ -323,6 +404,7 @@ function useDrag(
 
 function PlacementItem({
   placement,
+  frame,
   editable,
   isSelected,
   onSelect,
@@ -333,6 +415,7 @@ function PlacementItem({
   onLabelTextChange,
 }: {
   placement: RecipePlacement;
+  frame: LabelFrame;
   editable: boolean;
   isSelected: boolean;
   onSelect: () => void;
@@ -417,23 +500,13 @@ function PlacementItem({
   ) : null;
 
   const labelContent = (
-    <div
-      className="w-[120px] bg-black/40 px-1.5 py-0.5 text-center backdrop-blur-[2px]"
-      // OS 標準の日本語ゴシック体スタックを使う。画面・保存（html-to-image）の
-      // 両方で同じシステムフォントが使われるので、文字の太さ・字形が完全に一致する。
-      // Noto Sans JP の Web Font 埋め込みは iOS Safari でメモリ不足によるリロードを
-      // 引き起こすため避ける（ラベルは 10〜11px の小さいテキストでフォント差は目立たない）。
-      style={{
-        fontFamily:
-          "-apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', Meiryo, sans-serif",
-      }}
-    >
-      {placement.brand && (
-        <p className="truncate text-[11px] font-bold text-white">{placement.brand}</p>
-      )}
-      {placement.product && (
-        <p className="line-clamp-4 text-[10px] font-medium leading-tight text-white">{placement.product}</p>
-      )}
+    // OS 標準の日本語ゴシック体スタックを使う（getFrameStyle が fontFamily を付与）。
+    // 画面・保存（html-to-image）の両方で同じシステムフォントが使われるので、
+    // 文字の太さ・字形が完全に一致する。Noto Sans JP の Web Font 埋め込みは
+    // iOS Safari でメモリ不足によるリロードを引き起こすため避ける。
+    <div className={frame.container} style={getFrameStyle(frame)}>
+      {placement.brand && <p className={frame.brand}>{placement.brand}</p>}
+      {placement.product && <p className={frame.product}>{placement.product}</p>}
     </div>
   );
 

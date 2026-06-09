@@ -73,6 +73,8 @@ export interface Section {
   backgroundImage?: string;
   /** recipe mode: positioned cosmetic items */
   placements?: RecipePlacement[];
+  /** recipe mode: コスメタイトル（ラベル）のフレームデザイン id。未指定なら "dark" */
+  labelFrame?: string;
 }
 
 const PLACEHOLDER_IMG = "/cosme-placeholder.svg";
