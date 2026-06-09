@@ -630,6 +630,7 @@ export function SectionRenderer({ section }: SectionRendererProps) {
           <RecipeCanvas
             backgroundImage={section.backgroundImage}
             placements={section.placements ?? []}
+            labelFrame={section.labelFrame}
           />
         );
       default:
