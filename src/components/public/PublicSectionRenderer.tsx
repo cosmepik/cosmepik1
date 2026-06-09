@@ -297,7 +297,7 @@ function RecipeSection({
         {/* cosmepik ロゴ */}
         <span
           aria-hidden
-          className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2"
+          className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2"
           style={{
             width: 112,
             height: 28,

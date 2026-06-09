@@ -356,7 +356,7 @@ function RecipeSectionBlock({ section, slug, cacheBust, isPremium, userAffiliate
         {!isPremium && (
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2"
+            className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2"
             style={{
               width: 112,
               height: 28,
