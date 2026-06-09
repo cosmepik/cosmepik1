@@ -39,7 +39,8 @@ export interface DownloadRecipeOptions {
    *   - 上限 3 で iOS Safari の foreignObject メモリ不足クラッシュを回避
    */
   pixelRatio?: number;
-  /** 出力 JPEG の品質（0〜1）。既定 0.92。 */
+  /** 出力 JPEG の品質（0〜1）。既定 0.95。値を上げても画像生成のメモリ負荷は
+   *  増えず（エンコードは canvas 完成後の処理）、文字の縁のにじみだけが改善する。 */
   jpegQuality?: number;
   /** 最小出力幅（px）。pixelRatio 自動算出のときに使う。既定 1080。 */
   minOutputWidth?: number;
@@ -248,7 +249,7 @@ export async function downloadRecipeImage(
   const {
     filename = `cosmepik-recipe-${Date.now()}`,
     shareTitle = "メイクレシピ",
-    jpegQuality = 0.92,
+    jpegQuality = 0.95,
     minOutputWidth = 1080,
   } = options;
 
