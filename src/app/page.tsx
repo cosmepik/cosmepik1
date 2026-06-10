@@ -141,7 +141,7 @@ export default async function LandingPage() {
               <CosmepikLogo height={36} color={NAV_BLUE} />
               <div className="relative mt-4 rounded-2xl bg-white px-5 py-4 shadow-sm" style={{ border: "1.5px solid #eee" }}>
                 <p className="text-[15px] font-bold leading-relaxed text-center" style={{ color: TEXT_DARK }}>
-                  メイクレシピを超簡単に作成、<br />収益化しよう！
+                  愛用コスメをひとつのリンクに！
                 </p>
                 {/* 吹き出しの三角 */}
                 <div
