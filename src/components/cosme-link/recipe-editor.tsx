@@ -82,10 +82,27 @@ export function RecipeEditor() {
 
   const updateRecipe = useCallback(
     (updates: Partial<Section>) => {
-      if (!recipeSection) return;
-      updateSection(recipeSection.id, updates);
+      const section = recipeSectionRef.current;
+      if (!section) return;
+      updateSection(section.id, updates);
     },
-    [recipeSection, updateSection],
+    [updateSection],
+  );
+
+  /**
+   * placements を更新する。updateSection の関数型更新を使い、React state 上の
+   * 最新 placements を基に変更する。ドラッグ中の連続更新で labelOffset / scale が
+   * 古い closure によって消える競合を防ぐ。
+   */
+  const updatePlacements = useCallback(
+    (updater: (current: RecipePlacement[]) => RecipePlacement[]) => {
+      const section = recipeSectionRef.current;
+      if (!section) return;
+      updateSection(section.id, (s) => ({
+        placements: updater(s.placements ?? []),
+      }));
+    },
+    [updateSection],
   );
 
   /**
@@ -107,10 +124,13 @@ export function RecipeEditor() {
       x: 30 + (currentPlacements.length % 4) * 15,
       y: 30 + (currentPlacements.length % 3) * 15,
       scale: 1,
+      labelOffsetX: LABEL_DEFAULT.offsetX,
+      labelOffsetY: LABEL_DEFAULT.offsetY,
+      labelScale: LABEL_DEFAULT.scale,
     };
-    updateSection(section.id, {
-      placements: [...currentPlacements, newPlacement],
-    });
+    updateSection(section.id, (s) => ({
+      placements: [...(s.placements ?? []), newPlacement],
+    }));
     setSelectedId(newPlacement.id);
     if (!localStorage.getItem("cosmetree:editTipShown")) {
       localStorage.setItem("cosmetree:editTipShown", "1");
@@ -136,70 +156,77 @@ export function RecipeEditor() {
 
   const handleMove = useCallback(
     (id: string, x: number, y: number) => {
-      const next = placements.map((p) => (p.id === id ? { ...p, x, y } : p));
-      updateRecipe({ placements: next });
+      updatePlacements((current) =>
+        current.map((p) => (p.id === id ? { ...p, x, y } : p)),
+      );
     },
-    [placements, updateRecipe],
+    [updatePlacements],
   );
 
   const handleLabelMove = useCallback(
     (id: string, offsetX: number, offsetY: number) => {
-      const next = placements.map((p) =>
-        p.id === id ? { ...p, labelOffsetX: offsetX, labelOffsetY: offsetY } : p,
+      updatePlacements((current) =>
+        current.map((p) =>
+          p.id === id ? { ...p, labelOffsetX: offsetX, labelOffsetY: offsetY } : p,
+        ),
       );
-      updateRecipe({ placements: next });
     },
-    [placements, updateRecipe],
+    [updatePlacements],
   );
 
-  const handleDelete = useCallback((id?: string) => {
-    const targetId = id ?? selectedId;
-    if (!targetId) return;
-    const next = placements.filter((p) => p.id !== targetId);
-    updateRecipe({ placements: next });
-    if (selectedId === targetId) setSelectedId(null);
-  }, [selectedId, placements, updateRecipe]);
+  const handleDelete = useCallback(
+    (id?: string) => {
+      const targetId = id ?? selectedId;
+      if (!targetId) return;
+      updatePlacements((current) => current.filter((p) => p.id !== targetId));
+      if (selectedId === targetId) setSelectedId(null);
+    },
+    [selectedId, updatePlacements],
+  );
 
   const handleScale = useCallback(
     (delta: number) => {
       if (!selectedId) return;
-      const next = placements.map((p) => {
-        if (p.id !== selectedId) return p;
-        const cur = p.scale ?? 1;
-        return { ...p, scale: Math.max(0.5, Math.min(2.5, cur + delta)) };
-      });
-      updateRecipe({ placements: next });
+      updatePlacements((current) =>
+        current.map((p) => {
+          if (p.id !== selectedId) return p;
+          const cur = p.scale ?? 1;
+          return { ...p, scale: Math.max(0.5, Math.min(2.5, cur + delta)) };
+        }),
+      );
     },
-    [selectedId, placements, updateRecipe],
+    [selectedId, updatePlacements],
   );
 
   const handleLabelScale = useCallback(
     (delta: number) => {
       if (!selectedId) return;
-      const next = placements.map((p) => {
-        if (p.id !== selectedId) return p;
-        const cur = p.labelScale ?? LABEL_DEFAULT.scale;
-        return { ...p, labelScale: Math.max(0.5, Math.min(2.5, cur + delta)) };
-      });
-      updateRecipe({ placements: next });
+      updatePlacements((current) =>
+        current.map((p) => {
+          if (p.id !== selectedId) return p;
+          const cur = p.labelScale ?? LABEL_DEFAULT.scale;
+          return { ...p, labelScale: Math.max(0.5, Math.min(2.5, cur + delta)) };
+        }),
+      );
     },
-    [selectedId, placements, updateRecipe],
+    [selectedId, updatePlacements],
   );
 
   const handleLabelReset = useCallback(() => {
     if (!selectedId) return;
-    const next = placements.map((p) =>
-      p.id === selectedId
-        ? {
-            ...p,
-            labelOffsetX: LABEL_DEFAULT.offsetX,
-            labelOffsetY: LABEL_DEFAULT.offsetY,
-            labelScale: LABEL_DEFAULT.scale,
-          }
-        : p,
+    updatePlacements((current) =>
+      current.map((p) =>
+        p.id === selectedId
+          ? {
+              ...p,
+              labelOffsetX: LABEL_DEFAULT.offsetX,
+              labelOffsetY: LABEL_DEFAULT.offsetY,
+              labelScale: LABEL_DEFAULT.scale,
+            }
+          : p,
+      ),
     );
-    updateRecipe({ placements: next });
-  }, [selectedId, placements, updateRecipe]);
+  }, [selectedId, updatePlacements]);
 
   /**
    * タイトル（ラベル）の表示／非表示を切り替える。
@@ -207,20 +234,20 @@ export function RecipeEditor() {
    */
   const handleLabelToggleHidden = useCallback(
     (id: string, hidden: boolean) => {
-      const next = placements.map((p) =>
-        p.id === id ? { ...p, hideLabel: hidden } : p,
+      updatePlacements((current) =>
+        current.map((p) => (p.id === id ? { ...p, hideLabel: hidden } : p)),
       );
-      updateRecipe({ placements: next });
     },
-    [placements, updateRecipe],
+    [updatePlacements],
   );
 
   const updatePlacement = useCallback(
     (id: string, updates: Partial<RecipePlacement>) => {
-      const next = placements.map((p) => (p.id === id ? { ...p, ...updates } : p));
-      updateRecipe({ placements: next });
+      updatePlacements((current) =>
+        current.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+      );
     },
-    [placements, updateRecipe],
+    [updatePlacements],
   );
 
   /**
@@ -248,11 +275,11 @@ export function RecipeEditor() {
       scale: 1,
       color: "#fff",
     };
-    updateRecipe({ placements: [...placements, newComment] });
+    updatePlacements((current) => [...current, newComment]);
     setSelectedId(id);
     setTempComment("");
     setEditingComment(true);
-  }, [placements, updateRecipe]);
+  }, [updatePlacements]);
 
   const startEditLabel = useCallback(() => {
     if (!selectedPlacement) return;

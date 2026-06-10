@@ -272,45 +272,77 @@ export async function addItemToSection(
 let _pendingSave: Promise<void> | null = null;
 const _debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
 const _pendingData = new Map<string, import("@/lib/sections").Section[]>();
+/** slug ごとに保存ループが走っているか（同時 upsert による古いデータの上書きを防ぐ） */
+const _saveInFlight = new Map<string, Promise<void>>();
 
-function doSave(s: string, sections: import("@/lib/sections").Section[]): Promise<void> {
-  const p = (async () => {
+/**
+ * 保留中の sections を DB に保存する。slug ごとに直列化し、
+ * sanitize（画像アップロード）中に新しい編集が入っても、保存完了後に
+ * 最新データを追い保存する。古い保存が新しい編集を上書きする競合を防ぐ。
+ */
+function runSaveLoop(s: string): Promise<void> {
+  const existing = _saveInFlight.get(s);
+  if (existing) return existing;
+
+  const loop = (async () => {
     try {
-      // saveSections は base64 を URL に置換した「実際に保存したデータ」を返す。
-      // それでキャッシュを更新し、次回以降 base64 を再送して肥大化させないようにする。
-      const saved = await db.saveSections(s, sections);
-      sectionsCache.set(s, { data: saved, ts: Date.now() });
-      try {
-        await fetch("/api/revalidate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username: s }),
-        });
-      } catch { /* ignore */ }
-    } catch (err) {
-      console.error("[store.doSave] セクション保存に失敗しました", err);
-      // サイレントなデータ消失を防ぐ：より新しい保留データが無ければ再キューして自動リトライ。
-      if (!_pendingData.has(s)) {
-        _pendingData.set(s, sections);
-        const existing = _debounceTimers.get(s);
-        if (existing) clearTimeout(existing);
-        _debounceTimers.set(s, setTimeout(() => {
-          _debounceTimers.delete(s);
-          const data = _pendingData.get(s);
-          _pendingData.delete(s);
-          if (data) doSave(s, data);
-        }, 3000));
+      while (_pendingData.has(s)) {
+        const data = _pendingData.get(s)!;
+        _pendingData.delete(s);
+
+        try {
+          const saved = await db.saveSections(s, data);
+          sectionsCache.set(s, { data: saved, ts: Date.now() });
+          try {
+            await fetch("/api/revalidate", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ username: s }),
+            });
+          } catch { /* ignore */ }
+
+          // 保存中に入った編集があればループ継続して最新を追い保存
+          if (_pendingData.has(s)) continue;
+          break;
+        } catch (err) {
+          console.error("[store.runSaveLoop] セクション保存に失敗しました", err);
+          // 失敗したバッチを再キュー（その間に新しい編集が来ていればそちらを優先）
+          if (!_pendingData.has(s)) {
+            _pendingData.set(s, data);
+          }
+          const existingTimer = _debounceTimers.get(s);
+          if (existingTimer) clearTimeout(existingTimer);
+          _debounceTimers.set(
+            s,
+            setTimeout(() => {
+              _debounceTimers.delete(s);
+              void runSaveLoop(s);
+            }, 3000),
+          );
+          try {
+            const { toast } = await import("sonner");
+            toast.error(
+              "メイクレシピの保存に失敗しました。通信環境をご確認ください（自動で再試行します）",
+            );
+          } catch { /* ignore */ }
+          break;
+        }
       }
-      // ユーザーに保存失敗を知らせる（黙って消えるのを防ぐ）
-      try {
-        const { toast } = await import("sonner");
-        toast.error("メイクレシピの保存に失敗しました。通信環境をご確認ください（自動で再試行します）");
-      } catch { /* ignore */ }
+    } finally {
+      _saveInFlight.delete(s);
+      // 保存中に入った編集の追い保存（失敗時の 3s リトライタイマーと重複しないよう除外）
+      if (_pendingData.has(s) && !_debounceTimers.has(s)) {
+        void runSaveLoop(s);
+      }
     }
   })();
-  _pendingSave = p;
-  p.finally(() => { if (_pendingSave === p) _pendingSave = null; });
-  return p;
+
+  _saveInFlight.set(s, loop);
+  _pendingSave = loop;
+  loop.finally(() => {
+    if (_pendingSave === loop) _pendingSave = null;
+  });
+  return loop;
 }
 
 /** セクション一覧保存（slug ごと）— 800ms デバウンス付き */
@@ -329,9 +361,7 @@ export function setSections(
   if (existing) clearTimeout(existing);
   _debounceTimers.set(s, setTimeout(() => {
     _debounceTimers.delete(s);
-    const data = _pendingData.get(s);
-    _pendingData.delete(s);
-    if (data) doSave(s, data);
+    void runSaveLoop(s);
   }, 800));
 }
 
@@ -343,15 +373,17 @@ export function flushSections(slug?: string | null): Promise<void> {
     clearTimeout(timer);
     _debounceTimers.delete(s);
   }
-  const data = _pendingData.get(s);
-  _pendingData.delete(s);
-  if (data) return doSave(s, data);
-  return _pendingSave ?? Promise.resolve();
+  if (_pendingData.has(s) || _saveInFlight.has(s)) {
+    return runSaveLoop(s);
+  }
+  return Promise.resolve();
 }
 
 /** 保存中のセクションデータがあれば完了を待つ */
 export function waitForPendingSave(): Promise<void> {
-  return _pendingSave ?? Promise.resolve();
+  const inFlight = Array.from(_saveInFlight.values());
+  if (inFlight.length === 0) return Promise.resolve();
+  return Promise.all(inFlight).then(() => {});
 }
 
 /** 全 slug の保留中保存を即座に flush する（ページ離脱・バックグラウンド化時用） */
@@ -359,9 +391,7 @@ function flushAllPending(): void {
   for (const timer of _debounceTimers.values()) clearTimeout(timer);
   _debounceTimers.clear();
   for (const s of Array.from(_pendingData.keys())) {
-    const data = _pendingData.get(s);
-    _pendingData.delete(s);
-    if (data) doSave(s, data);
+    void runSaveLoop(s);
   }
 }
 

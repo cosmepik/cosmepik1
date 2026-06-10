@@ -18,7 +18,10 @@ interface SectionContextType {
   sections: Section[];
   setSections: (sections: Section[]) => void;
   addSection: (section: Section) => void;
-  updateSection: (id: string, section: Partial<Section>) => void;
+  updateSection: (
+    id: string,
+    section: Partial<Section> | ((prev: Section) => Partial<Section>),
+  ) => void;
   deleteSection: (id: string) => void;
   moveSection: (id: string, direction: "up" | "down") => void;
   addItemToSection: (sectionId: string, item: SectionItem) => void;
@@ -146,9 +149,13 @@ export function SectionProvider({
   );
 
   const updateSection = useCallback(
-    (id: string, updates: Partial<Section>) => {
+    (id: string, updates: Partial<Section> | ((prev: Section) => Partial<Section>)) => {
       setSectionsState((prev) => {
-        const next = prev.map((s) => (s.id === id ? { ...s, ...updates } : s));
+        const next = prev.map((s) => {
+          if (s.id !== id) return s;
+          const partial = typeof updates === "function" ? updates(s) : updates;
+          return { ...s, ...partial };
+        });
         store.setSections(next, slug);
         return next;
       });
