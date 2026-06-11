@@ -20,21 +20,6 @@ interface BlogPost {
   created_at: string;
 }
 
-const catColor = (cat: string) => {
-  const map: Record<string, string> = {
-    ビューティー: "#d94c7a",
-    スキンケア: "#d94c7a",
-    レシピ: "#d94c7a",
-    コスメ: "#e87a50",
-    特集: "#9b8ec4",
-    連載: "#4a9ec4",
-    収益化: "#e87a50",
-    使い方: "#4ab894",
-    新機能: "#9b8ec4",
-  };
-  return map[cat] || "#888";
-};
-
 async function fetchPost(id: string): Promise<BlogPost | null> {
   if (!SUPABASE_URL || !SUPABASE_KEY) return null;
   try {
@@ -55,16 +40,15 @@ async function fetchPost(id: string): Promise<BlogPost | null> {
 }
 
 /**
- * 同じカテゴリーの最新記事を最大4件取得（自分自身は除外）。
+ * 最新記事を最大4件取得（自分自身は除外）。
  * 関連記事セクションでの内部リンク（SEO の「サイト内リンクグラフ」を強化する）に使う。
  */
-async function fetchRelatedPosts(
-  category: string,
+async function fetchRecentPosts(
   excludeId: string,
-): Promise<{ id: string; title: string; category: string; thumbnail_url: string | null; created_at: string }[]> {
+): Promise<{ id: string; title: string; thumbnail_url: string | null; created_at: string }[]> {
   if (!SUPABASE_URL || !SUPABASE_KEY) return [];
   try {
-    const url = `${SUPABASE_URL}/rest/v1/blog_posts?published=eq.true&category=eq.${encodeURIComponent(category)}&id=neq.${encodeURIComponent(excludeId)}&select=id,title,category,thumbnail_url,created_at&order=created_at.desc&limit=4`;
+    const url = `${SUPABASE_URL}/rest/v1/blog_posts?published=eq.true&id=neq.${encodeURIComponent(excludeId)}&select=id,title,thumbnail_url,created_at&order=created_at.desc&limit=4`;
     const res = await fetch(url, {
       headers: {
         apikey: SUPABASE_KEY,
@@ -96,23 +80,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .slice(0, 120);
   const url = `${SITE_URL}/blog/${post.id}`;
 
-  // 「メイクレシピ」関連を必ずキーワードに含めて、サイト全体のテーマを Google に明示する。
-  // カテゴリーごとの追加キーワードも併記。
-  const keywordsByCategory: Record<string, string[]> = {
-    レシピ: ["メイクレシピ", "メイクレシピ 作り方", "メイク 手順"],
-    ビューティー: ["メイク", "ビューティー", "メイクレシピ"],
-    スキンケア: ["スキンケア", "美容"],
-    コスメ: ["コスメ", "化粧品 おすすめ"],
-    特集: ["メイクレシピ", "コスメ 特集"],
-    使い方: ["cosmepik 使い方", "メイクレシピ 共有"],
-    新機能: ["cosmepik", "新機能"],
-    収益化: ["楽天アフィリエイト", "コスメ 収益化"],
-  };
   const keywords = [
     "cosmepik",
     "コスメピック",
-    ...(keywordsByCategory[post.category] ?? ["メイクレシピ"]),
-    post.category,
+    "メイクレシピ",
+    "愛用コスメ",
+    "コスメ リンク",
   ];
 
   return {
@@ -217,7 +190,7 @@ export default async function BlogDetailPage({ params }: Props) {
 
   const [embeds, related] = await Promise.all([
     resolveEmbeds(post.body),
-    fetchRelatedPosts(post.category, post.id),
+    fetchRecentPosts(post.id),
   ]);
 
   // Article 構造化データ。Google の検索結果でリッチな表示（日付・著者など）を出す手助けになる。
@@ -253,7 +226,7 @@ export default async function BlogDetailPage({ params }: Props) {
       "@type": "WebPage",
       "@id": `${SITE_URL}/blog/${post.id}`,
     },
-    articleSection: post.category,
+    articleSection: "#cosmepik編集部",
     inLanguage: "ja-JP",
   };
 
@@ -290,14 +263,8 @@ export default async function BlogDetailPage({ params }: Props) {
       <AppHeader />
 
       <article className="mx-auto max-w-2xl px-4 py-8">
-        {/* Category + Date */}
-        <div className="mb-4 flex items-center gap-2">
-          <span
-            className="rounded-full px-3 py-1 text-[11px] font-bold text-white"
-            style={{ background: catColor(post.category) }}
-          >
-            {post.category}
-          </span>
+        {/* Date */}
+        <div className="mb-4">
           <time
             dateTime={post.created_at}
             className="text-[11px] text-muted-foreground"
@@ -412,13 +379,7 @@ export default async function BlogDetailPage({ params }: Props) {
                     </div>
                   )}
                   <div className="flex min-w-0 flex-1 flex-col justify-center">
-                    <span
-                      className="text-[10px] font-bold"
-                      style={{ color: catColor(rp.category) }}
-                    >
-                      {rp.category}
-                    </span>
-                    <p className="mt-0.5 text-[12px] font-bold leading-[1.45] text-foreground line-clamp-2">
+                    <p className="text-[12px] font-bold leading-[1.45] text-foreground line-clamp-2">
                       {rp.title}
                     </p>
                   </div>

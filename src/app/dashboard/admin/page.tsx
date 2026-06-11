@@ -53,8 +53,6 @@ interface TransferCode {
 type SortKey = "views" | "clicks" | "createdAt" | "slug";
 type Tab = "users" | "blog" | "transfer";
 
-const CATEGORIES = ["特集", "ビューティー", "スキンケア", "レシピ", "コスメ", "連載", "収益化", "使い方", "新機能"];
-
 /* ───────────────── Component ───────────────── */
 
 export default function AdminPage() {
@@ -77,7 +75,6 @@ export default function AdminPage() {
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
   const [formTitle, setFormTitle] = useState("");
   const [formBody, setFormBody] = useState("");
-  const [formCategory, setFormCategory] = useState("特集");
   const [formThumbnail, setFormThumbnail] = useState("");
   const [formPublished, setFormPublished] = useState(false);
   const [formSaving, setFormSaving] = useState(false);
@@ -231,7 +228,6 @@ export default function AdminPage() {
     setEditingPost(null);
     setFormTitle("");
     setFormBody("");
-    setFormCategory("特集");
     setFormThumbnail("");
     setFormPublished(false);
   };
@@ -240,7 +236,6 @@ export default function AdminPage() {
     setEditingPost(post);
     setFormTitle(post.title);
     setFormBody(post.body);
-    setFormCategory(post.category);
     setFormThumbnail(post.thumbnail_url ?? "");
     setFormPublished(post.published);
     setShowForm(true);
@@ -253,7 +248,6 @@ export default function AdminPage() {
       const payload = {
         title: formTitle,
         body: formBody,
-        category: formCategory,
         thumbnailUrl: formThumbnail || null,
         published: formPublished,
         ...(editingPost ? { id: editingPost.id } : {}),
@@ -454,12 +448,6 @@ export default function AdminPage() {
                     <input type="text" value={formTitle} onChange={(e) => setFormTitle(e.target.value)} className="w-full rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20" placeholder="記事タイトル" />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-muted-foreground">カテゴリ</label>
-                    <select value={formCategory} onChange={(e) => setFormCategory(e.target.value)} className="w-full rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-primary">
-                      {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </div>
-                  <div>
                     <label className="mb-1 block text-xs font-medium text-muted-foreground">サムネイル画像（任意）</label>
                     <input ref={thumbnailInputRef} type="file" accept="image/*" onChange={handleThumbnailSelect} className="hidden" />
                     {formThumbnail ? (
@@ -539,9 +527,6 @@ export default function AdminPage() {
                           style={{ background: post.published ? "#4ab894" : "#aaa" }}
                         >
                           {post.published ? "公開" : "下書き"}
-                        </span>
-                        <span className="inline-block rounded-full border border-border px-2 py-0.5 text-[10px] font-medium text-muted-foreground shrink-0">
-                          {post.category}
                         </span>
                       </div>
                       <p className="truncate text-sm font-medium text-foreground">{post.title}</p>

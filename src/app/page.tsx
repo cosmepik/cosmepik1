@@ -72,26 +72,9 @@ function SectionHeading({ label, title }: { label: string; title: string }) {
   );
 }
 
-// カテゴリラベルの色マッピング
-const catColor = (cat: string) => {
-  const map: Record<string, string> = {
-    ビューティー: "#d94c7a",
-    スキンケア: "#d94c7a",
-    レシピ: "#d94c7a",
-    コスメ: "#e87a50",
-    特集: "#9b8ec4",
-    連載: "#4a9ec4",
-    収益化: "#e87a50",
-    使い方: "#4ab894",
-    新機能: "#9b8ec4",
-  };
-  return map[cat] || "#888";
-};
-
 interface BlogPost {
   id: string;
   title: string;
-  category: string;
   thumbnail_url: string | null;
   created_at: string;
 }
@@ -102,7 +85,7 @@ async function fetchBlogPosts(): Promise<BlogPost[]> {
     if (!admin) return [];
     const { data } = await admin
       .from("blog_posts")
-      .select("id, title, category, thumbnail_url, created_at")
+      .select("id, title, thumbnail_url, created_at")
       .eq("published", true)
       .order("created_at", { ascending: false })
       .limit(5);
@@ -360,8 +343,7 @@ export default async function LandingPage() {
                     </div>
                   )}
                   <div className="flex min-w-0 flex-1 flex-col justify-center">
-                    <span className="text-[11px] font-bold" style={{ color: catColor(post.category) }}>{post.category}</span>
-                    <p className="mt-1 text-[13px] font-bold leading-[1.45] line-clamp-3" style={{ color: TEXT_DARK }}>{post.title}</p>
+                    <p className="text-[13px] font-bold leading-[1.45] line-clamp-3" style={{ color: TEXT_DARK }}>{post.title}</p>
                   </div>
                 </Link>
               ))}

@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       title: body.title.trim(),
       body: body.body?.trim() ?? "",
       thumbnail_url: body.thumbnailUrl?.trim() || null,
-      category: body.category?.trim() || "特集",
+      category: "",
       published: body.published ?? false,
     })
     .select()
@@ -104,7 +104,6 @@ export async function PATCH(request: NextRequest) {
   if (body.title !== undefined) updates.title = body.title.trim();
   if (body.body !== undefined) updates.body = body.body;
   if (body.thumbnailUrl !== undefined) updates.thumbnail_url = body.thumbnailUrl?.trim() || null;
-  if (body.category !== undefined) updates.category = body.category.trim();
   if (body.published !== undefined) updates.published = body.published;
 
   const { data, error } = await admin

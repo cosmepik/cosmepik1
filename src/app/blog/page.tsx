@@ -39,30 +39,14 @@ const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_P
 interface BlogPost {
   id: string;
   title: string;
-  category: string;
   thumbnail_url: string | null;
   created_at: string;
 }
 
-const catColor = (cat: string) => {
-  const map: Record<string, string> = {
-    ビューティー: "#d94c7a",
-    スキンケア: "#d94c7a",
-    レシピ: "#d94c7a",
-    コスメ: "#e87a50",
-    特集: "#9b8ec4",
-    連載: "#4a9ec4",
-    収益化: "#e87a50",
-    使い方: "#4ab894",
-    新機能: "#9b8ec4",
-  };
-  return map[cat] || "#888";
-};
-
 async function fetchAllPosts(): Promise<BlogPost[]> {
   if (!SUPABASE_URL || !SUPABASE_KEY) return [];
   try {
-    const url = `${SUPABASE_URL}/rest/v1/blog_posts?published=eq.true&select=id,title,category,thumbnail_url,created_at&order=created_at.desc`;
+    const url = `${SUPABASE_URL}/rest/v1/blog_posts?published=eq.true&select=id,title,thumbnail_url,created_at&order=created_at.desc`;
     const res = await fetch(url, {
       headers: {
         apikey: SUPABASE_KEY,
@@ -148,8 +132,7 @@ export default async function BlogListPage() {
                   </div>
                 )}
                 <div className="flex min-w-0 flex-1 flex-col justify-center">
-                  <span className="text-[11px] font-bold" style={{ color: catColor(post.category) }}>{post.category}</span>
-                  <p className="mt-1 text-[13px] font-bold leading-[1.45] line-clamp-2 text-foreground">{post.title}</p>
+                  <p className="text-[13px] font-bold leading-[1.45] line-clamp-2 text-foreground">{post.title}</p>
                   <p className="mt-1 text-[10px] text-muted-foreground">
                     {new Date(post.created_at).toLocaleDateString("ja-JP")}
                   </p>

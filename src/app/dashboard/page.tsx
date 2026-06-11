@@ -862,8 +862,7 @@ export default function DashboardHomePage() {
                     </div>
                   )}
                   <div className="flex min-w-0 flex-1 flex-col justify-center">
-                    <span className="text-[11px] font-bold text-pink-400">{post.category}</span>
-                    <p className="mt-1 text-[13px] font-bold leading-[1.45] text-foreground line-clamp-2">
+                    <p className="text-[13px] font-bold leading-[1.45] text-foreground line-clamp-2">
                       {post.title}
                     </p>
                   </div>
