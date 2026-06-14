@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // IS_PRODUCTION はサーバー（robots/sitemap/metadata）だけでなく、
+  // クライアントコンポーネント（広告の出し分け等）でも参照する。
+  // env に列挙するとビルド時にクライアントバンドルへインライン化されるため、
+  // Netlify の既存環境変数 IS_PRODUCTION=true をそのまま流用できる。
+  env: {
+    IS_PRODUCTION: process.env.IS_PRODUCTION ?? "",
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "placehold.co", pathname: "/**" },
