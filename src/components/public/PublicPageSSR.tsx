@@ -8,7 +8,6 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { getCardDesign } from "@/lib/card-designs";
 import { AdBanner } from "@/components/AdSense";
-import { AdsterraNativeBanner } from "@/components/Adsterra";
 import { generateAffiliateLink } from "@/utils/affiliate";
 import type { InfluencerProfile, SnsLink } from "@/types";
 import type { Section, SectionItem } from "@/lib/sections";
@@ -490,8 +489,6 @@ export function PublicPageSSR({ username, profile, sections, themeVars, isPremiu
           ))}
 
           {!isPremium && <AdBanner className="w-full" />}
-
-          {!isPremium && <AdsterraNativeBanner className="w-full" />}
 
           {!isPremium && (
             <footer className="flex flex-col items-center gap-2 pb-8 pt-4">

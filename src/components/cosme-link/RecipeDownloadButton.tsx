@@ -4,7 +4,6 @@ import { useCallback, useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { downloadRecipeImage } from "@/lib/recipe-download";
-import { maybeShowRecipeSavePopunder } from "@/lib/adsterra-popunder";
 import { useRecipeSavedPopup } from "./recipe-saved-popup";
 import { useRecipeDownloadProgress } from "./recipe-download-progress";
 
@@ -40,7 +39,6 @@ export function RecipeDownloadButton({ getTarget, filename }: Props) {
       if (!el) return;
       setDownloading(true);
       startProgress();
-      void maybeShowRecipeSavePopunder();
       try {
         const result = await downloadRecipeImage(el, {
           filename: filename ?? `cosmepik-recipe-${Date.now()}`,
