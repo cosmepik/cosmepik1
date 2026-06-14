@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import type { RecipePlacement } from "@/lib/sections";
 import { LABEL_DEFAULT } from "@/lib/sections";
 import { downloadRecipeImage } from "@/lib/recipe-download";
+import { maybeShowRecipeSavePopunder } from "@/lib/adsterra-popunder";
 import {
   getLabelFrame,
   getFrameStyle,
@@ -102,6 +103,8 @@ export function RecipeCanvas({
       if (editable) onSelect?.(null);
       setDownloading(true);
       startProgress();
+      // 保存処理と並行してポップアンダー（プレミアム会員は除外）
+      void maybeShowRecipeSavePopunder();
       try {
         const result = await downloadRecipeImage(el, {
           filename: `cosmepik-recipe-${Date.now()}`,
