@@ -388,6 +388,9 @@ export async function fetchSections(username: string): Promise<Section[] | null>
  * @param droppable true の場合、アップロード失敗時に base64 を捨てる（undefined を返す）。
  *   原画像(originalImage)など「無くても表示は壊れない」フィールドに使い、行の肥大化を防ぐ。
  */
+/** data URL のうち、このサイズ以上のものは JSONB を肥大化させるため保存時に dropping する */
+const DATA_URL_DROP_THRESHOLD = 200_000;
+
 async function sanitizeImageField(
   value: string | undefined,
   folder: string,
@@ -395,13 +398,19 @@ async function sanitizeImageField(
   droppable: boolean,
 ): Promise<string | undefined> {
   if (!value || !value.startsWith("data:")) return value;
+  // data URL が閾値以上の場合は、アップロード失敗時に dropping する
+  const oversized = value.length > DATA_URL_DROP_THRESHOLD;
   try {
     const url = await uploadImage(value, folder, key);
     // uploadImage はアップロード失敗時に元の data URL をそのまま返す
-    if (url.startsWith("data:")) return droppable ? undefined : value;
+    if (url.startsWith("data:")) {
+      if (oversized || droppable) return undefined;
+      return value;
+    }
     return url;
   } catch {
-    return droppable ? undefined : value;
+    if (oversized || droppable) return undefined;
+    return value;
   }
 }
 
@@ -425,28 +434,68 @@ async function sanitizeSectionsImages(
       }
 
       if (Array.isArray(sec.placements) && sec.placements.length > 0) {
-        next.placements = await Promise.all(
-          sec.placements.map(async (p) => ({
-            ...p,
-            image: await sanitizeImageField(p.image, `${username}/cosme`, `img-${p.id}-${stamp}`, false),
-            originalImage: await sanitizeImageField(p.originalImage, `${username}/cosme-orig`, `orig-${p.id}-${stamp}`, true),
-          })),
+        next.placements = await batchSanitizePlacements(
+          sec.placements,
+          username,
+          stamp,
         );
       }
 
       if (Array.isArray(sec.items) && sec.items.length > 0) {
-        next.items = await Promise.all(
-          sec.items.map(async (it) => ({
-            ...it,
-            image: await sanitizeImageField(it.image, `${username}/cosme`, `img-${it.id}-${stamp}`, false),
-            originalImage: await sanitizeImageField(it.originalImage, `${username}/cosme-orig`, `orig-${it.id}-${stamp}`, true),
-          })),
+        next.items = await batchSanitizeItems(
+          sec.items,
+          username,
+          stamp,
         );
       }
 
       return next;
     }),
   );
+}
+
+/** placement をバッチサイズずつ順にアップロード（同時接続数を抑制） */
+async function batchSanitizePlacements(
+  placements: import("@/lib/sections").RecipePlacement[],
+  username: string,
+  stamp: number,
+): Promise<import("@/lib/sections").RecipePlacement[]> {
+  const BATCH = 3;
+  const result: import("@/lib/sections").RecipePlacement[] = [];
+  for (let i = 0; i < placements.length; i += BATCH) {
+    const batch = placements.slice(i, i + BATCH);
+    const sanitized = await Promise.all(
+      batch.map(async (p) => ({
+        ...p,
+        image: await sanitizeImageField(p.image, `${username}/cosme`, `img-${p.id}-${stamp}`, false),
+        originalImage: await sanitizeImageField(p.originalImage, `${username}/cosme-orig`, `orig-${p.id}-${stamp}`, true),
+      })),
+    );
+    result.push(...sanitized);
+  }
+  return result;
+}
+
+/** section items をバッチサイズずつ順にアップロード（同時接続数を抑制） */
+async function batchSanitizeItems(
+  items: import("@/lib/sections").SectionItem[],
+  username: string,
+  stamp: number,
+): Promise<import("@/lib/sections").SectionItem[]> {
+  const BATCH = 3;
+  const result: import("@/lib/sections").SectionItem[] = [];
+  for (let i = 0; i < items.length; i += BATCH) {
+    const batch = items.slice(i, i + BATCH);
+    const sanitized = await Promise.all(
+      batch.map(async (it) => ({
+        ...it,
+        image: await sanitizeImageField(it.image, `${username}/cosme`, `img-${it.id}-${stamp}`, false),
+        originalImage: await sanitizeImageField(it.originalImage, `${username}/cosme-orig`, `orig-${it.id}-${stamp}`, true),
+      })),
+    );
+    result.push(...sanitized);
+  }
+  return result;
 }
 
 /**

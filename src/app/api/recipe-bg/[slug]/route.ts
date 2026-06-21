@@ -28,7 +28,10 @@ export async function GET(
   if (!res.ok) return new NextResponse(null, { status: 502 });
 
   const rows = await res.json();
-  const sections = Array.isArray(rows) && rows[0]?.sections_json;
+  let sections = Array.isArray(rows) && rows[0]?.sections_json;
+  if (typeof sections === "string") {
+    try { sections = JSON.parse(sections); } catch { /* ignore */ }
+  }
   if (!Array.isArray(sections)) return new NextResponse(null, { status: 404 });
 
   const recipe = sections.find((s: { type?: string }) => s.type === "recipe");

@@ -83,12 +83,25 @@ async function fetchSectionsRest(username: string): Promise<Section[]> {
       },
       next: { revalidate: 60 },
     });
-    if (!res.ok) return [];
+    if (!res.ok) {
+      console.error(`[fetchSectionsRest] HTTP ${res.status} for ${username}`);
+      return [];
+    }
     const rows = await res.json();
     if (!Array.isArray(rows) || rows.length === 0) return [];
-    const arr = rows[0]?.sections_json;
+    let arr = rows[0]?.sections_json;
+    // PostgREST が JSONB を文字列として返す場合があるため、パースを試みる
+    if (typeof arr === "string") {
+      try {
+        arr = JSON.parse(arr);
+      } catch {
+        console.error(`[fetchSectionsRest] failed to parse sections_json string for ${username}`);
+        return [];
+      }
+    }
     return Array.isArray(arr) ? (arr as Section[]) : [];
-  } catch {
+  } catch (e) {
+    console.error(`[fetchSectionsRest] fetch error for ${username}:`, e);
     return [];
   }
 }
