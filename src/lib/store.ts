@@ -214,7 +214,8 @@ export async function getListByUsername(username: string): Promise<ListedCosmeIt
 }
 
 /** セクション一覧取得（slug ごと）— インメモリキャッシュ付き
- *  エラー時は stale キャッシュを返すか、"error" を返す */
+ *  エラー時は stale キャッシュを返すか、localStorage にフォールバックし、
+ *  それでもなければ "error" を返す */
 export async function getSections(slug?: string | null): Promise<import("@/lib/sections").Section[] | null | "error"> {
   const s = slug ?? FALLBACK_USER_ID;
   if (!useSupabase()) return Promise.resolve(local.getSections(s));
@@ -231,7 +232,13 @@ export async function getSections(slug?: string | null): Promise<import("@/lib/s
     }
     return data;
   } catch (err) {
-    console.error("[getSections] fetch failed, returning stale cache:", err);
+    console.error("[getSections] fetch failed, trying localStorage fallback:", err);
+    // Supabase 取得失敗時は localStorage のバックアップから復元を試みる
+    const localData = local.getSections(s);
+    if (localData && localData.length > 0) {
+      sectionsCache.set(s, { data: localData, ts: Date.now() });
+      return localData;
+    }
     if (cached) return cached.data;
     return "error";
   }
@@ -306,6 +313,9 @@ function runSaveLoop(s: string): Promise<void> {
           break;
         } catch (err) {
           console.error("[store.runSaveLoop] セクション保存に失敗しました", err);
+          // 保存失敗時にキャッシュを無効化する。次回リロード時に
+          // Supabase から再取得するようにし、古いデータが返されるのを防ぐ。
+          sectionsCache.delete(s);
           // 失敗したバッチを再キュー（その間に新しい編集が来ていればそちらを優先）
           if (!_pendingData.has(s)) {
             _pendingData.set(s, data);
@@ -355,6 +365,10 @@ export function setSections(
     local.setSections(s, sections);
     return;
   }
+  // Supabase 保存と同時に localStorage にもバックアップを保存する。
+  // Supabase upsert が失敗した場合や、保存中にリロードされた場合でも
+  // データが復元できるようにする。
+  local.setSections(s, sections);
   _pendingData.set(s, sections);
   sectionsCache.set(s, { data: sections, ts: Date.now() });
   const existing = _debounceTimers.get(s);
