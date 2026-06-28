@@ -6,7 +6,9 @@ import { isProduction } from "@/lib/env";
 const ADSENSE_CLIENT = "ca-pub-6342491111387215";
 
 export function AdSenseHead() {
-  if (!isProduction) return null;
+  // 審査中は無効化（審査通過後に true に戻す）
+  const ENABLE_ADSENSE = false;
+  if (!isProduction || !ENABLE_ADSENSE) return null;
 
   return (
     <Script
@@ -18,7 +20,9 @@ export function AdSenseHead() {
 }
 
 export function AdBanner({ className }: { className?: string }) {
-  if (!isProduction) return null;
+  // 審査中は無効化（審査通過後に true に戻す）
+  const ENABLE_ADSENSE = false;
+  if (!isProduction || !ENABLE_ADSENSE) return null;
 
   return (
     <div className={className}>
