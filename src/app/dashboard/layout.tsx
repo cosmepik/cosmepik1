@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { ProfileProvider } from "@/lib/profile-context";
 import { LiffAutoLogin } from "@/components/LiffAutoLogin";
+import { ServiceEndNotice } from "@/components/service-end-notice";
 
 /** パスまたはクエリから slug を取得。ダッシュボード本体では null（プロフィール読み込み不要） */
 function getSlug(pathname: string | null, slugFromQuery: string | null): string | null {
@@ -22,7 +23,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
   return (
     <LiffAutoLogin>
-      <ProfileProvider slug={slug}>{children}</ProfileProvider>
+      <ProfileProvider slug={slug}>
+        <ServiceEndNotice />
+        {children}
+      </ProfileProvider>
     </LiffAutoLogin>
   );
 }

@@ -8,6 +8,10 @@ import { CosmepikLogo } from "@/components/cosmepik-logo";
 import { createCosmeSet, setProfile } from "@/lib/store";
 import { Sparkles } from "lucide-react";
 import type { CosmeSetMode } from "@/types";
+import { SignupClosed } from "@/components/SignupClosed";
+
+/** サービス終了に伴い、新規プロフィール作成を停止中（SNSログイン経由の新規登録もここで止める） */
+const SIGNUP_CLOSED = true;
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -105,6 +109,8 @@ export default function OnboardingPage() {
       setSubmitting(false);
     }
   };
+
+  if (SIGNUP_CLOSED) return <SignupClosed />;
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-4">

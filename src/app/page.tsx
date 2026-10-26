@@ -5,6 +5,7 @@ import { CosmepikLogo } from "@/components/cosmepik-logo";
 import { PhoneMockupModes } from "@/components/landing/PhoneMockupModes";
 import { LandingHeader } from "@/components/landing/LandingHeader";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { SERVICE_END_DATE_LABEL, SERVICE_END_NOTICE_PATH } from "@/lib/service-end";
 
 /* =====================================================================
    cosmepik トップページ - non-no web モバイルデザイン完全再現版
@@ -99,6 +100,14 @@ export default async function LandingPage() {
   const blogPosts = await fetchBlogPosts();
   return (
     <div className="min-h-screen" style={{ background: BG_CREAM }}>
+
+      {/* ========== SERVICE END ========== */}
+      <Link
+        href={SERVICE_END_NOTICE_PATH}
+        className="block bg-foreground px-4 py-2.5 text-center text-xs font-medium text-white hover:opacity-90"
+      >
+        cosmepik は {SERVICE_END_DATE_LABEL} にサービスを終了します。新規登録は停止しました。詳しくはこちら →
+      </Link>
 
       {/* ========== HEADER ========== */}
       <LandingHeader />

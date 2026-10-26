@@ -2,8 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
 
+/** サービス終了に伴い、プレミアムプランの新規申し込みを停止中 */
+const NEW_SUBSCRIPTIONS_CLOSED = true;
+
 /** プレミアムプラン用 Checkout セッション作成 */
 export async function POST(request: NextRequest) {
+  if (NEW_SUBSCRIPTIONS_CLOSED) {
+    return NextResponse.json(
+      { error: "サービス終了に伴い、プレミアムプランの新規申し込みは停止しました" },
+      { status: 410 },
+    );
+  }
   try {
     const supabase = await createClient();
     if (!supabase) {

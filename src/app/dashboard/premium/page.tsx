@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Crown, Sparkles, Image, Palette, X, LayoutGrid, Settings, CheckCircle2, AlertTriangle } from "lucide-react";
 import { SideMenu } from "@/components/cosme-link/side-menu";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { SERVICE_END_DATE_LABEL, SERVICE_END_NOTICE_PATH } from "@/lib/service-end";
 
 const benefits = [
   {
@@ -31,7 +32,6 @@ const benefits = [
 
 export default function PremiumPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [upgrading, setUpgrading] = useState(false);
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
   const [isPremium, setIsPremium] = useState<boolean | null>(null);
   const [paymentFailed, setPaymentFailed] = useState(false);
@@ -46,28 +46,6 @@ export default function PremiumPage() {
       })
       .catch(() => setIsPremium(false));
   }, []);
-
-  const handleUpgradeToPremium = async () => {
-    setUpgradeError(null);
-    setUpgrading(true);
-    try {
-      const res = await fetch("/api/stripe/create-checkout-session", { method: "POST" });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setUpgradeError(data.error ?? "エラーが発生しました。");
-        setUpgrading(false);
-        return;
-      }
-      if (data.url) {
-        window.location.href = data.url;
-        return;
-      }
-      setUpgradeError("Checkout URL を取得できませんでした。");
-    } catch {
-      setUpgradeError("エラーが発生しました。");
-    }
-    setUpgrading(false);
-  };
 
   const handleOpenPortal = async () => {
     setUpgradeError(null);
@@ -198,23 +176,14 @@ export default function PremiumPage() {
           <div className="rounded-2xl border-2 border-amber-500/30 bg-amber-500/5 p-6 text-center">
             <Sparkles className="mx-auto mb-3 h-8 w-8 text-amber-500" aria-hidden />
             <h2 className="mb-2 text-lg font-semibold text-foreground">
-              プレミアムで公開ページをアップグレード
+              プレミアムプランの受付は終了しました
             </h2>
-            <p className="mb-6 text-sm text-muted-foreground">
-              いつでも解約可能。まずはお試しください。
+            <p className="text-sm text-muted-foreground">
+              cosmepik は {SERVICE_END_DATE_LABEL} にサービスを終了するため、新規のお申し込みを停止しています。{" "}
+              <Link href={SERVICE_END_NOTICE_PATH} className="font-medium text-green hover:underline">
+                詳しくはこちら
+              </Link>
             </p>
-            {upgradeError && (
-              <p className="mb-4 text-sm text-destructive">{upgradeError}</p>
-            )}
-            <button
-              type="button"
-              onClick={handleUpgradeToPremium}
-              disabled={upgrading}
-              className="inline-flex items-center gap-2 rounded-xl bg-amber-500 py-4 px-8 font-medium text-white transition-colors hover:bg-amber-600 disabled:opacity-50"
-            >
-              <Crown className="h-5 w-5" aria-hidden />
-              {upgrading ? "処理中..." : "プレミアムにアップグレード"}
-            </button>
           </div>
         )}
       </div>
